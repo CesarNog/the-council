@@ -3,6 +3,7 @@
 Nove versões alternativas de você debatem uma decisão real. Vite + React no frontend, serverless functions na Vercel, inference via Groq (free tier), persistência de resultados em Cloudflare KV.
 
 Produção: https://the-council-murex.vercel.app
+Repo: https://github.com/CesarNog/the-council (linkado — push em `main` dispara deploy automático)
 
 ## Rodar local
 
