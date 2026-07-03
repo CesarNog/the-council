@@ -151,6 +151,16 @@
 @media (max-width:640px){
   .votes{grid-template-columns:repeat(2,1fr);}
   .chamber{padding-bottom:80px;}
+
+  .chamber .ring-wrap{
+    position:sticky; top:0; z-index:5;
+    width:168px; margin:0 auto 6px;
+    background:var(--bg); padding-top:8px;
+  }
+  .chamber .ring-wrap .node{width:30px; height:30px; margin:-15px;}
+  .chamber .ring-wrap .node svg{width:15px; height:15px;}
+  .chamber .ring-wrap .ring-center .glyph{font-size:18px;}
+  .chamber .ring-wrap .tip{display:none;} /* tooltip nao cabe compacto, nao faz sentido em sticky */
 }
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001s !important; transition-duration:.001s !important;}
