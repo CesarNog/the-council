@@ -1,0 +1,42 @@
+name: Production Health Check
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # 09:00 UTC diario
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: council responde e gera debate valido
+        run: |
+          RESP=$(curl -s -w "\n%{http_code}" -X POST https://the-council-murex.vercel.app/api/council \
+            -H "Content-Type: application/json" \
+            -d '{"question":"CI health check","profile":{}}')
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | sed '$d')
+          echo "HTTP $CODE"
+          echo "$BODY" | head -c 300
+          if [ "$CODE" = "429" ]; then
+            echo "rate limited (esperado sob concorrencia — nao falha o job)"
+            exit 0
+          fi
+          if [ "$CODE" != "200" ]; then
+            echo "FALHA: esperado 200, recebeu $CODE"
+            exit 1
+          fi
+          echo "$BODY" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          assert d.get('id'), 'sem id'
+          assert len(d.get('turns', [])) >= 9, 'poucos turns'
+          assert len(d.get('votes', [])) == 9, 'votes incompletos'
+          assert d.get('verdict'), 'sem verdict'
+          print('OK:', d['id'])
+          "
+
+      - name: frontend responde
+        run: |
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" https://the-council-murex.vercel.app)
+          [ "$CODE" = "200" ] || { echo "FALHA: HTTP $CODE"; exit 1; }

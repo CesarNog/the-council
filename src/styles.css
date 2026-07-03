@@ -89,10 +89,8 @@
 .chamber-head .title{font-family:var(--serif); font-weight:300; font-size:24px;}
 .ask{margin:34px auto 0; text-align:center;}
 .ask textarea{text-align:center; resize:none; line-height:1.4;}
-.suggest{margin-top:20px; display:flex; justify-content:center;}
-.suggest button{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--ivory-dim);
-  background:none; border:none; border-bottom:1px dotted var(--gold-dim); cursor:pointer; padding:4px 2px; transition:color .3s;}
-.suggest button:hover{color:var(--gold);}
+.quick-questions{margin-top:26px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:560px; margin-left:auto; margin-right:auto;}
+.quick-questions .chip{font-size:12px; padding:10px 18px;}
 
 .question-banner{text-align:center; margin:10px 0 34px;}
 .question-banner .q{font-family:var(--serif); font-weight:300; font-style:italic; font-size:clamp(20px,3vw,30px); line-height:1.35; color:var(--ivory); max-width:30ch; margin:12px auto 0;}
@@ -165,3 +163,16 @@
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001s !important; transition-duration:.001s !important;}
 }
+
+.profile-overlay{position:fixed; inset:0; background:rgba(11,10,18,.85); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; z-index:50; padding:24px;}
+.profile-panel{background:var(--bg2); border:1px solid var(--line); padding:36px; width:min(440px,92vw); max-height:86vh; overflow-y:auto;}
+.avatar-row{display:flex; align-items:center; gap:16px; margin:18px 0 26px;}
+.avatar{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--gold-dim);}
+.profile-panel .field{margin-top:22px;}
+.profile-panel textarea{width:100%; background:transparent; border:1px solid var(--line); color:var(--ivory);
+  font-family:var(--sans); font-size:14px; padding:12px; margin-top:6px; resize:none;}
+.profile-panel textarea:focus{outline:none; border-color:var(--gold-dim);}
+.profile-panel .chips{margin-top:10px;}
+.user-badge{display:flex; align-items:center; gap:8px; cursor:pointer; background:none; border:none; padding:0;}
+.user-badge img{width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid var(--gold-dim);}

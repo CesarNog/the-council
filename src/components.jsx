@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/share.js";
-import { summonCouncil, DEMO_Q, FALLBACK } from "./lib/api.js";
+import { summonCouncil, FALLBACK } from "./lib/api.js";
+import { QUICK_QUESTIONS } from "./lib/prompts.js";
 
 export function Sigil({ id }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -64,7 +65,7 @@ function Whisper() {
   );
 }
 
-export function Landing({ onEnter }) {
+export function Landing({ onEnter, authSlot }) {
   return (
     <div className="landing">
       <div className="fade-up d1"><Ring /></div>
@@ -75,6 +76,7 @@ export function Landing({ onEnter }) {
         Bring them one real decision — and listen to them argue about your life.
       </p>
       <button className="btn primary fade-up d4" onClick={onEnter}>Enter the chamber</button>
+      {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
       <div className="fade-up d4"><Whisper /></div>
     </div>
   );
@@ -82,14 +84,14 @@ export function Landing({ onEnter }) {
 
 const VALUES = ["Freedom", "Security", "Meaning", "Ambition", "Love", "Peace", "Truth", "Adventure"];
 
-export function Onboarding({ onDone }) {
+export function Onboarding({ onDone, initial }) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [situation, setSituation] = useState("");
-  const [values, setValues] = useState([]);
+  const [name, setName] = useState(initial?.name || "");
+  const [situation, setSituation] = useState(initial?.situation || "");
+  const [values, setValues] = useState(initial?.values || []);
 
   const toggle = v => setValues(cur =>
-    cur.includes(v) ? cur.filter(x => x !== v) : cur.length < 2 ? [...cur, v] : cur);
+    cur.includes(v) ? cur.filter(x => x !== v) : cur.length < 3 ? [...cur, v] : cur);
 
   const next = () => step < 2 ? setStep(step + 1) : onDone({ name: name.trim(), situation: situation.trim(), values });
   const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); next(); } };
@@ -124,7 +126,7 @@ export function Onboarding({ onDone }) {
         <div className="onb-step" key="s2">
           <div className="eyebrow">Rite of entry · III</div>
           <h2>What do you protect above all?</h2>
-          <p className="hint">Choose at most two. The Council will remember.</p>
+          <p className="hint">Choose up to three. The Council will remember.</p>
           <div className="chips">
             {VALUES.map(v => (
               <button key={v} className={"chip" + (values.includes(v) ? " on" : "")} onClick={() => toggle(v)}>{v}</button>
@@ -178,7 +180,7 @@ export function ShareBar({ asked, debate }) {
   );
 }
 
-export function Chamber({ profile, preloaded, onExit }) {
+export function Chamber({ profile, preloaded, onExit, userSlot }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -290,7 +292,10 @@ export function Chamber({ profile, preloaded, onExit }) {
             <div className="eyebrow">The Chamber</div>
             <div className="title serif">{profile?.name ? `In session for ${profile.name}` : "A verdict already reached"}</div>
           </div>
-          {phase !== "idle" && <button className="btn small" onClick={reset}>New question</button>}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {userSlot}
+            {phase !== "idle" && <button className="btn small" onClick={reset}>New question</button>}
+          </div>
         </div>
 
         <Ring
@@ -309,8 +314,10 @@ export function Chamber({ profile, preloaded, onExit }) {
             <div style={{ marginTop: 30 }}>
               <button className="btn primary" onClick={() => convene()} disabled={!question.trim()}>Convene the Council</button>
             </div>
-            <div className="suggest">
-              <button onClick={() => convene(DEMO_Q)}>“{DEMO_Q}”</button>
+            <div className="quick-questions">
+              {QUICK_QUESTIONS.map(q => (
+                <button key={q} className="chip" onClick={() => convene(q)}>{q}</button>
+              ))}
             </div>
           </div>
         )}

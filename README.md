@@ -1,65 +1,88 @@
 # The Council
 
-Nove versões alternativas de você debatem uma decisão real. Vite + React no frontend, serverless functions na Vercel, inference via Groq (free tier), persistência de resultados em Cloudflare KV.
+[![CI](https://github.com/CesarNog/the-council/actions/workflows/ci.yml/badge.svg)](https://github.com/CesarNog/the-council/actions/workflows/ci.yml)
+[![Vercel](https://img.shields.io/github/deployments/CesarNog/the-council/production?label=vercel&logo=vercel)](https://the-council-murex.vercel.app)
+[![License: MIT](https://img.shields.io/github/license/CesarNog/the-council)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+[![Stars](https://img.shields.io/github/stars/CesarNog/the-council?style=social)](https://github.com/CesarNog/the-council/stargazers)
 
-Produção: https://the-council-murex.vercel.app
-Repo: https://github.com/CesarNog/the-council (linkado — push em `main` dispara deploy automático)
+Nine alternate versions of yourself — Founder, Billionaire, Artist, Athlete, Monk, Scientist, Explorer, Romantic, Shadow — debate one real decision you bring them. They disagree, interrupt, change their minds, and vote.
 
-## Rodar local
+**Live**: https://the-council-murex.vercel.app
 
-```
+## Stack
+
+Vite + React frontend, Vercel serverless functions, [Groq](https://groq.com) (`openai/gpt-oss-120b`) for inference, Cloudflare KV for persisted results and rate limiting.
+
+## Quickstart
+
+```bash
+git clone https://github.com/CesarNog/the-council.git
+cd the-council
 npm install
-cp .env.example .env.local   # preencher as 4 vars — ver secao Env vars
+cp .env.example .env.local   # fill in the 4 vars, see below
 npm run dev
 ```
 
-Serverless functions (`api/*.js`) so rodam de fato em `vercel dev`, nao em `npm run dev` puro (Vite nao executa `/api`). Pra testar o backend local:
+Serverless functions (`api/*.js`) only run under `vercel dev`, not plain `vite`:
 
-```
+```bash
 npx vercel dev
 ```
 
+## Environment variables
+
+| var | source | used for |
+|---|---|---|
+| `GROQ_API_KEY` | console.groq.com/keys | debate generation (`api/council.js`) |
+| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com → API Tokens → "Edit Cloudflare Workers" | KV read/write |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard | KV scope |
+| `CLOUDFLARE_KV_NAMESPACE_ID` | `wrangler kv namespace create` or API | where results / rate-limit counters live |
+
+See `.env.example`.
+
+## Testing
+
+```bash
+npm test
+```
+
+Covers `src/lib/share.js` (tally, headline generation, share text) and `src/lib/personas.js` (data integrity — every persona has a color, a pacing entry, an intensity entry). No component/UI tests yet.
+
 ## Deploy
 
-```
-npx vercel deploy --prod
-```
+Push to `main` — the repo is linked to Vercel, deploys are automatic. Manual deploy: `npx vercel deploy --prod`.
 
-Requer as env vars configuradas no projeto Vercel (`vercel env add`).
-
-## Env vars obrigatórias
-
-| var | de onde vem | pra que serve |
-|---|---|---|
-| `GROQ_API_KEY` | console.groq.com/keys | inference do debate (`api/council.js`) |
-| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com > API Tokens > template "Edit Cloudflare Workers" | KV read/write |
-| `CLOUDFLARE_ACCOUNT_ID` | `cloudflare accounts` na dashboard | escopo do KV |
-| `CLOUDFLARE_KV_NAMESPACE_ID` | criado via `wrangler kv namespace create` ou API | namespace onde resultados/rate-limit ficam |
-
-Ver `.env.example`.
-
-## Arquitetura
+## Architecture
 
 ```
 src/
-  lib/personas.js   dados: 9 personas, cores, mood colors, timing de reveal
-  lib/api.js        chamada pro backend + fallback offline (DEMO_Q, FALLBACK)
-  lib/share.js       tally/headline/share text/canvas PNG — logica pura, sem React
-  components.jsx     toda a UI: Ring, Landing, Onboarding, Chamber, ShareBar, ErrorBoundary
-  App.jsx            so orquestracao de rotas (landing/onboarding/chamber/shared)
-  styles.css         CSS global
+  lib/personas.js   9 personas: colors, mood palette, reveal pacing/intensity — single source of truth
+  lib/api.js        backend call + offline fallback (DEMO_Q, FALLBACK)
+  lib/share.js      tally / headline / share text / canvas PNG card — pure functions, no React
+  components.jsx     all UI: Ring, Landing, Onboarding, Chamber, ShareBar, ErrorBoundary
+  App.jsx            routing only (landing / onboarding / chamber / shared /r/:id)
+  styles.css
 
 api/
-  _kv.js       helper REST pro Cloudflare KV (nao e rota, prefixo _ e ignorado pela Vercel)
-  council.js   POST — gera debate via Groq, persiste no KV, aplica rate limit
-  result.js    GET  — recupera debate persistido por id (alimenta /r/:id)
+  _kv.js       Cloudflare KV REST helper (not a route — Vercel ignores `_`-prefixed files)
+  council.js   POST — generates a debate via Groq, persists it, rate-limits by IP
+  result.js    GET  — fetches a persisted debate by id, powers /r/:id share links
 ```
 
-## Limitações conhecidas (nao maquiadas)
+More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-- **TPM da Groq é por organização, não por usuário.** Free tier: 8000 tokens/min compartilhado por todo o tráfego do site. Cada debate consome ~2100 tokens. Na prática: **~3 debates/min agregados, de todos os usuários simultâneos**. Acima disso, 429 → frontend cai no fallback offline estático automaticamente (nunca quebra a UI, mas degrada a experiência).
-- **Rate limit por IP (KV) é best-effort, não atômico.** Sob concorrência alta pode passar um pouco do limite configurado (`RATE_LIMIT` em `api/council.js`). Não protege contra o teto agregado da Groq acima.
-- **Sem testes automatizados.** `councilHeadline()` foi validado manualmente com casos sintéticos, não há suite persistente.
-- **Sem CI/CD.** Deploy é manual (`vercel deploy --prod`).
-- **Sem Git/histórico de versão neste ambiente** — recomendado inicializar repo antes de qualquer trabalho colaborativo.
-- **Canvas do share card (`downloadShareCard`) depende de fontes já carregadas no browser** — não validado visualmente em produção, só a lógica de layout.
+## Known limitations
+
+- **Groq free tier TPM (8000/min) is shared across the entire org, not per user.** Each debate costs ~2100 tokens → roughly **3 debates/min aggregate, across all simultaneous visitors**. Past that, the API returns 429 and the frontend silently falls back to a static offline debate — the UI never breaks, but the experience degrades.
+- **The per-IP rate limiter (Cloudflare KV) is best-effort, not atomic.** Under high concurrency it can slightly overshoot `RATE_LIMIT` in `api/council.js`. It does not protect against the aggregate Groq ceiling above.
+- **No UI/component tests**, only pure-logic tests (`src/lib/*.test.js`).
+- **The canvas share card (`downloadShareCard`) has not been visually validated in production** — layout logic only.
+
+## Contributing
+
+See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
