@@ -324,7 +324,7 @@ export function Chamber({ profile, preloaded, onExit, userSlot }) {
 
         {phase !== "idle" && asked && (
           <div className="question-banner" style={{ marginTop: 30 }}>
-            <div className="eyebrow">{debate?.offline ? "Offline session · live deliberation unavailable" : "The matter before the Council"}</div>
+            <div className="eyebrow">{debate?.offline ? "Offline demo · sample debate, not about your question" : "The matter before the Council"}</div>
             <div className="q">“{asked}”</div>
           </div>
         )}
