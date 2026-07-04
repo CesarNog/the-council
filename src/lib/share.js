@@ -1,4 +1,5 @@
 import { PERSONAS, byId } from "./personas.js";
+import { t, personaName } from "./i18n.js";
 
 export function tally(debate) {
   const yes = debate.votes.filter(v => v.v === "yes").length;
@@ -7,22 +8,22 @@ export function tally(debate) {
   return { yes, no, dep };
 }
 
-export function councilHeadline(debate) {
+export function councilHeadline(debate, language = "en") {
   const { yes, no, dep } = tally(debate);
   const total = debate.votes.length;
-  if (yes === total) return "Every Council member agreed. Go.";
-  if (no === total) return "Every Council member agreed. Don't.";
+  if (yes === total) return t(language, "every_agreed_go");
+  if (no === total) return t(language, "every_agreed_dont");
   const outlier = debate.votes.length - Math.max(yes, no) === 1
     ? debate.votes.find(v => (yes > no ? v.v !== "yes" : v.v !== "no"))
     : null;
-  if (outlier) return `Only ${byId[outlier.p].name} disagreed.`;
-  if (Math.abs(yes - no) <= 1 && dep >= 2) return "The Council could not agree.";
-  return yes > no ? `The Council leans yes, ${yes}–${no}.` : no > yes ? `The Council leans no, ${no}–${yes}.` : "The Council is split down the middle.";
+  if (outlier) return t(language, "only_x_disagreed", personaName(language, outlier.p));
+  if (Math.abs(yes - no) <= 1 && dep >= 2) return t(language, "could_not_agree");
+  return yes > no ? t(language, "leans_yes", yes, no) : no > yes ? t(language, "leans_no", no, yes) : t(language, "split_middle");
 }
 
-export function shareText(question, debate, { max } = {}) {
+export function shareText(question, debate, { max, language = "en" } = {}) {
   const { yes, no, dep } = tally(debate);
-  const headline = councilHeadline(debate);
+  const headline = councilHeadline(debate, language);
   const quoteLine = debate.quote ? `\n\n"${debate.quote}"\n` : "";
   const full = `⚖ ${headline.toUpperCase()}\n\n"${question}"\n\nYES ${yes} · NO ${no} · DEPENDS ${dep}${quoteLine}\n${debate.verdict}\n\n— nine versions of me, one verdict`;
   if (!max || full.length <= max) return full;
@@ -31,7 +32,7 @@ export function shareText(question, debate, { max } = {}) {
   return `⚖ THE COUNCIL HAS RULED\n\n"${question}"\n\nYES ${yes} · NO ${no} · DEPENDS ${dep}\n\n${shortVerdict}`;
 }
 
-export function downloadShareCard(question, debate) {
+export function downloadShareCard(question, debate, language = "en") {
   const W = 1080, H = 1350;
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
@@ -66,7 +67,7 @@ export function downloadShareCard(question, debate) {
   x.fillText("THE COUNCIL HAS RULED", W / 2, 440);
   x.letterSpacing = "0px";
 
-  const headline = councilHeadline(debate);
+  const headline = councilHeadline(debate, language);
   x.fillStyle = "#EDE8DE";
   const hFont = "500 40px 'Fraunces', Georgia, serif";
   let y = 500;

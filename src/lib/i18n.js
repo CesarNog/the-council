@@ -102,6 +102,18 @@ const S = {
     zh: "议会当前需求量大——这一分钟事务过多。请稍候再敲门。",
   },
 
+  listen: { en: name => `Listen: ${name}`, pt: name => `Ouvir: ${name}`, es: name => `Escuchar: ${name}`, zh: name => `收听：${name}` },
+  listen_title: { en: "Listen", pt: "Ouvir", es: "Escuchar", zh: "收听" },
+  stop: { en: "Stop", pt: "Parar", es: "Detener", zh: "停止" },
+  share_native: { en: "Share", pt: "Compartilhar", es: "Compartir", zh: "分享" },
+  only_x_disagreed: { en: name => `Only ${name} disagreed.`, pt: name => `Só ${name} discordou.`, es: name => `Solo ${name} discrepó.`, zh: name => `只有${name}持不同意见。` },
+  every_agreed_go: { en: "Every Council member agreed. Go.", pt: "Todo o Conselho concordou. Vá em frente.", es: "Todo el Consejo estuvo de acuerdo. Adelante.", zh: "议会全体一致同意。去做吧。" },
+  every_agreed_dont: { en: "Every Council member agreed. Don't.", pt: "Todo o Conselho concordou. Não faça.", es: "Todo el Consejo estuvo de acuerdo. No lo hagas.", zh: "议会全体一致同意。别做。" },
+  could_not_agree: { en: "The Council could not agree.", pt: "O Conselho não chegou a um consenso.", es: "El Consejo no llegó a un acuerdo.", zh: "议会未能达成一致。" },
+  leans_yes: { en: (y, n) => `The Council leans yes, ${y}–${n}.`, pt: (y, n) => `O Conselho tende ao sim, ${y}–${n}.`, es: (y, n) => `El Consejo se inclina por el sí, ${y}–${n}.`, zh: (y, n) => `议会倾向赞成，${y}比${n}。` },
+  leans_no: { en: (n, y) => `The Council leans no, ${n}–${y}.`, pt: (n, y) => `O Conselho tende ao não, ${n}–${y}.`, es: (n, y) => `El Consejo se inclina por el no, ${n}–${y}.`, zh: (n, y) => `议会倾向反对，${n}比${y}。` },
+  split_middle: { en: "The Council is split down the middle.", pt: "O Conselho está totalmente dividido.", es: "El Consejo está completamente dividido.", zh: "议会意见完全分裂。" },
+
   footer_disclaimer: {
     en: "AI-generated perspectives — not professional, legal, medical or financial advice.",
     pt: "Perspectivas geradas por IA — não é aconselhamento profissional, jurídico, médico ou financeiro.",
@@ -115,6 +127,42 @@ export function t(lang, key, ...args) {
   if (!entry) return key;
   const val = entry[lang] ?? entry.en;
   return typeof val === "function" ? val(...args) : val;
+}
+
+const PERSONA_NAMES = {
+  founder:     { en: "The Founder",     pt: "O Fundador",   es: "El Fundador",   zh: "创业者" },
+  billionaire: { en: "The Billionaire", pt: "O Bilionário", es: "El Multimillonario", zh: "富豪" },
+  artist:      { en: "The Artist",      pt: "O Artista",    es: "El Artista",    zh: "艺术家" },
+  athlete:     { en: "The Athlete",     pt: "O Atleta",     es: "El Atleta",     zh: "运动员" },
+  monk:        { en: "The Monk",        pt: "O Monge",      es: "El Monje",      zh: "僧人" },
+  scientist:   { en: "The Scientist",   pt: "O Cientista",  es: "El Científico", zh: "科学家" },
+  explorer:    { en: "The Explorer",    pt: "O Explorador", es: "El Explorador", zh: "探险家" },
+  romantic:    { en: "The Romantic",    pt: "O Romântico",  es: "El Romántico",  zh: "浪漫者" },
+  shadow:      { en: "The Shadow",      pt: "A Sombra",     es: "La Sombra",     zh: "阴影自我" },
+};
+
+const PERSONA_TAGS = {
+  founder:     { en: "the self who bet everything",     pt: "o eu que apostou tudo",         es: "el yo que lo apostó todo",       zh: "押上一切的自己" },
+  billionaire: { en: "the self who compounded quietly",  pt: "o eu que multiplicou em silêncio", es: "el yo que multiplicó en silencio", zh: "静静积累财富的自己" },
+  artist:      { en: "the self who chose beauty",        pt: "o eu que escolheu a beleza",     es: "el yo que eligió la belleza",    zh: "选择了美的自己" },
+  athlete:     { en: "the self who never missed a rep",  pt: "o eu que nunca falhou um treino", es: "el yo que nunca falló una repetición", zh: "从不缺席训练的自己" },
+  monk:        { en: "the self who let go",              pt: "o eu que deixou ir",             es: "el yo que dejó ir",              zh: "学会放下的自己" },
+  scientist:   { en: "the self who demanded proof",      pt: "o eu que exigiu provas",         es: "el yo que exigió pruebas",       zh: "要求证据的自己" },
+  explorer:    { en: "the self who kept moving",         pt: "o eu que continuou em frente",   es: "el yo que siguió avanzando",     zh: "不断前行的自己" },
+  romantic:    { en: "the self who chose love",          pt: "o eu que escolheu o amor",       es: "el yo que eligió el amor",       zh: "选择了爱的自己" },
+  shadow:      { en: "the self you don't introduce",     pt: "o eu que você não apresenta",    es: "el yo que no presentas",         zh: "你不愿介绍的自己" },
+};
+
+export function personaName(lang, id) {
+  return PERSONA_NAMES[id]?.[lang] || PERSONA_NAMES[id]?.en || id;
+}
+
+export function personaShortName(lang, id) {
+  return personaName(lang, id).replace(/^(The|O|A|El|La)\s+/, "");
+}
+
+export function personaTag(lang, id) {
+  return PERSONA_TAGS[id]?.[lang] || PERSONA_TAGS[id]?.en || "";
 }
 
 export const QUICK_QUESTIONS_I18N = {

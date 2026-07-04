@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
-import { t, TTS_LANG, QUICK_QUESTIONS_I18N } from "./lib/i18n.js";
+import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 
 export function Sigil({ id }) {
@@ -21,7 +21,7 @@ export function Sigil({ id }) {
   }
 }
 
-export function Ring({ active, speaking, mentioned, phase, label }) {
+export function Ring({ active, speaking, mentioned, phase, label, language = "en" }) {
   return (
     <div className="ring-wrap">
       <div className="ring-orbit" />
@@ -34,9 +34,9 @@ export function Ring({ active, speaking, mentioned, phase, label }) {
           + (speaking === p.id ? " speaking-voice" : "")
           + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "");
         return (
-          <div key={p.id} className={cls} role="img" aria-label={p.name} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--intensity": INTENSITY[p.id] }}>
+          <div key={p.id} className={cls} role="img" aria-label={personaName(language, p.id)} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--intensity": INTENSITY[p.id] }}>
             <Sigil id={p.id} />
-            <span className="tip" style={{ color: p.color }}>{p.name.replace("The ", "")}</span>
+            <span className="tip" style={{ color: p.color }}>{personaShortName(language, p.id)}</span>
           </div>
         );
       })}
@@ -48,21 +48,21 @@ export function Ring({ active, speaking, mentioned, phase, label }) {
   );
 }
 
-function Whisper() {
+function Whisper({ language }) {
   const [i, setI] = useState(0);
   const [vis, setVis] = useState(true);
   useEffect(() => {
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setVis(false);
       setTimeout(() => { setI(n => (n + 1) % PERSONAS.length); setVis(true); }, 600);
     }, 4200);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, []);
   const p = PERSONAS[i];
   return (
     <div style={{ marginTop: 34, minHeight: 46, transition: "opacity .6s ease", opacity: vis ? 1 : 0 }}>
       <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>“{p.line}”</span>
-      <div className="eyebrow" style={{ marginTop: 8, fontSize: 9, color: "var(--ivory-faint)" }}>— {p.name}</div>
+      <div className="eyebrow" style={{ marginTop: 8, fontSize: 9, color: "var(--ivory-faint)" }}>— {personaName(language, p.id)}</div>
     </div>
   );
 }
@@ -70,13 +70,13 @@ function Whisper() {
 export function Landing({ onEnter, authSlot, language }) {
   return (
     <div className="landing">
-      <div className="fade-up d1"><Ring /></div>
+      <div className="fade-up d1"><Ring language={language} /></div>
       <div className="eyebrow fade-up d2" style={{ marginTop: 40 }}>The Council</div>
       <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
       <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
       <button className="btn primary fade-up d4" onClick={onEnter}>{t(language, "enter_chamber")}</button>
       {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
-      <div className="fade-up d4"><Whisper /></div>
+      <div className="fade-up d4"><Whisper language={language} /></div>
     </div>
   );
 }
@@ -151,19 +151,19 @@ function ShareIcon() {
   );
 }
 
-export function ShareBar({ asked, debate }) {
+export function ShareBar({ asked, debate, language = "en" }) {
   const appUrl = debate?.id && typeof window !== "undefined"
     ? `${window.location.origin}/r/${debate.id}`
     : (typeof window !== "undefined" ? window.location.href : "https://the-council-murex.vercel.app");
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const nativeShare = () => {
-    navigator.share({ title: "The Council has ruled", text: shareText(asked, debate), url: appUrl }).catch(() => {});
+    navigator.share({ title: "The Council has ruled", text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
   };
 
   const links = [
-    { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate) + "\n\n" + appUrl)}` },
-    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260 }))}&url=${encodeURIComponent(appUrl)}` },
+    { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
+    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language }))}&url=${encodeURIComponent(appUrl)}` },
     { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
     { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}` },
   ];
@@ -171,7 +171,7 @@ export function ShareBar({ asked, debate }) {
   return (
     <div className="share-row">
       {canNativeShare && (
-        <button className="btn primary share-btn" onClick={nativeShare}><ShareIcon /> Share</button>
+        <button className="btn primary share-btn" onClick={nativeShare}><ShareIcon /> {t(language, "share_native")}</button>
       )}
       {links.map(l => (
         <a key={l.label} className="btn share-btn" href={l.href} target="_blank" rel="noopener noreferrer">
@@ -301,7 +301,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
     setPhase("idle"); setAsked(""); setDebate(null); setShown(0); setVotesShown(0);
   };
 
-  const copyText = () => navigator.clipboard?.writeText(shareText(asked, debate));
+  const copyText = () => navigator.clipboard?.writeText(shareText(asked, debate, { language }));
 
   const { yes, no, dep } = tally(debate || { votes: [] });
 
@@ -328,6 +328,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
           speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
           mentioned={mentionedIds}
           phase={phase}
+          language={language}
           label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
         />
 
@@ -374,7 +375,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div style={{ flex: 1 }}>
                     <div className="who" style={{ color: p.color }}>
-                      {p.name} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {p.tag}</span>
+                      {personaName(language, p.id)} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {personaTag(language, p.id)}</span>
                     </div>
                     <div className="txt">{turn.t}</div>
                   </div>
@@ -382,8 +383,8 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
                     <button
                       className={"listen-btn" + (isPlaying ? " playing" : "")}
                       onClick={() => playTurn(i)}
-                      aria-label={isPlaying ? "Stop" : `Listen: ${p.name}`}
-                      title={isPlaying ? "Stop" : "Listen"}
+                      aria-label={isPlaying ? t(language, "stop") : t(language, "listen", personaName(language, p.id))}
+                      title={isPlaying ? t(language, "stop") : t(language, "listen_title")}
                     >
                       {isPlaying ? "■" : "▶"}
                     </button>
@@ -394,7 +395,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
             {phase === "debate" && shown < debate.turns.length && (
               <div className="speaking" role="status" style={{ color: byId[debate.turns[shown].p].color }}>
                 <span className="dots"><i /><i /><i /></span>
-                {t(language, "is_speaking", byId[debate.turns[shown].p].name)}
+                {t(language, "is_speaking", personaName(language, debate.turns[shown].p))}
               </div>
             )}
             {phase === "reflecting" && (
@@ -417,7 +418,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
                 return (
                   <div className="vote" key={i} style={{ color: p.color, animationDelay: `${i * .04}s` }}>
                     <div className="sig"><Sigil id={p.id} /></div>
-                    <div className="nm" style={{ color: p.color }}>{p.name.replace("The ", "")}</div>
+                    <div className="nm" style={{ color: p.color }}>{personaShortName(language, p.id)}</div>
                     <div className={"vv " + cls}>{label}</div>
                     <div className="rr">{v.r}</div>
                   </div>
@@ -442,7 +443,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
             <div className="verdict">
               <div className="eyebrow">{yes}–{no}–{dep} · yes–no–depends</div>
-              <div className="headline serif">{councilHeadline(debate)}</div>
+              <div className="headline serif">{councilHeadline(debate, language)}</div>
               <div className="vx serif">{debate.verdict}</div>
               {debate.quote && <div className="pull-quote serif">“{debate.quote}”</div>}
               <div className="rule" />
@@ -463,10 +464,10 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
               )}
 
               <div className="actions">
-                <ShareBar asked={asked} debate={debate} />
+                <ShareBar asked={asked} debate={debate} language={language} />
               </div>
               <div className="actions secondary">
-                <button className="btn small" onClick={() => downloadShareCard(asked, debate)}>{t(language, "download_verdict")}</button>
+                <button className="btn small" onClick={() => downloadShareCard(asked, debate, language)}>{t(language, "download_verdict")}</button>
                 <button className="btn small" onClick={copyText}>{t(language, "copy_as_text")}</button>
                 <button className="btn small" onClick={reset}>{t(language, "bring_another")}</button>
               </div>

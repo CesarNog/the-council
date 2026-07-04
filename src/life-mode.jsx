@@ -25,12 +25,12 @@ export function LifeModeBanner({ lifeMode, onDismiss, language }) {
         </button>
       ) : (
         <div className="life-mode-open">
-          {lifeMode.turns.map((t, i) => {
-            const p = byId[t.p] || persona;
+          {lifeMode.turns.map((turn, i) => {
+            const p = byId[turn.p] || persona;
             return (
               <div className="life-mode-turn" key={i} style={{ color: p.color }}>
                 <span className="sig"><Sigil id={p.id} /></span>
-                <span>{t.t}</span>
+                <span>{turn.t}</span>
               </div>
             );
           })}
