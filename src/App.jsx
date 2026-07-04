@@ -4,7 +4,7 @@ import { GoogleSignIn, ProfileSettings } from "./auth-ui.jsx";
 import { LifeModeBanner } from "./life-mode.jsx";
 import { LanguageSelector } from "./language-selector.jsx";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
-import { detectBrowserLanguage } from "./lib/i18n.js";
+import { detectBrowserLanguage, t } from "./lib/i18n.js";
 
 function sharedIdFromPath() {
   const m = typeof window !== "undefined" ? window.location.pathname.match(/^\/r\/([a-z0-9]{4,20})$/i) : null;
@@ -132,7 +132,16 @@ function TheCouncilApp() {
   return (
     <div className="council-root">
       <div className="grain" />
-      <div className="lang-selector-fixed"><LanguageSelector language={language} onChange={changeLanguage} /></div>
+      <header className="site-header">
+        <button className="brand" onClick={() => { if (screen !== "landing" && !sharedId) setScreen("landing"); }}>
+          <span className="brand-glyph">⚖</span>
+          <span className="brand-name">The Council</span>
+        </button>
+        <div className="header-right">
+          <LanguageSelector language={language} onChange={changeLanguage} />
+          {userBadge}
+        </div>
+      </header>
       {screen === "landing" && <div className="ambient" style={{ background: "radial-gradient(50% 40% at 50% 30%, rgba(201,169,110,.08), transparent 70%)" }} />}
       {screen === "landing" && (
         <Landing
@@ -151,7 +160,6 @@ function TheCouncilApp() {
       {screen === "chamber" && (
         <Chamber
           profile={profile}
-          userSlot={userBadge}
           language={language}
           lifeModeSlot={user?.lifeMode && (
             <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
@@ -169,6 +177,18 @@ function TheCouncilApp() {
           onSignOut={handleSignOut}
         />
       )}
+
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <span className="footer-brand">⚖ The Council</span>
+          <span className="footer-note">{t(language, "footer_disclaimer")}</span>
+          <span className="footer-links">
+            <a href="https://github.com/CesarNog/the-council" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <span className="footer-sep">·</span>
+            <span>© 2026</span>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

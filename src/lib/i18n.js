@@ -94,6 +94,13 @@ const S = {
   could_not_save: { en: "Could not save. Try again.", pt: "Não foi possível salvar. Tente novamente.", es: "No se pudo guardar. Inténtalo de nuevo.", zh: "保存失败，请重试。" },
 
   dismiss: { en: "Dismiss", pt: "Dispensar", es: "Descartar", zh: "关闭" },
+
+  footer_disclaimer: {
+    en: "AI-generated perspectives — not professional, legal, medical or financial advice.",
+    pt: "Perspectivas geradas por IA — não é aconselhamento profissional, jurídico, médico ou financeiro.",
+    es: "Perspectivas generadas por IA — no es asesoramiento profesional, legal, médico o financiero.",
+    zh: "AI生成的观点——不构成专业、法律、医疗或财务建议。",
+  },
 };
 
 export function t(lang, key, ...args) {

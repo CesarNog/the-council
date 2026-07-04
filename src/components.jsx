@@ -182,18 +182,14 @@ export function ShareBar({ asked, debate }) {
   );
 }
 
-export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot, language }) {
+export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [debate, setDebate] = useState(null);
   const [shown, setShown] = useState(0);
   const [votesShown, setVotesShown] = useState(0);
-  const [voiceOn, setVoiceOn] = useState(() => {
-    if (!voiceSupported) return false;
-    try { return localStorage.getItem("council:voice") !== "off"; } catch { return true; }
-  });
-  const [speaking, setSpeaking] = useState(null); // persona id falando agora, ou null
+  const [speaking, setSpeaking] = useState(null); // index do turno tocando agora, ou null
   const endRef = useRef(null);
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
@@ -213,22 +209,17 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot, la
   const ringActive = activeSpeaker || votingSpeaker;
 
   useEffect(() => {
-    if (!voiceOn || !activeSpeaker || !debate) return;
-    const text = debate.turns[shown - 1].t;
-    speak(text, activeSpeaker, { onStart: () => setSpeaking(activeSpeaker), onEnd: () => setSpeaking(null), lang: TTS_LANG[language] });
-    return () => stopSpeaking();
-  }, [activeSpeaker, shown, voiceOn, language]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente
   }, [phase]);
 
-  const toggleVoice = () => {
-    setVoiceOn(v => {
-      const next = !v;
-      try { localStorage.setItem("council:voice", next ? "on" : "off"); } catch {}
-      if (!next) stopSpeaking();
-      return next;
+  const playTurn = (index) => {
+    if (!voiceSupported || !debate) return;
+    if (speaking === index) { stopSpeaking(); setSpeaking(null); return; }
+    const turn = debate.turns[index];
+    speak(turn.t, turn.p, {
+      onStart: () => setSpeaking(index),
+      onEnd: () => setSpeaking(s => (s === index ? null : s)),
+      lang: TTS_LANG[language],
     });
   };
 
@@ -321,20 +312,12 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot, la
             <div className="eyebrow">{t(language, "chamber_label")}</div>
             <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {userSlot}
-            {voiceSupported && (
-              <button className="btn small" onClick={toggleVoice} title={voiceOn ? "Mute voices" : "Unmute voices"}>
-                {voiceOn ? "🔊" : "🔇"}
-              </button>
-            )}
-            {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
-          </div>
+          {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
         </div>
 
         <Ring
           active={ringActive}
-          speaking={speaking}
+          speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
           mentioned={mentionedIds}
           phase={phase}
           label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
@@ -377,11 +360,24 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot, la
           <div className="feed" aria-live="polite" aria-atomic="false">
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
+              const isPlaying = speaking === i;
               return (
-                <div className="turn" key={i} style={{ color: p.color }}>
+                <div
+                  className={"turn" + (voiceSupported ? " listenable" : "") + (isPlaying ? " playing" : "")}
+                  key={i}
+                  style={{ color: p.color }}
+                  onClick={voiceSupported ? () => playTurn(i) : undefined}
+                  role={voiceSupported ? "button" : undefined}
+                  tabIndex={voiceSupported ? 0 : undefined}
+                  onKeyDown={voiceSupported ? e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); playTurn(i); } } : undefined}
+                  aria-label={voiceSupported ? `${p.name}: ${turn.t}` : undefined}
+                >
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div>
-                    <div className="who" style={{ color: p.color }}>{p.name} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {p.tag}</span></div>
+                    <div className="who" style={{ color: p.color }}>
+                      {p.name} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {p.tag}</span>
+                      {voiceSupported && <span className="listen-hint">{isPlaying ? "■" : "▶"}</span>}
+                    </div>
                     <div className="txt">{turn.t}</div>
                   </div>
                 </div>
