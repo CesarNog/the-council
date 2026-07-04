@@ -46,4 +46,9 @@ export const FALLBACK = {
   ],
   verdict: "The Council leans toward leaving — but not tonight. Build the smallest real version while employed, secure your runway and one paying customer, and bring the people you love into the plan before you sign anything.",
   question: "What would you build first if you knew no one would ever clap?",
+  realities: [
+    { label: "The Safe Path", line: "You stay another year, get the promotion, and wonder every Sunday night what you didn't try." },
+    { label: "The Side Door", line: "You build it nights and weekends for six months before ever quitting anything." },
+    { label: "The Leap", line: "You quit Friday, panic Monday, and either build something real or learn exactly why the job made sense." },
+  ],
 };

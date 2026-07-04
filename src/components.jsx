@@ -408,6 +408,21 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
               {debate.quote && <div className="pull-quote serif">“{debate.quote}”</div>}
               <div className="rule" />
               {debate.question && <div className="cq">{debate.question}</div>}
+
+              {debate.realities?.length > 0 && (
+                <div className="realities">
+                  <div className="eyebrow" style={{ marginBottom: 16 }}>In another life…</div>
+                  <div className="realities-grid">
+                    {debate.realities.map((r, i) => (
+                      <div className="reality" key={i}>
+                        <div className="reality-label">{r.label}</div>
+                        <div className="reality-line">{r.line}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="actions">
                 <ShareBar asked={asked} debate={debate} />
               </div>

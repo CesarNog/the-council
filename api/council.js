@@ -25,7 +25,7 @@ The person: ${profile.name || "the seeker"}. Context: ${profile.situation || "un
 Their question: "${question}"
 
 Return ONLY valid JSON, no markdown fences, exactly this shape:
-{"mood":"tense|warm|hopeful|somber|electric","turns":[{"p":"founder","t":"..."}],"votes":[{"p":"founder","v":"yes","r":"..."}],"verdict":"...","quote":"...","question":"..."}
+{"mood":"tense|warm|hopeful|somber|electric","turns":[{"p":"founder","t":"..."}],"votes":[{"p":"founder","v":"yes","r":"..."}],"verdict":"...","quote":"...","question":"...","realities":[{"label":"...","line":"..."}]}
 
 Rules:
 - 12 to 14 turns. Each turn respects its persona's sentence-length fingerprint above.
@@ -40,6 +40,7 @@ Rules:
 - verdict: 2 sentences, second person, synthesizing the tension — never commanding.
 - quote: the single most quotable line from the debate, verbatim from one of the turns — the line a reader would screenshot.
 - question: one probing question back at the person.
+- realities: exactly 3 entries. Each imagines a plausible alternate path the person could take relative to this decision (not fantasy). label: 2-4 words, e.g. "The Safe Path". line: one vivid sentence, second person, what that path would probably look like one year from now. Grounded, not mystical.
 - Write everything in the same language as the person's question.`;
 
 const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
 
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile), { maxTokens: 1700 });
+    json = await callGroq(buildPrompt(q, profile), { maxTokens: 1900 });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);

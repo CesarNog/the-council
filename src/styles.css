@@ -190,3 +190,12 @@
 .life-mode-turn .sig{flex:0 0 26px; height:26px; border-radius:50%; border:1px solid currentColor;
   display:flex; align-items:center; justify-content:center; color:inherit;}
 .life-mode-turn .sig svg{width:13px; height:13px;}
+
+.realities{margin-top:44px; padding-top:36px; border-top:1px solid var(--line);}
+.realities-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.reality{border:1px solid var(--line); padding:18px; background:rgba(255,255,255,.015); text-align:left;}
+.reality-label{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;}
+.reality-line{font-family:var(--serif); font-size:14px; line-height:1.5; color:var(--ivory-dim);}
+@media (max-width:640px){
+  .realities-grid{grid-template-columns:1fr;}
+}
