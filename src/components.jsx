@@ -272,17 +272,25 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
   useEffect(() => stopSpeaking, []); // cleanup ao desmontar
 
+  const [rateLimited, setRateLimited] = useState(false);
+
   const convene = async (q) => {
     const qq = (q || question).trim();
     if (!qq) return;
-    setAsked(qq); setQuestion("");
+    setAsked(qq); setQuestion(""); setRateLimited(false);
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
     try {
       const result = await summonCouncil(qq, profile, language);
       setDebate(result); setPhase("debate");
     } catch (e) {
-      // gateway indisponível: a demo nunca trava — sessão offline com debate canônico
+      if (e.kind === "rate_limited") {
+        // 429: mostrar debate fake identico confundia ("por que ele fala sempre a mesma coisa?") — erro honesto com retry
+        setRateLimited(true);
+        setPhase("error");
+        return;
+      }
+      // falha real de rede: demo offline claramente rotulada
       setDebate({ ...FALLBACK, offline: true });
       setPhase("debate");
     }
@@ -362,24 +370,24 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
               const p = byId[turn.p];
               const isPlaying = speaking === i;
               return (
-                <div
-                  className={"turn" + (voiceSupported ? " listenable" : "") + (isPlaying ? " playing" : "")}
-                  key={i}
-                  style={{ color: p.color }}
-                  onClick={voiceSupported ? () => playTurn(i) : undefined}
-                  role={voiceSupported ? "button" : undefined}
-                  tabIndex={voiceSupported ? 0 : undefined}
-                  onKeyDown={voiceSupported ? e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); playTurn(i); } } : undefined}
-                  aria-label={voiceSupported ? `${p.name}: ${turn.t}` : undefined}
-                >
+                <div className={"turn" + (isPlaying ? " playing" : "")} key={i} style={{ color: p.color }}>
                   <div className="sig"><Sigil id={p.id} /></div>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div className="who" style={{ color: p.color }}>
                       {p.name} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {p.tag}</span>
-                      {voiceSupported && <span className="listen-hint">{isPlaying ? "■" : "▶"}</span>}
                     </div>
                     <div className="txt">{turn.t}</div>
                   </div>
+                  {voiceSupported && (
+                    <button
+                      className={"listen-btn" + (isPlaying ? " playing" : "")}
+                      onClick={() => playTurn(i)}
+                      aria-label={isPlaying ? "Stop" : `Listen: ${p.name}`}
+                      title={isPlaying ? "Stop" : "Listen"}
+                    >
+                      {isPlaying ? "■" : "▶"}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -468,7 +476,7 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
         {phase === "error" && (
           <div className="err">
-            {t(language, "chamber_stuck")}<br />
+            {t(language, rateLimited ? "rate_limited_msg" : "chamber_stuck")}<br />
             <div style={{ marginTop: 22 }}>
               <button className="btn" onClick={() => convene(asked)}>{t(language, "knock_again")}</button>
             </div>

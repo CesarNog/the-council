@@ -95,6 +95,13 @@ const S = {
 
   dismiss: { en: "Dismiss", pt: "Dispensar", es: "Descartar", zh: "关闭" },
 
+  rate_limited_msg: {
+    en: "The Council is in high demand — too many matters this minute. Wait a moment and knock again.",
+    pt: "O Conselho está em alta demanda — muitas questões neste minuto. Aguarde um momento e bata novamente.",
+    es: "El Consejo tiene alta demanda — demasiados asuntos este minuto. Espera un momento y llama de nuevo.",
+    zh: "议会当前需求量大——这一分钟事务过多。请稍候再敲门。",
+  },
+
   footer_disclaimer: {
     en: "AI-generated perspectives — not professional, legal, medical or financial advice.",
     pt: "Perspectivas geradas por IA — não é aconselhamento profissional, jurídico, médico ou financeiro.",

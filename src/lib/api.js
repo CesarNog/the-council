@@ -6,7 +6,11 @@ export async function summonCouncil(question, profile, language) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question, profile, language }),
   });
-  if (!res.ok) throw new Error("council unreachable");
+  if (!res.ok) {
+    const err = new Error("council unreachable");
+    err.kind = res.status === 429 ? "rate_limited" : "unreachable";
+    throw err;
+  }
   const json = await res.json();
   if (!Array.isArray(json.turns) || !Array.isArray(json.votes) || !json.verdict) throw new Error("bad shape");
   json.turns = json.turns.filter(t => byId[t.p] && t.t);

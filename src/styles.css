@@ -241,14 +241,14 @@
   .footer-note{text-align:center;}
 }
 
-.turn.listenable{cursor:pointer; border-radius:4px; transition:background .2s;}
-.turn.listenable:hover{background:rgba(255,255,255,.025);}
-.turn.playing{background:rgba(255,255,255,.035);}
-.listen-hint{margin-left:10px; font-size:9px; opacity:0; transition:opacity .2s; color:var(--gold);}
-.turn.listenable:hover .listen-hint, .turn.playing .listen-hint{opacity:.8;}
+.turn.playing{background:rgba(255,255,255,.035); border-radius:4px;}
+.listen-btn{flex:0 0 auto; align-self:center; width:34px; height:34px; border-radius:50%;
+  background:transparent; border:1px solid var(--line); color:var(--ivory-faint);
+  font-size:10px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center;}
+.listen-btn:hover{border-color:var(--gold-dim); color:var(--gold);}
+.listen-btn.playing{border-color:currentColor; color:inherit;}
 @media (hover:none){
-  .listen-hint{opacity:.5;} /* touch nao tem hover — affordance precisa estar visivel */
-  .turn.playing .listen-hint{opacity:1;}
+  .listen-btn{width:44px; height:44px;} /* touch target minimo */
   .btn.small{padding:13px 20px; font-size:11px;}
   .lang-chip{padding:10px 14px; font-size:10px;}
   .chip{padding:12px 18px;}
