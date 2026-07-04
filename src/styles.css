@@ -176,3 +176,17 @@
 .profile-panel .chips{margin-top:10px;}
 .user-badge{display:flex; align-items:center; gap:8px; cursor:pointer; background:none; border:none; padding:0;}
 .user-badge img{width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid var(--gold-dim);}
+
+.life-mode{max-width:520px; margin:0 auto 30px; animation:fadeUp .8s cubic-bezier(.2,.7,.2,1) both;}
+.life-mode-teaser{display:flex; align-items:center; gap:12px; width:100%; background:rgba(255,255,255,.03);
+  border:1px solid currentColor; border-color:color-mix(in srgb, currentColor 35%, transparent);
+  padding:16px 20px; cursor:pointer; text-align:left; color:var(--ivory);}
+.life-mode-teaser:hover{background:rgba(255,255,255,.06);}
+.life-mode-teaser .sig{flex:0 0 30px; height:30px; border-radius:50%; border:1px solid currentColor;
+  display:flex; align-items:center; justify-content:center; color:inherit;}
+.life-mode-teaser .sig svg{width:15px; height:15px;}
+.life-mode-open{border:1px solid var(--line); padding:20px; display:flex; flex-direction:column; gap:12px;}
+.life-mode-turn{display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--ivory);}
+.life-mode-turn .sig{flex:0 0 26px; height:26px; border-radius:50%; border:1px solid currentColor;
+  display:flex; align-items:center; justify-content:center; color:inherit;}
+.life-mode-turn .sig svg{width:13px; height:13px;}

@@ -180,7 +180,7 @@ export function ShareBar({ asked, debate }) {
   );
 }
 
-export function Chamber({ profile, preloaded, onExit, userSlot }) {
+export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -304,6 +304,8 @@ export function Chamber({ profile, preloaded, onExit, userSlot }) {
           phase={phase}
           label={phase === "summoning" ? "deliberating" : phase === "reflecting" ? "reflecting" : phase === "voting" ? "voting" : phase === "verdict" ? "adjourned" : null}
         />
+
+        {phase === "idle" && lifeModeSlot}
 
         {phase === "idle" && (
           <div className="ask">

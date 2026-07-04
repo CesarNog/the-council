@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Landing, Onboarding, Chamber, ErrorBoundary } from "./components.jsx";
 import { GoogleSignIn, ProfileSettings } from "./auth-ui.jsx";
+import { LifeModeBanner } from "./life-mode.jsx";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
 
 function sharedIdFromPath() {
@@ -129,7 +130,15 @@ function TheCouncilApp() {
           initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
         />
       )}
-      {screen === "chamber" && <Chamber profile={profile} userSlot={userBadge} />}
+      {screen === "chamber" && (
+        <Chamber
+          profile={profile}
+          userSlot={userBadge}
+          lifeModeSlot={user?.lifeMode && (
+            <LifeModeBanner lifeMode={user.lifeMode} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
+          )}
+        />
+      )}
       {screen === "shared" && sharedId && <SharedGate id={sharedId} onExit={exitShared} />}
 
       {showProfileSettings && user && (

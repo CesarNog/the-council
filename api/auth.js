@@ -45,6 +45,8 @@ export default async function handler(req, res) {
     customPicture: existing?.customPicture ?? null,
     situation: existing?.situation ?? "",
     values: existing?.values ?? [],
+    lastVisit: existing?.lastVisit ?? null,
+    lifeMode: existing?.lifeMode ?? null,
     createdAt: existing?.createdAt ?? Date.now(),
   };
 

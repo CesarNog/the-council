@@ -1,4 +1,5 @@
 import { kvGet, kvPut } from "./_kv.js";
+import { callGroq, GroqError } from "./_groq.js";
 
 const buildPrompt = (question, profile = {}) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
 
@@ -67,57 +68,26 @@ export default async function handler(req, res) {
   const allowed = await checkRateLimit(ip).catch(() => true); // KV fora do ar nao deve derrubar o produto
   if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down" });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 9000); // plano hobby corta funcao em 10s
-
-  let r;
+  let json;
   try {
-    r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b", // free tier; llama-3.3-70b-versatile esta sendo depreciado pela Groq
-        max_tokens: 1700,
-        reasoning_effort: "low", // reasoning tokens consomem max_tokens antes do content
-        response_format: { type: "json_object" },
-        messages: [{ role: "user", content: buildPrompt(q, profile) }],
-      }),
-    });
+    json = await callGroq(buildPrompt(q, profile), { maxTokens: 1700 });
   } catch (e) {
-    console.error("council: groq fetch failed", e.name, e.message);
-    return res.status(504).json({ error: e.name === "AbortError" ? "timeout" : "network_error" });
-  } finally {
-    clearTimeout(timeout);
+    if (e instanceof GroqError) {
+      console.error("council:", e.kind, e.detail);
+      const statusByKind = { timeout: 504, network_error: 504, rate_limited: 429, gateway_error: 502, unparseable_response: 502 };
+      return res.status(statusByKind[e.kind] || 502).json({ error: e.kind, detail: e.detail });
+    }
+    throw e;
   }
 
-  if (!r.ok) {
-    const detail = await r.text();
-    console.error("council: groq error", r.status, detail.slice(0, 300));
-    const rateLimited = r.status === 429;
-    return res.status(rateLimited ? 429 : 502).json({
-      error: rateLimited ? "rate_limited" : "gateway_error",
-      detail: detail.slice(0, 300),
-    });
-  }
-
-  const data = await r.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
-  try {
-    const raw = text.replace(/```json|```/g, "").trim();
-    const json = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
-    if (!Array.isArray(json.turns) || !Array.isArray(json.votes) || !json.verdict) throw new Error("bad shape");
-
-    const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
-    kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
-      .catch(e => console.error("council: persist failed", e.message));
-
-    return res.status(200).json({ id, ...json });
-  } catch (e) {
-    console.error("council: unparseable response", e.message, text.slice(0, 300));
+  if (!Array.isArray(json.turns) || !Array.isArray(json.votes) || !json.verdict) {
+    console.error("council: bad shape", JSON.stringify(json).slice(0, 300));
     return res.status(502).json({ error: "unparseable_response" });
   }
+
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+  kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
+    .catch(e => console.error("council: persist failed", e.message));
+
+  return res.status(200).json({ id, ...json });
 }
