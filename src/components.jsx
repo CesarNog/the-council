@@ -3,6 +3,7 @@ import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js"
 import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { QUICK_QUESTIONS } from "./lib/prompts.js";
+import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 
 export function Sigil({ id }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -20,7 +21,7 @@ export function Sigil({ id }) {
   }
 }
 
-export function Ring({ active, mentioned, phase, label }) {
+export function Ring({ active, speaking, mentioned, phase, label }) {
   return (
     <div className="ring-wrap">
       <div className="ring-orbit" />
@@ -30,6 +31,7 @@ export function Ring({ active, mentioned, phase, label }) {
         const cx = 50 + 44 * Math.cos(a), cy = 50 + 44 * Math.sin(a);
         const cls = "node"
           + (active === p.id ? " active" : " breathing")
+          + (speaking === p.id ? " speaking-voice" : "")
           + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "");
         return (
           <div key={p.id} className={cls} role="img" aria-label={p.name} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--intensity": INTENSITY[p.id] }}>
@@ -187,6 +189,11 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
   const [debate, setDebate] = useState(null);
   const [shown, setShown] = useState(0);
   const [votesShown, setVotesShown] = useState(0);
+  const [voiceOn, setVoiceOn] = useState(() => {
+    if (!voiceSupported) return false;
+    try { return localStorage.getItem("council:voice") !== "off"; } catch { return true; }
+  });
+  const [speaking, setSpeaking] = useState(null); // persona id falando agora, ou null
   const endRef = useRef(null);
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
@@ -204,6 +211,26 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
     ? debate.votes[votesShown - 1].p : null;
 
   const ringActive = activeSpeaker || votingSpeaker;
+
+  useEffect(() => {
+    if (!voiceOn || !activeSpeaker || !debate) return;
+    const text = debate.turns[shown - 1].t;
+    speak(text, activeSpeaker, { onStart: () => setSpeaking(activeSpeaker), onEnd: () => setSpeaking(null) });
+    return () => stopSpeaking();
+  }, [activeSpeaker, shown, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente
+  }, [phase]);
+
+  const toggleVoice = () => {
+    setVoiceOn(v => {
+      const next = !v;
+      try { localStorage.setItem("council:voice", next ? "on" : "off"); } catch {}
+      if (!next) stopSpeaking();
+      return next;
+    });
+  };
 
   const mentionedIds = useMemo(() => {
     if (!activeSpeaker || !debate) return new Set();
@@ -252,6 +279,8 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [shown, votesShown, phase]);
 
+  useEffect(() => stopSpeaking, []); // cleanup ao desmontar
+
   const convene = async (q) => {
     const qq = (q || question).trim();
     if (!qq) return;
@@ -294,12 +323,18 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {userSlot}
+            {voiceSupported && (
+              <button className="btn small" onClick={toggleVoice} title={voiceOn ? "Mute voices" : "Unmute voices"}>
+                {voiceOn ? "🔊" : "🔇"}
+              </button>
+            )}
             {phase !== "idle" && <button className="btn small" onClick={reset}>New question</button>}
           </div>
         </div>
 
         <Ring
           active={ringActive}
+          speaking={speaking}
           mentioned={mentionedIds}
           phase={phase}
           label={phase === "summoning" ? "deliberating" : phase === "reflecting" ? "reflecting" : phase === "voting" ? "voting" : phase === "verdict" ? "adjourned" : null}

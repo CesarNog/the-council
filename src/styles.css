@@ -54,6 +54,11 @@
 .node:hover .tip, .node.active .tip{opacity:1; transform:translateX(-50%);}
 .node{transition-duration:var(--intensity, .5s);}
 .node.active{transform:scale(1.28); border-color:currentColor; box-shadow:0 0 34px -4px currentColor; background:#181428;}
+.node.speaking-voice{animation:voicePulse 1.1s ease-in-out infinite;}
+@keyframes voicePulse{
+  0%,100%{box-shadow:0 0 34px -4px currentColor;}
+  50%{box-shadow:0 0 54px 4px currentColor;}
+}
 .node.breathing{animation:breathe 3.4s ease-in-out infinite;}
 @keyframes breathe{0%,100%{opacity:.4; transform:scale(1);}50%{opacity:.72; transform:scale(1.04);}}
 .node.mentioned{animation:mentionFlash 1.1s ease-out; border-color:currentColor;}
