@@ -1,10 +1,10 @@
 import { byId } from "./personas.js";
 
-export async function summonCouncil(question, profile) {
+export async function summonCouncil(question, profile, language) {
   const res = await fetch("/api/council", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, profile }),
+    body: JSON.stringify({ question, profile, language }),
   });
   if (!res.ok) throw new Error("council unreachable");
   const json = await res.json();

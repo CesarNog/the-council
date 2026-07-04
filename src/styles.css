@@ -204,3 +204,15 @@
 @media (max-width:640px){
   .realities-grid{grid-template-columns:1fr;}
 }
+
+.lang-selector{display:flex; gap:6px; flex-wrap:wrap;}
+.lang-chip{font-family:var(--mono); font-size:10px; letter-spacing:.06em; padding:6px 12px;
+  background:transparent; border:1px solid var(--line); color:var(--ivory-faint); cursor:pointer; transition:all .2s;}
+.lang-chip:hover{border-color:var(--gold-dim); color:var(--ivory);}
+.lang-chip.on{border-color:var(--gold); color:var(--gold);}
+
+.lang-selector-fixed{position:fixed; top:18px; right:18px; z-index:60;}
+@media (max-width:640px){
+  .lang-selector-fixed{top:10px; right:10px;}
+  .lang-selector-fixed .lang-chip{padding:5px 9px; font-size:9px;}
+}

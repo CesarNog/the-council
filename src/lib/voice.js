@@ -14,13 +14,14 @@ export const voiceSupported = typeof window !== "undefined" && "speechSynthesis"
 
 let currentUtterance = null;
 
-export function speak(text, personaId, { onStart, onEnd } = {}) {
+export function speak(text, personaId, { onStart, onEnd, lang } = {}) {
   if (!voiceSupported) return;
   window.speechSynthesis.cancel(); // uma fala por vez — corta a anterior se ainda estiver rodando
   const u = new SpeechSynthesisUtterance(text);
   const profile = PROFILES[personaId] || { rate: 1, pitch: 1 };
   u.rate = profile.rate;
   u.pitch = profile.pitch;
+  if (lang) u.lang = lang;
   u.onstart = () => onStart?.();
   u.onend = () => onEnd?.();
   u.onerror = () => onEnd?.(); // fala falhou (voz indisponivel etc) — nao trava o estado visual

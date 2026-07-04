@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { Landing, Onboarding, Chamber, ErrorBoundary } from "./components.jsx";
 import { GoogleSignIn, ProfileSettings } from "./auth-ui.jsx";
 import { LifeModeBanner } from "./life-mode.jsx";
+import { LanguageSelector } from "./language-selector.jsx";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
+import { detectBrowserLanguage } from "./lib/i18n.js";
 
 function sharedIdFromPath() {
   const m = typeof window !== "undefined" ? window.location.pathname.match(/^\/r\/([a-z0-9]{4,20})$/i) : null;
@@ -53,6 +55,19 @@ function TheCouncilApp() {
   const [user, setUser] = useState(null); // null = anonimo ou ainda carregando
   const [checkingSession, setCheckingSession] = useState(!sharedId);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [language, setLanguage] = useState(() => {
+    try {
+      const saved = localStorage.getItem("council:lang");
+      return saved || detectBrowserLanguage();
+    } catch {
+      return detectBrowserLanguage();
+    }
+  });
+
+  const changeLanguage = (code) => {
+    setLanguage(code);
+    try { localStorage.setItem("council:lang", code); } catch {}
+  };
 
   useEffect(() => {
     if (sharedId) return;
@@ -117,25 +132,29 @@ function TheCouncilApp() {
   return (
     <div className="council-root">
       <div className="grain" />
+      <div className="lang-selector-fixed"><LanguageSelector language={language} onChange={changeLanguage} /></div>
       {screen === "landing" && <div className="ambient" style={{ background: "radial-gradient(50% 40% at 50% 30%, rgba(201,169,110,.08), transparent 70%)" }} />}
       {screen === "landing" && (
         <Landing
           onEnter={() => setScreen("onboarding")}
           authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
+          language={language}
         />
       )}
       {screen === "onboarding" && (
         <Onboarding
           onDone={handleOnboardingDone}
           initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
+          language={language}
         />
       )}
       {screen === "chamber" && (
         <Chamber
           profile={profile}
           userSlot={userBadge}
+          language={language}
           lifeModeSlot={user?.lifeMode && (
-            <LifeModeBanner lifeMode={user.lifeMode} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
+            <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
           )}
         />
       )}
@@ -144,6 +163,7 @@ function TheCouncilApp() {
       {showProfileSettings && user && (
         <ProfileSettings
           user={user}
+          language={language}
           onSave={(u) => { setUser(u); setProfile(p => ({ ...p, situation: u.situation, values: u.values })); setShowProfileSettings(false); }}
           onClose={() => setShowProfileSettings(false)}
           onSignOut={handleSignOut}

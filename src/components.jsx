@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
-import { QUICK_QUESTIONS } from "./lib/prompts.js";
+import { t, TTS_LANG, QUICK_QUESTIONS_I18N } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 
 export function Sigil({ id }) {
@@ -67,33 +67,33 @@ function Whisper() {
   );
 }
 
-export function Landing({ onEnter, authSlot }) {
+export function Landing({ onEnter, authSlot, language }) {
   return (
     <div className="landing">
       <div className="fade-up d1"><Ring /></div>
       <div className="eyebrow fade-up d2" style={{ marginTop: 40 }}>The Council</div>
-      <h1 className="fade-up d2">Nine versions of you.<br /><em>One verdict.</em></h1>
-      <p className="sub fade-up d3">
-        The founder you never became. The monk you almost were. The shadow you keep quiet.
-        Bring them one real decision — and listen to them argue about your life.
-      </p>
-      <button className="btn primary fade-up d4" onClick={onEnter}>Enter the chamber</button>
+      <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
+      <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
+      <button className="btn primary fade-up d4" onClick={onEnter}>{t(language, "enter_chamber")}</button>
       {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
       <div className="fade-up d4"><Whisper /></div>
     </div>
   );
 }
 
-const VALUES = ["Freedom", "Security", "Meaning", "Ambition", "Love", "Peace", "Truth", "Adventure"];
+const VALUE_KEYS = ["value_freedom", "value_security", "value_meaning", "value_ambition", "value_love", "value_peace", "value_truth", "value_adventure"];
 
-export function Onboarding({ onDone, initial }) {
+export function Onboarding({ onDone, initial, language }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initial?.name || "");
   const [situation, setSituation] = useState(initial?.situation || "");
   const [values, setValues] = useState(initial?.values || []);
 
-  const toggle = v => setValues(cur =>
-    cur.includes(v) ? cur.filter(x => x !== v) : cur.length < 3 ? [...cur, v] : cur);
+  const toggle = key => {
+    const canonical = t("en", key); // valor canonico enviado ao backend — independe do idioma de exibicao
+    setValues(cur =>
+      cur.includes(canonical) ? cur.filter(x => x !== canonical) : cur.length < 3 ? [...cur, canonical] : cur);
+  };
 
   const next = () => step < 2 ? setStep(step + 1) : onDone({ name: name.trim(), situation: situation.trim(), values });
   const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); next(); } };
@@ -103,39 +103,39 @@ export function Onboarding({ onDone, initial }) {
       <div className="progress">{[0, 1, 2].map(i => <i key={i} className={i <= step ? "on" : ""} />)}</div>
       {step === 0 && (
         <div className="onb-step" key="s0">
-          <div className="eyebrow">Rite of entry · I</div>
-          <h2>What shall the Council call you?</h2>
-          <p className="hint">A first name is enough. They already know the rest.</p>
-          <input type="text" autoFocus value={name} onChange={e => setName(e.target.value)} onKeyDown={onKey} placeholder="Your name" />
+          <div className="eyebrow">{t(language, "onb_progress_1")}</div>
+          <h2>{t(language, "onb_name_q")}</h2>
+          <p className="hint">{t(language, "onb_name_hint")}</p>
+          <input type="text" autoFocus value={name} onChange={e => setName(e.target.value)} onKeyDown={onKey} placeholder={t(language, "onb_name_placeholder")} />
           <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={next} disabled={!name.trim()}>Continue</button>
+            <button className="btn" onClick={next} disabled={!name.trim()}>{t(language, "continue")}</button>
           </div>
         </div>
       )}
       {step === 1 && (
         <div className="onb-step" key="s1">
-          <div className="eyebrow">Rite of entry · II</div>
-          <h2>Where do you stand right now?</h2>
-          <p className="hint">One honest line. They can smell a rehearsed answer.</p>
+          <div className="eyebrow">{t(language, "onb_progress_2")}</div>
+          <h2>{t(language, "onb_situation_q")}</h2>
+          <p className="hint">{t(language, "onb_situation_hint")}</p>
           <textarea rows={2} autoFocus value={situation} onChange={e => setSituation(e.target.value)} onKeyDown={onKey}
-            placeholder="e.g. Product manager, 31, restless" />
+            placeholder={t(language, "onb_situation_placeholder")} />
           <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={next} disabled={!situation.trim()}>Continue</button>
+            <button className="btn" onClick={next} disabled={!situation.trim()}>{t(language, "continue")}</button>
           </div>
         </div>
       )}
       {step === 2 && (
         <div className="onb-step" key="s2">
-          <div className="eyebrow">Rite of entry · III</div>
-          <h2>What do you protect above all?</h2>
-          <p className="hint">Choose up to three. The Council will remember.</p>
+          <div className="eyebrow">{t(language, "onb_progress_3")}</div>
+          <h2>{t(language, "onb_values_q")}</h2>
+          <p className="hint">{t(language, "onb_values_hint")}</p>
           <div className="chips">
-            {VALUES.map(v => (
-              <button key={v} className={"chip" + (values.includes(v) ? " on" : "")} onClick={() => toggle(v)}>{v}</button>
+            {VALUE_KEYS.map(key => (
+              <button key={key} className={"chip" + (values.includes(t("en", key)) ? " on" : "")} onClick={() => toggle(key)}>{t(language, key)}</button>
             ))}
           </div>
           <div style={{ marginTop: 44 }}>
-            <button className="btn primary" onClick={next} disabled={values.length === 0}>Convene the Council</button>
+            <button className="btn primary" onClick={next} disabled={values.length === 0}>{t(language, "convene")}</button>
           </div>
         </div>
       )}
@@ -182,7 +182,7 @@ export function ShareBar({ asked, debate }) {
   );
 }
 
-export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) {
+export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot, language }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -215,9 +215,9 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
   useEffect(() => {
     if (!voiceOn || !activeSpeaker || !debate) return;
     const text = debate.turns[shown - 1].t;
-    speak(text, activeSpeaker, { onStart: () => setSpeaking(activeSpeaker), onEnd: () => setSpeaking(null) });
+    speak(text, activeSpeaker, { onStart: () => setSpeaking(activeSpeaker), onEnd: () => setSpeaking(null), lang: TTS_LANG[language] });
     return () => stopSpeaking();
-  }, [activeSpeaker, shown, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeSpeaker, shown, voiceOn, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente
@@ -288,7 +288,7 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
     try {
-      const result = await summonCouncil(qq, profile);
+      const result = await summonCouncil(qq, profile, language);
       setDebate(result); setPhase("debate");
     } catch (e) {
       // gateway indisponível: a demo nunca trava — sessão offline com debate canônico
@@ -318,8 +318,8 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
       <div className="chamber">
         <div className="chamber-head">
           <div>
-            <div className="eyebrow">The Chamber</div>
-            <div className="title serif">{profile?.name ? `In session for ${profile.name}` : "A verdict already reached"}</div>
+            <div className="eyebrow">{t(language, "chamber_label")}</div>
+            <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {userSlot}
@@ -328,7 +328,7 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
                 {voiceOn ? "🔊" : "🔇"}
               </button>
             )}
-            {phase !== "idle" && <button className="btn small" onClick={reset}>New question</button>}
+            {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
           </div>
         </div>
 
@@ -337,22 +337,22 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
           speaking={speaking}
           mentioned={mentionedIds}
           phase={phase}
-          label={phase === "summoning" ? "deliberating" : phase === "reflecting" ? "reflecting" : phase === "voting" ? "voting" : phase === "verdict" ? "adjourned" : null}
+          label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
         />
 
         {phase === "idle" && lifeModeSlot}
 
         {phase === "idle" && (
           <div className="ask">
-            <div className="eyebrow" style={{ marginBottom: 18 }}>Bring your question before the Council</div>
+            <div className="eyebrow" style={{ marginBottom: 18 }}>{t(language, "bring_question")}</div>
             <textarea rows={2} value={question} onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); convene(); } }}
-              placeholder="Should I…" autoFocus />
+              placeholder={t(language, "question_placeholder")} autoFocus />
             <div style={{ marginTop: 30 }}>
-              <button className="btn primary" onClick={() => convene()} disabled={!question.trim()}>Convene the Council</button>
+              <button className="btn primary" onClick={() => convene()} disabled={!question.trim()}>{t(language, "convene")}</button>
             </div>
             <div className="quick-questions">
-              {QUICK_QUESTIONS.map(q => (
+              {QUICK_QUESTIONS_I18N[language].map(q => (
                 <button key={q} className="chip" onClick={() => convene(q)}>{q}</button>
               ))}
             </div>
@@ -361,7 +361,7 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
 
         {phase !== "idle" && asked && (
           <div className="question-banner" style={{ marginTop: 30 }}>
-            <div className="eyebrow">{debate?.offline ? "Offline demo · sample debate, not about your question" : "The matter before the Council"}</div>
+            <div className="eyebrow">{debate?.offline ? t(language, "offline_banner") : t(language, "matter_before_council")}</div>
             <div className="q">“{asked}”</div>
           </div>
         )}
@@ -369,20 +369,20 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
         {phase === "summoning" && (
           <div className="speaking" style={{ justifyContent: "center" }}>
             <span className="dots"><i /><i /><i /></span>
-            The nine take their seats
+            {t(language, "the_nine_take_seats")}
           </div>
         )}
 
         {debate && (phase === "debate" || phase === "reflecting" || phase === "voting" || phase === "verdict") && (
           <div className="feed" aria-live="polite" aria-atomic="false">
-            {debate.turns.slice(0, shown).map((t, i) => {
-              const p = byId[t.p];
+            {debate.turns.slice(0, shown).map((turn, i) => {
+              const p = byId[turn.p];
               return (
                 <div className="turn" key={i} style={{ color: p.color }}>
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div>
                     <div className="who" style={{ color: p.color }}>{p.name} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {p.tag}</span></div>
-                    <div className="txt">{t.t}</div>
+                    <div className="txt">{turn.t}</div>
                   </div>
                 </div>
               );
@@ -390,11 +390,11 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
             {phase === "debate" && shown < debate.turns.length && (
               <div className="speaking" role="status" style={{ color: byId[debate.turns[shown].p].color }}>
                 <span className="dots"><i /><i /><i /></span>
-                {byId[debate.turns[shown].p].name} is speaking
+                {t(language, "is_speaking", byId[debate.turns[shown].p].name)}
               </div>
             )}
             {phase === "reflecting" && (
-              <div className="reflection">The chamber falls quiet. Nine minds, weighing.</div>
+              <div className="reflection">{t(language, "chamber_falls_quiet")}</div>
             )}
           </div>
         )}
@@ -402,14 +402,14 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
         {debate && (phase === "voting" || phase === "verdict") && (
           <>
             <div className="vote-title">
-              <div className="eyebrow">Deliberation closed</div>
-              <h3 className="serif">The Council votes</h3>
+              <div className="eyebrow">{t(language, "deliberation_closed")}</div>
+              <h3 className="serif">{t(language, "council_votes")}</h3>
             </div>
             <div className="votes">
               {debate.votes.slice(0, votesShown).map((v, i) => {
                 const p = byId[v.p];
                 const cls = v.v === "yes" ? "yes" : v.v === "no" ? "no" : "dep";
-                const label = v.v === "yes" ? "Yes" : v.v === "no" ? "No" : "It depends";
+                const label = v.v === "yes" ? t(language, "vote_yes") : v.v === "no" ? t(language, "vote_no") : t(language, "vote_depends");
                 return (
                   <div className="vote" key={i} style={{ color: p.color, animationDelay: `${i * .04}s` }}>
                     <div className="sig"><Sigil id={p.id} /></div>
@@ -431,9 +431,9 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
               <i style={{ width: `${(no / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.1)" }} />
             </div>
             <div className="tally-labels">
-              <span style={{ color: "#D8C08A" }}>Yes {yes}</span>
-              <span>Depends {dep}</span>
-              <span>No {no}</span>
+              <span style={{ color: "#D8C08A" }}>{t(language, "yes")} {yes}</span>
+              <span>{t(language, "depends")} {dep}</span>
+              <span>{t(language, "no")} {no}</span>
             </div>
 
             <div className="verdict">
@@ -446,7 +446,7 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
 
               {debate.realities?.length > 0 && (
                 <div className="realities">
-                  <div className="eyebrow" style={{ marginBottom: 16 }}>In another life…</div>
+                  <div className="eyebrow" style={{ marginBottom: 16 }}>{t(language, "in_another_life")}</div>
                   <div className="realities-grid">
                     {debate.realities.map((r, i) => (
                       <div className="reality" key={i}>
@@ -462,9 +462,9 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
                 <ShareBar asked={asked} debate={debate} />
               </div>
               <div className="actions secondary">
-                <button className="btn small" onClick={() => downloadShareCard(asked, debate)}>Download verdict card</button>
-                <button className="btn small" onClick={copyText}>Copy as text</button>
-                <button className="btn small" onClick={reset}>Bring another matter</button>
+                <button className="btn small" onClick={() => downloadShareCard(asked, debate)}>{t(language, "download_verdict")}</button>
+                <button className="btn small" onClick={copyText}>{t(language, "copy_as_text")}</button>
+                <button className="btn small" onClick={reset}>{t(language, "bring_another")}</button>
               </div>
             </div>
           </>
@@ -472,9 +472,9 @@ export function Chamber({ profile, preloaded, onExit, userSlot, lifeModeSlot }) 
 
         {phase === "error" && (
           <div className="err">
-            The chamber doors are stuck — the Council could not be reached.<br />
+            {t(language, "chamber_stuck")}<br />
             <div style={{ marginTop: 22 }}>
-              <button className="btn" onClick={() => convene(asked)}>Knock again</button>
+              <button className="btn" onClick={() => convene(asked)}>{t(language, "knock_again")}</button>
             </div>
           </div>
         )}

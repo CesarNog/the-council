@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { updateProfile, resizeImageToDataUrl } from "./lib/auth.js";
+import { t } from "./lib/i18n.js";
 
 export function GoogleSignIn({ onCredential }) {
   const ref = useRef(null);
@@ -30,28 +31,31 @@ export function GoogleSignIn({ onCredential }) {
   return <div ref={ref} />;
 }
 
-const PROFILE_VALUES = ["Freedom", "Security", "Meaning", "Ambition", "Love", "Peace", "Truth", "Adventure"];
+const PROFILE_VALUE_KEYS = ["value_freedom", "value_security", "value_meaning", "value_ambition", "value_love", "value_peace", "value_truth", "value_adventure"];
 
-export function ProfileSettings({ user, onSave, onClose, onSignOut }) {
+export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) {
   const [situation, setSituation] = useState(user.situation || "");
   const [values, setValues] = useState(user.values || []);
   const [picture, setPicture] = useState(user.customPicture);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const toggle = v => setValues(cur =>
-    cur.includes(v) ? cur.filter(x => x !== v) : cur.length < 3 ? [...cur, v] : cur);
+  const toggle = key => {
+    const canonical = t("en", key);
+    setValues(cur =>
+      cur.includes(canonical) ? cur.filter(x => x !== canonical) : cur.length < 3 ? [...cur, canonical] : cur);
+  };
 
   const onFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { setError("Only image files."); return; }
+    if (!file.type.startsWith("image/")) { setError(t(language, "only_image_files")); return; }
     try {
       const dataUrl = await resizeImageToDataUrl(file);
       setPicture(dataUrl);
       setError(null);
     } catch {
-      setError("Could not read that image.");
+      setError(t(language, "could_not_read_image"));
     }
   };
 
@@ -61,7 +65,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut }) {
       const updated = await updateProfile({ situation: situation.trim(), values, picture });
       onSave(updated);
     } catch {
-      setError("Could not save. Try again.");
+      setError(t(language, "could_not_save"));
     } finally {
       setSaving(false);
     }
@@ -72,31 +76,31 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut }) {
   return (
     <div className="profile-overlay" onClick={onClose}>
       <div className="profile-panel" onClick={e => e.stopPropagation()}>
-        <div className="eyebrow">Your presence at the table</div>
+        <div className="eyebrow">{t(language, "your_presence")}</div>
 
         <div className="avatar-row">
           {avatarSrc && <img src={avatarSrc} alt="" className="avatar" />}
           <label className="btn small">
-            Change picture
+            {t(language, "change_picture")}
             <input type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
           </label>
         </div>
 
         <div className="field">
-          <div className="hint">Name</div>
+          <div className="hint">{t(language, "name_label")}</div>
           <div className="serif" style={{ fontSize: 18 }}>{user.name}</div>
         </div>
 
         <div className="field">
-          <div className="hint">Where you stand right now</div>
-          <textarea rows={2} value={situation} onChange={e => setSituation(e.target.value)} placeholder="e.g. Product manager, 31, restless" />
+          <div className="hint">{t(language, "where_you_stand")}</div>
+          <textarea rows={2} value={situation} onChange={e => setSituation(e.target.value)} placeholder={t(language, "onb_situation_placeholder")} />
         </div>
 
         <div className="field">
-          <div className="hint">What you protect above all — up to three</div>
+          <div className="hint">{t(language, "protect_up_to_three")}</div>
           <div className="chips">
-            {PROFILE_VALUES.map(v => (
-              <button key={v} className={"chip" + (values.includes(v) ? " on" : "")} onClick={() => toggle(v)}>{v}</button>
+            {PROFILE_VALUE_KEYS.map(key => (
+              <button key={key} className={"chip" + (values.includes(t("en", key)) ? " on" : "")} onClick={() => toggle(key)}>{t(language, key)}</button>
             ))}
           </div>
         </div>
@@ -104,9 +108,9 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut }) {
         {error && <div className="err" style={{ marginTop: 12, fontSize: 13 }}>{error}</div>}
 
         <div className="actions" style={{ marginTop: 30 }}>
-          <button className="btn primary" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</button>
-          <button className="btn small" onClick={onClose}>Close</button>
-          <button className="btn small" onClick={onSignOut}>Sign out</button>
+          <button className="btn primary" onClick={save} disabled={saving}>{saving ? t(language, "saving") : t(language, "save")}</button>
+          <button className="btn small" onClick={onClose}>{t(language, "close")}</button>
+          <button className="btn small" onClick={onSignOut}>{t(language, "sign_out")}</button>
         </div>
       </div>
     </div>

@@ -1,7 +1,9 @@
 import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 
-const buildPrompt = (question, profile = {}) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
+const LANGUAGE_NAMES = { en: "English", pt: "Brazilian Portuguese", es: "Spanish", zh: "Simplified Chinese" };
+
+const buildPrompt = (question, profile = {}, language) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
 
 Voice fingerprints (violate these and the persona is unrecognizable — that is a failure):
 - founder: short imperative sentences (under 16 words). Startup jargon. Impatient, interrupts others mid-thought.
@@ -41,7 +43,7 @@ Rules:
 - quote: the single most quotable line from the debate, verbatim from one of the turns — the line a reader would screenshot.
 - question: one probing question back at the person.
 - realities: exactly 3 entries. Each imagines a plausible alternate path the person could take relative to this decision (not fantasy). label: 2-4 words, e.g. "The Safe Path". line: one vivid sentence, second person, what that path would probably look like one year from now. Grounded, not mystical.
-- Write everything in the same language as the person's question.`;
+- Write everything in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}.`;
 
 const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
 const RATE_WINDOW = 60000; // ms — best-effort: KV eventually consistent, nao atomico, sob concorrencia alta pode passar um pouco do limite
@@ -60,7 +62,7 @@ async function checkRateLimit(ip) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const { question, profile } = req.body ?? {};
+  const { question, profile, language } = req.body ?? {};
   if (!question || typeof question !== "string") return res.status(400).json({ error: "invalid question" });
   const q = question.trim();
   if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
@@ -71,7 +73,7 @@ export default async function handler(req, res) {
 
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile), { maxTokens: 1900 });
+    json = await callGroq(buildPrompt(q, profile, language), { maxTokens: 1900 });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
