@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
+
+# Shared debate pages are ephemeral — discourage deep crawl of /r/* paths
+Disallow: /r/
+
 Sitemap: https://the-council-murex.vercel.app/sitemap.xml

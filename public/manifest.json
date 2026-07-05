@@ -1,0 +1,24 @@
+{
+  "name": "The Council",
+  "short_name": "The Council",
+  "description": "Nine versions of you. One verdict. Bring a real decision before nine alternate selves and listen to them argue.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0A12",
+  "theme_color": "#0B0A12",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
