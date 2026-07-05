@@ -6,6 +6,7 @@ import { LanguageSelector } from "./language-selector.jsx";
 import { ConsentBanner, CookieSettings, useConsentBannerVisible } from "./consent-ui.jsx";
 import { acceptAll, rejectOptional } from "./lib/consent.js";
 import { initAnalytics, trackPageView } from "./lib/analytics.js";
+import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
 import { detectBrowserLanguage, t } from "./lib/i18n.js";
 
@@ -129,7 +130,7 @@ function TheCouncilApp() {
     try { localStorage.setItem("council:lang", code); } catch {}
   };
 
-  useEffect(() => { initAnalytics(); }, []);
+  useEffect(() => { initAnalytics(); initAds(); }, []);
 
   useEffect(() => { trackPageView(screen); }, [screen]);
 
@@ -272,7 +273,7 @@ function TheCouncilApp() {
 
       {consentBannerVisible && !showCookieSettings && (
         <ConsentBanner
-          onAccept={() => { acceptAll(); initAnalytics(); dismissConsentBanner(); }}
+          onAccept={() => { acceptAll(); initAnalytics(); initAds(); dismissConsentBanner(); }}
           onReject={() => { rejectOptional(); dismissConsentBanner(); }}
           onSettings={() => setShowCookieSettings(true)}
         />
@@ -280,7 +281,7 @@ function TheCouncilApp() {
 
       {showCookieSettings && (
         <CookieSettings
-          onSave={() => { initAnalytics(); setShowCookieSettings(false); dismissConsentBanner(); }}
+          onSave={() => { initAnalytics(); initAds(); setShowCookieSettings(false); dismissConsentBanner(); }}
           onClose={() => setShowCookieSettings(false)}
         />
       )}
