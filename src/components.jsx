@@ -182,6 +182,10 @@ export function ShareBar({ asked, debate, language = "en" }) {
   );
 }
 
+function vibrate(pattern) {
+  if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(pattern);
+}
+
 export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
@@ -263,8 +267,26 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setVotesShown(v => v + 1), 520);
+    vibrate(12);
     return () => clearTimeout(t);
   }, [phase, votesShown, debate]);
+
+  // verdict: sequencia cinematografica — escurece, tally, headline+verdict, quote, resto
+  const [verdictStage, setVerdictStage] = useState(0);
+  useEffect(() => {
+    if (phase !== "verdict") { setVerdictStage(0); return; }
+    const delays = [50, 900, 1000, 900]; // stage 0->1->2->3->4
+    let stage = 0;
+    const timers = delays.map(d => {
+      stage += 1;
+      const s = stage;
+      return setTimeout(() => {
+        setVerdictStage(s);
+        if (s === 2) vibrate([20, 40, 60]); // padrao mais marcado no reveal do veredito
+      }, delays.slice(0, s).reduce((a, b) => a + b, 0));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [phase]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -370,8 +392,14 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
               const isPlaying = speaking === i;
+              const isFocused = phase === "debate" && i === shown - 1;
+              const isDimmed = phase === "debate" && i < shown - 1;
               return (
-                <div className={"turn" + (isPlaying ? " playing" : "")} key={i} style={{ color: p.color }}>
+                <div
+                  className={"turn" + (isPlaying ? " playing" : "") + (isFocused ? " focused" : "") + (isDimmed ? " dimmed" : "")}
+                  key={i}
+                  style={{ color: p.color }}
+                >
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div style={{ flex: 1 }}>
                     <div className="who" style={{ color: p.color }}>
@@ -430,27 +458,29 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
         {debate && phase === "verdict" && (
           <>
-            <div className="tally">
-              <i style={{ width: `${(yes / debate.votes.length) * 100}%`, background: "#D8C08A" }} />
-              <i style={{ width: `${(dep / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.28)" }} />
-              <i style={{ width: `${(no / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.1)" }} />
+            <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "")} />
+
+            <div className={"tally" + (verdictStage >= 1 ? " in" : "")}>
+              <i className={yes >= no && yes >= dep ? "winning" : ""} style={{ width: `${(yes / debate.votes.length) * 100}%`, background: "#D8C08A" }} />
+              <i className={dep > yes && dep > no ? "winning" : ""} style={{ width: `${(dep / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.28)" }} />
+              <i className={no > yes && no >= dep ? "winning" : ""} style={{ width: `${(no / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.1)" }} />
             </div>
-            <div className="tally-labels">
+            <div className={"tally-labels" + (verdictStage >= 1 ? " in" : "")}>
               <span style={{ color: "#D8C08A" }}>{t(language, "yes")} {yes}</span>
               <span>{t(language, "depends")} {dep}</span>
               <span>{t(language, "no")} {no}</span>
             </div>
 
             <div className="verdict">
-              <div className="eyebrow">{yes}–{no}–{dep} · yes–no–depends</div>
-              <div className="headline serif">{councilHeadline(debate, language)}</div>
-              <div className="vx serif">{debate.verdict}</div>
-              {debate.quote && <div className="pull-quote serif">“{debate.quote}”</div>}
-              <div className="rule" />
-              {debate.question && <div className="cq">{debate.question}</div>}
+              <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>
+              <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{councilHeadline(debate, language)}</div>
+              <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
+              {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>“{debate.quote}”</div>}
+              <div className={"rule reveal" + (verdictStage >= 3 ? " in" : "")} />
+              {debate.question && <div className={"cq reveal" + (verdictStage >= 4 ? " in" : "")}>{debate.question}</div>}
 
               {debate.realities?.length > 0 && (
-                <div className="realities">
+                <div className={"realities reveal" + (verdictStage >= 4 ? " in" : "")}>
                   <div className="eyebrow" style={{ marginBottom: 16 }}>{t(language, "in_another_life")}</div>
                   <div className="realities-grid">
                     {debate.realities.map((r, i) => (
@@ -463,10 +493,10 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
                 </div>
               )}
 
-              <div className="actions">
+              <div className={"actions reveal" + (verdictStage >= 4 ? " in" : "")}>
                 <ShareBar asked={asked} debate={debate} language={language} />
               </div>
-              <div className="actions secondary">
+              <div className={"actions secondary reveal" + (verdictStage >= 4 ? " in" : "")}>
                 <button className="btn small" onClick={() => downloadShareCard(asked, debate, language)}>{t(language, "download_verdict")}</button>
                 <button className="btn small" onClick={copyText}>{t(language, "copy_as_text")}</button>
                 <button className="btn small" onClick={reset}>{t(language, "bring_another")}</button>
