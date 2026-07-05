@@ -342,7 +342,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     }
   };
 
-  // landing quick-question chip — convene immediately on mount
+  // auto-convene on mount — used by quick-question chips and /decisions/:slug pages
   const initialQuestionRef = useRef(initialQuestion);
   useEffect(() => {
     if (initialQuestionRef.current) convene(initialQuestionRef.current);
