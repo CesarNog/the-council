@@ -108,6 +108,7 @@ const S = {
   share_native: { en: "Share", pt: "Compartilhar", es: "Compartir", zh: "分享" },
   copy_link: { en: "Copy link", pt: "Copiar link", es: "Copiar enlace", zh: "复制链接" },
   link_copied: { en: "Copied!", pt: "Copiado!", es: "¡Copiado!", zh: "已复制！" },
+  try_example: { en: "Or see the Council in action →", pt: "Ou veja o Conselho em ação →", es: "O ve al Consejo en acción →", zh: "或先看看议会如何运作 →" },
   only_x_disagreed: { en: name => `Only ${name} disagreed.`, pt: name => `Só ${name} discordou.`, es: name => `Solo ${name} discrepó.`, zh: name => `只有${name}持不同意见。` },
   every_agreed_go: { en: "Every Council member agreed. Go.", pt: "Todo o Conselho concordou. Vá em frente.", es: "Todo el Consejo estuvo de acuerdo. Adelante.", zh: "议会全体一致同意。去做吧。" },
   every_agreed_dont: { en: "Every Council member agreed. Don't.", pt: "Todo o Conselho concordou. Não faça.", es: "Todo el Consejo estuvo de acuerdo. No lo hagas.", zh: "议会全体一致同意。别做。" },
