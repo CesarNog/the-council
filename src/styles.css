@@ -335,3 +335,15 @@
 .footer-link-btn{background:none; border:none; padding:0; color:inherit; font:inherit;
   cursor:pointer; text-decoration:underline; text-underline-offset:3px; opacity:.7;}
 .footer-link-btn:hover{opacity:1;}
+
+/* Shared page conversion banner */
+.shared-conversion-banner{
+  margin:0 auto 80px; max-width:540px; padding:32px 24px; text-align:center;
+  border-top:1px solid var(--line); display:flex; flex-direction:column;
+  align-items:center; gap:20px;}
+.shared-conversion-text{
+  margin:0; font-size:clamp(16px,2.5vw,20px); color:var(--ivory-dim);
+  font-style:normal; line-height:1.5;}
+.shared-conversion-text em{
+  font-style:italic; color:var(--gold,#C9A96E);}
+.shared-conversion-btn{font-size:15px; padding:14px 28px;}

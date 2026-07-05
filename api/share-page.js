@@ -36,6 +36,7 @@ export default async function handler(req, res) {
 
   html = html
     .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/<link rel="canonical" href=".*?" \/>/, `<link rel="canonical" href="${appUrl}" />`)
     .replace(/<meta name="description" content=".*?" \/>/, `<meta name="description" content="${esc(description)}" />`)
     .replace(/<meta property="og:title" content=".*?" \/>/, `<meta property="og:title" content="${esc(title)}" />`)
     .replace(/<meta property="og:description" content=".*?" \/>/, `<meta property="og:description" content="${esc(description)}" />`)
