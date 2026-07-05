@@ -1,5 +1,8 @@
 import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
+import { PERSONAS } from "../src/lib/personas.js";
+
+const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
 const LANGUAGE_NAMES = { en: "English", pt: "Brazilian Portuguese", es: "Spanish", zh: "Simplified Chinese" };
 
@@ -87,6 +90,11 @@ export default async function handler(req, res) {
     console.error("council: bad shape", JSON.stringify(json).slice(0, 300));
     return res.status(502).json({ error: "unparseable_response" });
   }
+
+  // modelo ocasionalmente inventa/duplica persona (nao-determinismo com reasoning_effort:low) — observado em producao
+  json.turns = json.turns.filter(turn => VALID_IDS.has(turn.p));
+  const seen = new Set();
+  json.votes = json.votes.filter(v => VALID_IDS.has(v.p) && !seen.has(v.p) && (seen.add(v.p), true));
 
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
