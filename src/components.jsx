@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
-import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/share.js";
+import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
@@ -153,13 +153,18 @@ function ShareIcon() {
 }
 
 export function ShareBar({ asked, debate, language = "en" }) {
-  const appUrl = debate?.id && typeof window !== "undefined"
-    ? `${window.location.origin}/r/${debate.id}`
-    : (typeof window !== "undefined" ? window.location.href : "https://the-council-murex.vercel.app");
+  const [copied, setCopied] = useState(false);
+  const appUrl = shareUrl(debate?.id);
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const nativeShare = () => {
     navigator.share({ title: "The Council has ruled", text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
+  };
+
+  const handleCopyLink = () => {
+    copyLink(appUrl).then(ok => {
+      if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    });
   };
 
   const links = [
@@ -179,6 +184,9 @@ export function ShareBar({ asked, debate, language = "en" }) {
           <ShareIcon /> {l.label}
         </a>
       ))}
+      <button className="btn share-btn" onClick={handleCopyLink}>
+        <ShareIcon /> {copied ? t(language, "link_copied") : t(language, "copy_link")}
+      </button>
     </div>
   );
 }
