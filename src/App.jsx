@@ -11,6 +11,25 @@ function sharedIdFromPath() {
   return m ? m[1] : null;
 }
 
+function eclipsePreviewDebate() {
+  if (typeof window === "undefined") return null;
+  if (new URLSearchParams(window.location.search).get("preview") !== "eclipse") return null;
+  const ids = ["founder", "billionaire", "artist", "athlete", "monk", "scientist", "explorer", "romantic", "shadow"];
+  return {
+    question: "[QA preview] Should I take the leap?",
+    debate: {
+      id: "preview",
+      mood: "electric",
+      turns: ids.map(p => ({ p, t: "[Eclipse QA preview turn]" })),
+      votes: ids.map(p => ({ p, v: "yes", r: "[QA]" })),
+      verdict: "[QA preview] This is a synthetic unanimous debate used only to visually validate the Eclipse sequence.",
+      quote: "[QA preview quote]",
+      question: "[QA preview reflection question]",
+      realities: [],
+    },
+  };
+}
+
 function SharedGate({ id, onExit }) {
   const [result, setResult] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -50,7 +69,8 @@ function userHasCompletedProfile(user) {
 
 function TheCouncilApp() {
   const [sharedId, setSharedId] = useState(sharedIdFromPath);
-  const [screen, setScreen] = useState(sharedId ? "shared" : "landing"); // landing | onboarding | chamber | shared
+  const [eclipsePreview] = useState(eclipsePreviewDebate);
+  const [screen, setScreen] = useState(sharedId ? "shared" : eclipsePreview ? "chamber" : "landing"); // landing | onboarding | chamber | shared
   const [profile, setProfile] = useState({ name: "", situation: "", values: [] });
   const [user, setUser] = useState(null); // null = anonimo ou ainda carregando
   const [checkingSession, setCheckingSession] = useState(!sharedId);
@@ -161,6 +181,7 @@ function TheCouncilApp() {
         <Chamber
           profile={profile}
           language={language}
+          preloaded={eclipsePreview}
           lifeModeSlot={user?.lifeMode && (
             <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
           )}
