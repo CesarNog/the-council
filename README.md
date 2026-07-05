@@ -77,7 +77,7 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Known limitations
 
-- **Groq free tier TPM (8000/min) is shared across the entire org, not per user.** Each debate costs ~2100 tokens → roughly **3 debates/min aggregate, across all simultaneous visitors**. Past that, the API returns 429 and the frontend silently falls back to a static offline debate — the UI never breaks, but the experience degrades.
+- **Groq free tier TPM (8000/min) is shared across the entire org, not per user.** Each debate costs ~2000–2300 tokens → roughly **3 debates/min aggregate, across all simultaneous visitors**. Past that, the API returns 429 and the frontend silently falls back to a static offline debate — the UI never breaks, but the experience degrades.
 - **The per-IP rate limiter (Cloudflare KV) is best-effort, not atomic.** Under high concurrency it can slightly overshoot `RATE_LIMIT` in `api/council.js`. It does not protect against the aggregate Groq ceiling above.
 - **Google auth is implemented but not wired up in production** — requires `GOOGLE_CLIENT_ID`/`VITE_GOOGLE_CLIENT_ID`, not yet set. Without them `/api/auth` returns `503`. The end-to-end sign-in flow (button render → callback → cookie) has not been validated in a real browser.
 - **The offline fallback debate is fixed regardless of the question asked.** If Groq is unreachable (rate limit, timeout) the frontend shows a static debate written for "should I quit my job" — even if the user asked something else entirely, e.g. a relationship question. Cosmetic, not a crash, but misleading.

@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile, language), { maxTokens: 1900 });
+    json = await callGroq(buildPrompt(q, profile, language), { maxTokens: 2300 });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
