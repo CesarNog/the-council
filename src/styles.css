@@ -157,7 +157,7 @@
   .chamber{padding-bottom:80px;}
 
   .chamber .ring-wrap{
-    position:sticky; top:52px; z-index:5; /* abaixo do site-header sticky */
+    position:sticky; top:44px; z-index:5; /* header mobile: padding:10px 14px + maior filho — estimativa, nao medida */
     width:168px; margin:0 auto 6px;
     background:var(--bg); padding-top:8px;
   }
