@@ -167,7 +167,7 @@ export function ShareBar({ asked, debate, language = "en" }) {
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const nativeShare = () => {
-    navigator.share({ title: "The Council has ruled", text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
+    navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
   };
 
   const handleCopyLink = () => {
@@ -319,11 +319,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   useEffect(() => stopSpeaking, []); // cleanup ao desmontar
 
   const [rateLimited, setRateLimited] = useState(false);
+  const [retryIn, setRetryIn] = useState(0);
 
   const convene = async (q) => {
     const qq = (q || question).trim();
     if (!qq) return;
-    setAsked(qq); setQuestion(""); setRateLimited(false);
+    setAsked(qq); setQuestion(""); setRateLimited(false); setRetryIn(0);
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
     try {
@@ -333,6 +334,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       if (e.kind === "rate_limited") {
         // 429: mostrar debate fake identico confundia ("por que ele fala sempre a mesma coisa?") — erro honesto com retry
         setRateLimited(true);
+        setRetryIn(e.retryAfter || 60);
         setPhase("error");
         return;
       }
@@ -341,6 +343,18 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       setPhase("debate");
     }
   };
+
+  // countdown for rate-limit — ticks down to 0, then auto-retries
+  const askedRef = useRef(asked);
+  useEffect(() => { askedRef.current = asked; }, [asked]);
+  useEffect(() => {
+    if (phase !== "error" || !rateLimited || retryIn <= 0) return;
+    const id = setTimeout(() => setRetryIn(n => Math.max(0, n - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [phase, rateLimited, retryIn]);
+  useEffect(() => {
+    if (phase === "error" && rateLimited && retryIn === 0 && askedRef.current) convene(askedRef.current);
+  }, [retryIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // auto-convene on mount — used by quick-question chips and /decisions/:slug pages
   const initialQuestionRef = useRef(initialQuestion);
@@ -564,7 +578,10 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
         {phase === "error" && (
           <div className="err">
-            {t(language, rateLimited ? "rate_limited_msg" : "chamber_stuck")}<br />
+            {t(language, rateLimited ? "rate_limited_msg" : "chamber_stuck")}
+            {rateLimited && retryIn > 0 && (
+              <div className="rate-limit-countdown" role="status" aria-live="polite">{t(language, "rate_limited_retry_in", retryIn)}</div>
+            )}
             <div style={{ marginTop: 22 }}>
               <button className="btn" onClick={() => convene(asked)}>{t(language, "knock_again")}</button>
             </div>

@@ -1,7 +1,7 @@
 export class GroqError extends Error {
   constructor(kind, detail) {
     super(kind);
-    this.kind = kind; // "timeout" | "network_error" | "rate_limited" | "gateway_error" | "unparseable_response"
+    this.kind = kind; // "timeout" | "network_error" | "rate_limited" | "gateway_error" | "truncated_response" | "unparseable_response"
     this.detail = detail;
   }
 }
@@ -39,7 +39,11 @@ export async function callGroq(prompt, { maxTokens = 1700, timeoutMs = 9000 } = 
   }
 
   const data = await r.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
+  const choice = data.choices?.[0];
+  const text = choice?.message?.content ?? "";
+  if (choice?.finish_reason === "length") {
+    throw new GroqError("truncated_response", `response cut short at ${text.length} chars — increase max_tokens or shorten prompt`);
+  }
   try {
     const raw = text.replace(/```json|```/g, "").trim();
     return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));

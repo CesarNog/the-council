@@ -55,10 +55,50 @@ describe("shareText", () => {
     expect(text).toContain("A quotable line.");
   });
 
+  it("coloca a frase antes do tally", () => {
+    const text = shareText("Should I move?", debate);
+    const quotePos = text.indexOf("A quotable line.");
+    const tallyPos = text.indexOf("YES 1");
+    expect(quotePos).toBeLessThan(tallyPos);
+  });
+
+  it("usa labels traduzidos em portugues", () => {
+    const text = shareText("Devo me mudar?", debate, { language: "pt" });
+    expect(text).toContain("SIM 1");
+    expect(text).toContain("NÃO 1");
+    expect(text).toContain("DEPENDE 1");
+    expect(text).toContain("nove versões de mim");
+  });
+
+  it("usa labels traduzidos em espanhol", () => {
+    const text = shareText("¿Debo moverme?", debate, { language: "es" });
+    expect(text).toContain("SÍ 1");
+    expect(text).toContain("NO 1");
+    expect(text).toContain("nueve versiones de mí");
+  });
+
+  it("usa labels traduzidos em chines", () => {
+    const text = shareText("我该搬家吗？", debate, { language: "zh" });
+    expect(text).toContain("赞成 1");
+    expect(text).toContain("反对 1");
+    expect(text).toContain("待定 1");
+    expect(text).toContain("九个版本的我");
+  });
+
+  it("tagline inglesa por padrao", () => {
+    const text = shareText("Should I move?", debate);
+    expect(text).toContain("— nine versions of me, one verdict");
+  });
+
   it("respeita max e cai pro formato curto", () => {
     const text = shareText("Should I move?", debate, { max: 50 });
     expect(text.length).toBeLessThanOrEqual(50 + 40); // formato curto nao trunca agressivamente por design
     expect(text).toContain("Should I move?");
+  });
+
+  it("formato curto traduzido em portugues", () => {
+    const text = shareText("Devo me mudar?", debate, { max: 50, language: "pt" });
+    expect(text).toContain("O CONSELHO DECIDIU");
   });
 });
 
