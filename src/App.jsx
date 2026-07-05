@@ -5,6 +5,7 @@ import { LifeModeBanner } from "./life-mode.jsx";
 import { LanguageSelector } from "./language-selector.jsx";
 import { ConsentBanner, CookieSettings, useConsentBannerVisible } from "./consent-ui.jsx";
 import { acceptAll, rejectOptional } from "./lib/consent.js";
+import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
 import { detectBrowserLanguage, t } from "./lib/i18n.js";
 
@@ -127,6 +128,8 @@ function TheCouncilApp() {
     setLanguage(code);
     try { localStorage.setItem("council:lang", code); } catch {}
   };
+
+  useEffect(() => { initAds(); }, []);
 
   useEffect(() => {
     if (sharedId) return;
@@ -267,7 +270,7 @@ function TheCouncilApp() {
 
       {consentBannerVisible && !showCookieSettings && (
         <ConsentBanner
-          onAccept={() => { acceptAll(); dismissConsentBanner(); }}
+          onAccept={() => { acceptAll(); initAds(); dismissConsentBanner(); }}
           onReject={() => { rejectOptional(); dismissConsentBanner(); }}
           onSettings={() => setShowCookieSettings(true)}
         />
@@ -275,7 +278,7 @@ function TheCouncilApp() {
 
       {showCookieSettings && (
         <CookieSettings
-          onSave={() => { setShowCookieSettings(false); dismissConsentBanner(); }}
+          onSave={() => { initAds(); setShowCookieSettings(false); dismissConsentBanner(); }}
           onClose={() => setShowCookieSettings(false)}
         />
       )}
