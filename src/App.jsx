@@ -128,12 +128,20 @@ function userHasCompletedProfile(user) {
   return !!(user?.name && user?.situation && user?.values?.length);
 }
 
+function decisionQuestionFromWindow() {
+  if (typeof window === "undefined") return null;
+  const q = window.__COUNCIL_DECISION__;
+  if (q) delete window.__COUNCIL_DECISION__;
+  return q || null;
+}
+
 function TheCouncilApp() {
   const [sharedId, setSharedId] = useState(sharedIdFromPath);
   const [staticPage, setStaticPage] = useState(staticPageFromPath);
   const [eclipsePreview] = useState(eclipsePreviewDebate);
-  const [screen, setScreen] = useState(sharedId ? "shared" : eclipsePreview ? "chamber" : "landing"); // landing | onboarding | chamber | shared
+  const [decisionQuestion] = useState(decisionQuestionFromWindow);
   const [quickQuestion, setQuickQuestion] = useState(null);
+  const [screen, setScreen] = useState(sharedId ? "shared" : eclipsePreview ? "chamber" : decisionQuestion ? "chamber" : "landing"); // landing | onboarding | chamber | shared
   const [consentBannerVisible, dismissConsentBanner] = useConsentBannerVisible();
   const [showCookieSettings, setShowCookieSettings] = useState(false);
   const [profile, setProfile] = useState({ name: "", situation: "", values: [] });
@@ -263,7 +271,7 @@ function TheCouncilApp() {
           profile={profile}
           language={language}
           preloaded={eclipsePreview}
-          initialQuestion={quickQuestion}
+          initialQuestion={decisionQuestion || quickQuestion}
           lifeModeSlot={user?.lifeMode && (
             <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
           )}
