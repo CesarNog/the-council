@@ -580,7 +580,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           <div className="err">
             {t(language, rateLimited ? "rate_limited_msg" : "chamber_stuck")}
             {rateLimited && retryIn > 0 && (
-              <div className="rate-limit-countdown">{t(language, "rate_limited_retry_in", retryIn)}</div>
+              <div className="rate-limit-countdown" role="status" aria-live="polite">{t(language, "rate_limited_retry_in", retryIn)}</div>
             )}
             <div style={{ marginTop: 22 }}>
               <button className="btn" onClick={() => convene(asked)}>{t(language, "knock_again")}</button>

@@ -41,13 +41,15 @@ export function shareText(question, debate, { max, language = "en" } = {}) {
   const lNo = t(language, "share_no");
   const lDep = t(language, "share_depends");
   const tagline = t(language, "share_tagline");
+  const tallyLine = `${lYes} ${yes} · ${lNo} ${no} · ${lDep} ${dep}`;
   // quote appears before tally so the punchy line grabs attention first
   const quoteLine = debate.quote ? `\n\n"${debate.quote}"` : "";
-  const full = `⚖ ${headline.toUpperCase()}\n\n"${question}"${quoteLine}\n\n${lYes} ${yes} · ${lNo} ${no} · ${lDep} ${dep}\n\n${debate.verdict}\n\n${tagline}`;
+  const full = `⚖ ${headline.toUpperCase()}\n\n"${question}"${quoteLine}\n\n${tallyLine}\n\n${debate.verdict}\n\n${tagline}`;
   if (!max || full.length <= max) return full;
-  const room = max - (question.length + 40); // reserva espaco pro cabecalho/rodape
+  const shortPrefix = `⚖ ${t(language, "share_ruled")}\n\n"${question}"\n\n${tallyLine}\n\n`;
+  const room = max - shortPrefix.length;
   const shortVerdict = debate.verdict.length > room ? debate.verdict.slice(0, Math.max(room, 0)) + "…" : debate.verdict;
-  return `⚖ ${t(language, "share_ruled")}\n\n"${question}"\n\n${lYes} ${yes} · ${lNo} ${no} · ${lDep} ${dep}\n\n${shortVerdict}`;
+  return `${shortPrefix}${shortVerdict}`;
 }
 
 const VOTE_COLORS = { yes: "#C9A96E", no: "#8B3A3A", depends: "rgba(237,232,222,.35)" };

@@ -1,7 +1,7 @@
 export class GroqError extends Error {
   constructor(kind, detail) {
     super(kind);
-    this.kind = kind; // "timeout" | "network_error" | "rate_limited" | "gateway_error" | "unparseable_response"
+    this.kind = kind; // "timeout" | "network_error" | "rate_limited" | "gateway_error" | "truncated_response" | "unparseable_response"
     this.detail = detail;
   }
 }
