@@ -68,7 +68,20 @@ function eclipsePreviewDebate() {
   };
 }
 
-function SharedGate({ id, onExit }) {
+function SharedConversionBanner({ onEnter }) {
+  return (
+    <div className="shared-conversion-banner">
+      <p className="shared-conversion-text">
+        What would <em>your</em> nine voices say?
+      </p>
+      <button className="btn primary shared-conversion-btn" onClick={onEnter}>
+        ⚖ Bring your own matter before The Council
+      </button>
+    </div>
+  );
+}
+
+function SharedGate({ id, onExit, onEnter }) {
   const [result, setResult] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -84,7 +97,12 @@ function SharedGate({ id, onExit }) {
       <div className="landing">
         <div className="eyebrow">This verdict is gone</div>
         <h1 style={{ fontSize: "clamp(28px,4vw,44px)" }}>The Council has already adjourned.</h1>
-        <button className="btn primary" style={{ marginTop: 30 }} onClick={onExit}>Bring your own matter</button>
+        <p style={{ opacity: 0.6, marginTop: 16, fontSize: 15 }}>
+          Shared verdicts are ephemeral — they don't linger.
+        </p>
+        <button className="btn primary" style={{ marginTop: 30 }} onClick={onEnter || onExit}>
+          ⚖ Consult The Council about your own decision
+        </button>
       </div>
     );
   }
@@ -98,7 +116,12 @@ function SharedGate({ id, onExit }) {
       </div>
     );
   }
-  return <Chamber profile={{}} preloaded={result} onExit={onExit} />;
+  return (
+    <>
+      <Chamber profile={{}} preloaded={result} onExit={onExit} />
+      <SharedConversionBanner onEnter={onEnter || onExit} />
+    </>
+  );
 }
 
 function userHasCompletedProfile(user) {
@@ -241,7 +264,13 @@ function TheCouncilApp() {
           )}
         />
       )}
-      {screen === "shared" && sharedId && <SharedGate id={sharedId} onExit={exitShared} />}
+      {screen === "shared" && sharedId && (
+        <SharedGate
+          id={sharedId}
+          onExit={exitShared}
+          onEnter={() => { window.history.pushState({}, "", "/"); setSharedId(null); setScreen("onboarding"); }}
+        />
+      )}
 
       {showProfileSettings && user && (
         <ProfileSettings
