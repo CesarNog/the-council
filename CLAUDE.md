@@ -21,7 +21,7 @@ npm run build                # vite build
 
 ## Project Structure
 
-```
+```text
 the-council/
 ├── src/
 │   ├── App.jsx                  # Routing only (landing / onboarding / chamber / shared /r/:id)
