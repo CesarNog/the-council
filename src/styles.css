@@ -151,6 +151,7 @@
 .rule{width:54px; height:1px; background:var(--gold-dim); margin:22px auto 0;}
 
 .err{margin-top:40px; text-align:center; color:var(--ivory-dim); font-size:14px; line-height:1.7;}
+.rate-limit-countdown{margin-top:12px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--gold-dim); opacity:.8;}
 
 @media (max-width:640px){
   .votes{grid-template-columns:repeat(2,1fr);}

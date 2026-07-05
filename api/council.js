@@ -62,10 +62,12 @@ async function checkRateLimit(ip) {
   const now = Date.now();
   let state = raw ? JSON.parse(raw) : { c: 0, t: now };
   if (now - state.t > RATE_WINDOW) state = { c: 0, t: now };
-  if (state.c >= RATE_LIMIT) return false;
+  if (state.c >= RATE_LIMIT) {
+    return { allowed: false, retryAfter: Math.ceil((state.t + RATE_WINDOW - now) / 1000) };
+  }
   state.c += 1;
   await kvPut(key, JSON.stringify(state), 120).catch(() => {}); // falha de escrita nao bloqueia a requisicao
-  return true;
+  return { allowed: true };
 }
 
 export default async function handler(req, res) {
@@ -76,8 +78,8 @@ export default async function handler(req, res) {
   if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
 
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
-  const allowed = await checkRateLimit(ip).catch(() => true); // KV fora do ar nao deve derrubar o produto
-  if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down" });
+  const { allowed, retryAfter } = await checkRateLimit(ip).catch(() => ({ allowed: true })); // KV fora do ar nao deve derrubar o produto
+  if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down", retryAfter });
 
   let history = [];
   const session = getSessionFromRequest(req);
@@ -93,7 +95,7 @@ export default async function handler(req, res) {
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
-      const statusByKind = { timeout: 504, network_error: 504, rate_limited: 429, gateway_error: 502, unparseable_response: 502 };
+      const statusByKind = { timeout: 504, network_error: 504, rate_limited: 429, gateway_error: 502, unparseable_response: 502, truncated_response: 502 };
       return res.status(statusByKind[e.kind] || 502).json({ error: e.kind, detail: e.detail });
     }
     throw e;
