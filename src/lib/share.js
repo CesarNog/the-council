@@ -21,6 +21,19 @@ export function councilHeadline(debate, language = "en") {
   return yes > no ? t(language, "leans_yes", yes, no) : no > yes ? t(language, "leans_no", no, yes) : t(language, "split_middle");
 }
 
+export function shareUrl(id, origin) {
+  const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://the-council-murex.vercel.app");
+  return id ? `${base}/r/${id}` : base;
+}
+
+export async function copyLink(url) {
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    await navigator.clipboard.writeText(url);
+    return true;
+  }
+  return false;
+}
+
 export function shareText(question, debate, { max, language = "en" } = {}) {
   const { yes, no, dep } = tally(debate);
   const headline = councilHeadline(debate, language);
@@ -31,6 +44,8 @@ export function shareText(question, debate, { max, language = "en" } = {}) {
   const shortVerdict = debate.verdict.length > room ? debate.verdict.slice(0, Math.max(room, 0)) + "…" : debate.verdict;
   return `⚖ THE COUNCIL HAS RULED\n\n"${question}"\n\nYES ${yes} · NO ${no} · DEPENDS ${dep}\n\n${shortVerdict}`;
 }
+
+const VOTE_COLORS = { yes: "#C9A96E", no: "#8B3A3A", depends: "rgba(237,232,222,.35)" };
 
 export function downloadShareCard(question, debate, language = "en") {
   const W = 1080, H = 1350;
@@ -43,20 +58,24 @@ export function downloadShareCard(question, debate, language = "en") {
   g.addColorStop(0, "rgba(201,169,110,.14)"); g.addColorStop(1, "rgba(201,169,110,0)");
   x.fillStyle = g; x.fillRect(0, 0, W, H);
 
-  x.strokeStyle = "rgba(201,169,110,.5)"; x.lineWidth = 2;
+  // Persona ring — dots colored by vote outcome
+  x.strokeStyle = "rgba(201,169,110,.35)"; x.lineWidth = 2;
   x.beginPath(); x.arc(W / 2, 240, 120, Math.PI * 0.75, Math.PI * 2.25); x.stroke();
+  const voteMap = Object.fromEntries(debate.votes.map(v => [v.p, v.v]));
   PERSONAS.forEach((p, i) => {
     const a = -Math.PI / 2 + (i / 9) * Math.PI * 2;
-    x.fillStyle = p.color;
-    x.beginPath(); x.arc(W / 2 + Math.cos(a) * 120, 240 + Math.sin(a) * 120, 7, 0, Math.PI * 2); x.fill();
+    const vote = voteMap[p.id] || "depends";
+    const dotColor = VOTE_COLORS[vote] || p.color;
+    x.fillStyle = dotColor;
+    x.beginPath(); x.arc(W / 2 + Math.cos(a) * 120, 240 + Math.sin(a) * 120, vote === "yes" ? 9 : 7, 0, Math.PI * 2); x.fill();
   });
 
   const wrap = (text, font, maxW) => {
     x.font = font;
     const words = text.split(" "); const lines = []; let cur = "";
     for (const w of words) {
-      const t = cur ? cur + " " + w : w;
-      if (x.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+      const candidate = cur ? cur + " " + w : w;
+      if (x.measureText(candidate).width > maxW && cur) { lines.push(cur); cur = w; } else cur = candidate;
     }
     if (cur) lines.push(cur);
     return lines;
@@ -75,7 +94,7 @@ export function downloadShareCard(question, debate, language = "en") {
 
   y += 40;
   const qFont = "italic 300 46px 'Fraunces', Georgia, serif";
-  wrap(`“${question}”`, qFont, 860).forEach(l => { x.font = qFont; x.fillText(l, W / 2, y); y += 60; });
+  wrap(`"${question}"`, qFont, 860).forEach(l => { x.font = qFont; x.fillText(l, W / 2, y); y += 60; });
 
   const { yes, no, dep } = tally(debate);
   y += 40;
@@ -85,13 +104,27 @@ export function downloadShareCard(question, debate, language = "en") {
   y += 70;
   x.strokeStyle = "rgba(201,169,110,.4)"; x.beginPath(); x.moveTo(W / 2 - 60, y); x.lineTo(W / 2 + 60, y); x.stroke();
 
-  y += 70;
-  x.fillStyle = "rgba(237,232,222,.85)";
-  const vFont = "300 34px 'Fraunces', Georgia, serif";
-  wrap(debate.verdict, vFont, 820).forEach(l => { x.font = vFont; x.fillText(l, W / 2, y); y += 50; });
+  // Verdict or quote — prefer quote for visual punch
+  if (debate.quote) {
+    y += 70;
+    x.fillStyle = "rgba(201,169,110,.9)";
+    const qqFont = "italic 400 36px 'Fraunces', Georgia, serif";
+    wrap(`"${debate.quote}"`, qqFont, 820).forEach(l => { x.font = qqFont; x.fillText(l, W / 2, y); y += 54; });
+  } else {
+    y += 70;
+    x.fillStyle = "rgba(237,232,222,.85)";
+    const vFont = "300 34px 'Fraunces', Georgia, serif";
+    wrap(debate.verdict, vFont, 820).forEach(l => { x.font = vFont; x.fillText(l, W / 2, y); y += 50; });
+  }
 
+  // Footer: tagline + share URL
+  const url = shareUrl(debate.id);
   x.fillStyle = "rgba(237,232,222,.4)"; x.font = "400 22px 'JetBrains Mono', monospace";
-  x.fillText("nine versions of me · one verdict", W / 2, H - 80);
+  x.fillText("nine versions of me · one verdict", W / 2, H - 110);
+  if (debate.id) {
+    x.fillStyle = "rgba(201,169,110,.55)"; x.font = "400 20px 'JetBrains Mono', monospace";
+    x.fillText(url.replace(/^https?:\/\//, ""), W / 2, H - 72);
+  }
 
   const a = document.createElement("a");
   a.download = "council-verdict.png";
