@@ -6,7 +6,7 @@ Context for AI assistants working in this repo.
 
 Vite + React SPA, Vercel serverless backend, Groq (`openai/gpt-oss-120b`) for LLM inference, Cloudflare KV for storage (debate results, rate limiting, user profiles). Single-file-per-concern architecture — not a large codebase, don't over-fragment further.
 
-Google Sign-In (`api/auth.js`, `api/profile.js`) exists in code but is **not wired up in production** — `GOOGLE_CLIENT_ID`/`VITE_GOOGLE_CLIENT_ID` aren't set, so `/api/auth` returns `503` and the app runs anonymously. Don't assume "no auth" when touching `src/auth-ui.jsx`, `src/life-mode.jsx`, or `api/profile.js` — the code path is real, just unconfirmed end-to-end (see README "Known limitations").
+Google Sign-In (`api/auth.js`, `api/profile.js`) is partially wired: `VITE_GOOGLE_CLIENT_ID` is now baked into `vite.config.js` so the sign-in button renders in all Vite/Vercel builds. The backend (`api/auth.js`) still reads `GOOGLE_CLIENT_ID` from a Vercel env var at runtime — until that env var is set in the Vercel dashboard, `/api/auth` returns `503`. Don't assume "no auth" when touching `src/auth-ui.jsx`, `src/life-mode.jsx`, or `api/profile.js` — the code paths are real.
 
 ## Commands
 
