@@ -133,6 +133,7 @@ function TheCouncilApp() {
   const [staticPage, setStaticPage] = useState(staticPageFromPath);
   const [eclipsePreview] = useState(eclipsePreviewDebate);
   const [screen, setScreen] = useState(sharedId ? "shared" : eclipsePreview ? "chamber" : "landing"); // landing | onboarding | chamber | shared
+  const [quickQuestion, setQuickQuestion] = useState(null);
   const [consentBannerVisible, dismissConsentBanner] = useConsentBannerVisible();
   const [showCookieSettings, setShowCookieSettings] = useState(false);
   const [profile, setProfile] = useState({ name: "", situation: "", values: [] });
@@ -242,7 +243,10 @@ function TheCouncilApp() {
       {screen === "landing" && <div className="ambient" style={{ background: "radial-gradient(50% 40% at 50% 30%, rgba(201,169,110,.08), transparent 70%)" }} />}
       {screen === "landing" && (
         <Landing
-          onEnter={() => setScreen("onboarding")}
+          onEnter={(q) => {
+            if (q) { setQuickQuestion(q); setScreen("chamber"); }
+            else setScreen("onboarding");
+          }}
           authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
           language={language}
         />
@@ -259,6 +263,7 @@ function TheCouncilApp() {
           profile={profile}
           language={language}
           preloaded={eclipsePreview}
+          initialQuestion={quickQuestion}
           lifeModeSlot={user?.lifeMode && (
             <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
           )}

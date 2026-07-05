@@ -69,15 +69,24 @@ function Whisper({ language }) {
 }
 
 export function Landing({ onEnter, authSlot, language }) {
+  const quickQs = (QUICK_QUESTIONS_I18N[language] || QUICK_QUESTIONS_I18N.en).slice(0, 3);
   return (
     <div className="landing">
       <div className="fade-up d1"><Ring language={language} /></div>
       <div className="eyebrow fade-up d2" style={{ marginTop: 40 }}>The Council</div>
       <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
       <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
-      <button className="btn primary fade-up d4" onClick={onEnter}>{t(language, "enter_chamber")}</button>
+      <button className="btn primary fade-up d4" onClick={() => onEnter()}>{t(language, "enter_chamber")}</button>
       {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
-      <div className="fade-up d4"><Whisper language={language} /></div>
+      <div className="fade-up d5 landing-quick-section">
+        <div className="landing-quick-label">{t(language, "try_example")}</div>
+        <div className="landing-quick-chips">
+          {quickQs.map(q => (
+            <button key={q} className="landing-chip" onClick={() => onEnter(q)}>{q}</button>
+          ))}
+        </div>
+      </div>
+      <div className="fade-up d5"><Whisper language={language} /></div>
     </div>
   );
 }
@@ -195,7 +204,7 @@ function vibrate(pattern) {
   if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(pattern);
 }
 
-export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) {
+export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeSlot, language }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -332,6 +341,12 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
       setPhase("debate");
     }
   };
+
+  // landing quick-question chip — convene immediately on mount
+  const initialQuestionRef = useRef(initialQuestion);
+  useEffect(() => {
+    if (initialQuestionRef.current) convene(initialQuestionRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = () => {
     if (onExit) return onExit();
