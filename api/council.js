@@ -1,12 +1,13 @@
 import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { PERSONAS } from "../src/lib/personas.js";
+import { getSessionFromRequest } from "./_session.js";
 
 const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
 const LANGUAGE_NAMES = { en: "English", pt: "Brazilian Portuguese", es: "Spanish", zh: "Simplified Chinese" };
 
-const buildPrompt = (question, profile = {}, language) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
+const buildPrompt = (question, profile = {}, language, history = []) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
 
 Voice fingerprints (violate these and the persona is unrecognizable — that is a failure):
 - founder: short imperative sentences (under 16 words). Startup jargon. Impatient, interrupts others mid-thought.
@@ -28,9 +29,12 @@ Baseline relationship dynamics — bake these into who agrees, interrupts, or ch
 
 The person: ${profile.name || "the seeker"}. Context: ${profile.situation || "unknown"}. Values most: ${(profile.values || []).join(", ") || "unknown"}.
 Their question: "${question}"
-
+${history.length > 0 ? `
+Past matters this person already brought to the Council (most recent first) — reference ONE only if it is genuinely relevant to today's question, never force it, never reference more than one:
+${history.map(h => `- "${h.question}" → ${h.verdict}`).join("\n")}
+` : ""}
 Return ONLY valid JSON, no markdown fences, exactly this shape:
-{"mood":"tense|warm|hopeful|somber|electric","turns":[{"p":"founder","t":"..."}],"votes":[{"p":"founder","v":"yes","r":"..."}],"verdict":"...","quote":"...","question":"...","realities":[{"label":"...","line":"..."}]}
+{"mood":"tense|warm|hopeful|somber|electric","turns":[{"p":"founder","t":"..."}],"votes":[{"p":"founder","v":"yes","r":"..."}],"verdict":"...","quote":"...","question":"...","realities":[{"label":"...","line":"..."}],"memoryEcho":null}
 
 Rules:
 - 12 to 14 turns. Each turn respects its persona's sentence-length fingerprint above.
@@ -46,6 +50,7 @@ Rules:
 - quote: the single most quotable line from the debate, verbatim from one of the turns — the line a reader would screenshot.
 - question: one probing question back at the person.
 - realities: exactly 3 entries. Each imagines a plausible alternate path the person could take relative to this decision (not fantasy). label: 2-4 words, e.g. "The Safe Path". line: one vivid sentence, second person, what that path would probably look like one year from now. Grounded, not mystical.
+- memoryEcho: null unless a past matter above is genuinely relevant to today's question — if the topics clearly overlap (same decision, same fear, same person involved), you should surface it: {"persona":"monk","line":"one short in-voice sentence naturally referencing that past matter and asking how the person feels about it now"}. If there is no past matter listed above, or none overlaps, leave it null.
 - Write everything in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}.`;
 
 const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
@@ -74,9 +79,17 @@ export default async function handler(req, res) {
   const allowed = await checkRateLimit(ip).catch(() => true); // KV fora do ar nao deve derrubar o produto
   if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down" });
 
+  let history = [];
+  const session = getSessionFromRequest(req);
+  if (session) {
+    const raw = await kvGet(`user:${session.sub}`).catch(() => null);
+    const user = raw ? JSON.parse(raw) : null;
+    history = (user?.debateHistory || []).slice(0, 3);
+  }
+
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile, language), { maxTokens: 2300 });
+    json = await callGroq(buildPrompt(q, profile, language, history), { maxTokens: 2300 });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
@@ -95,6 +108,7 @@ export default async function handler(req, res) {
   json.turns = json.turns.filter(turn => VALID_IDS.has(turn.p));
   const seen = new Set();
   json.votes = json.votes.filter(v => VALID_IDS.has(v.p) && !seen.has(v.p) && (seen.add(v.p), true));
+  if (json.memoryEcho && !VALID_IDS.has(json.memoryEcho.persona)) json.memoryEcho = null;
 
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort

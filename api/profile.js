@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "PATCH") {
-    const { situation, values, picture, dismissLifeMode } = req.body ?? {};
+    const { situation, values, picture, dismissLifeMode, recordDebate } = req.body ?? {};
     const next = { ...auth.user };
 
     if (situation !== undefined) {
@@ -69,6 +69,21 @@ export default async function handler(req, res) {
       next.customPicture = picture;
     }
     if (dismissLifeMode) next.lifeMode = null;
+
+    if (recordDebate?.id && recordDebate?.question) {
+      const entry = {
+        id: recordDebate.id,
+        question: String(recordDebate.question).slice(0, 300),
+        verdict: String(recordDebate.verdict || "").slice(0, 500),
+        mood: recordDebate.mood || null,
+        unanimousVote: recordDebate.unanimousVote === "yes" || recordDebate.unanimousVote === "no" ? recordDebate.unanimousVote : null,
+        at: Date.now(),
+      };
+      next.debateHistory = [entry, ...(next.debateHistory || [])].slice(0, 10);
+      if (entry.unanimousVote) {
+        next.eclipses = [entry, ...(next.eclipses || [])].slice(0, 50);
+      }
+    }
 
     await kvPut(`user:${auth.sub}`, JSON.stringify(next));
     return res.status(200).json(next);

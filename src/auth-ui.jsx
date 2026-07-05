@@ -107,6 +107,26 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) 
 
         {error && <div className="err" style={{ marginTop: 12, fontSize: 13 }}>{error}</div>}
 
+        {(user.debateHistory?.length > 0 || user.eclipses?.length > 0) && (
+          <div className="field">
+            <div className="hint">{t(language, "your_journey")}</div>
+            <div className="echo-timeline">
+              {user.debateHistory.map((h, i) => {
+                const isEclipse = !!h.unanimousVote;
+                return (
+                  <div key={h.id || i} className={"echo-entry" + (isEclipse ? " eclipse" : "")}>
+                    <div className="echo-dot">{isEclipse ? "☉" : "·"}</div>
+                    <div>
+                      <div className="echo-q">{h.question}</div>
+                      <div className="echo-date">{new Date(h.at).toLocaleDateString(language === "pt" ? "pt-BR" : language)}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="actions" style={{ marginTop: 30 }}>
           <button className="btn primary" onClick={save} disabled={saving}>{saving ? t(language, "saving") : t(language, "save")}</button>
           <button className="btn small" onClick={onClose}>{t(language, "close")}</button>

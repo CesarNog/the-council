@@ -47,6 +47,8 @@ export default async function handler(req, res) {
     values: existing?.values ?? [],
     lastVisit: existing?.lastVisit ?? null,
     lifeMode: existing?.lifeMode ?? null,
+    debateHistory: existing?.debateHistory ?? [],
+    eclipses: existing?.eclipses ?? [],
     createdAt: existing?.createdAt ?? Date.now(),
   };
 

@@ -120,6 +120,28 @@ const S = {
     es: "Perspectivas generadas por IA — no es asesoramiento profesional, legal, médico o financiero.",
     zh: "AI生成的观点——不构成专业、法律、医疗或财务建议。",
   },
+
+  council_eclipse: { en: "Council Eclipse", pt: "Eclipse do Conselho", es: "Eclipse del Consejo", zh: "议会之蚀" },
+  eclipse_sub: {
+    en: "For the first time, every possible version of you reached the same conclusion.",
+    pt: "Pela primeira vez, todas as versões possíveis de você chegaram à mesma conclusão.",
+    es: "Por primera vez, todas las versiones posibles de ti llegaron a la misma conclusión.",
+    zh: "有史以来第一次，你所有可能的自我都得出了相同的结论。",
+  },
+  eclipse_headline: {
+    en: v => `Every version of you says: ${v}.`,
+    pt: v => `Toda versão de você diz: ${v}.`,
+    es: v => `Toda versión de ti dice: ${v}.`,
+    zh: v => `你所有的自我都说：${v}。`,
+  },
+  eclipse_rarity: {
+    en: "This moment is exceptionally rare.",
+    pt: "Este momento é excepcionalmente raro.",
+    es: "Este momento es excepcionalmente raro.",
+    zh: "这一刻极为罕见。",
+  },
+  memory_echo_label: { en: "A memory surfaces", pt: "Uma lembrança ressurge", es: "Un recuerdo aflora", zh: "一段记忆浮现" },
+  your_journey: { en: "Your journey with the Council", pt: "Sua jornada com o Conselho", es: "Tu viaje con el Consejo", zh: "你与议会的旅程" },
 };
 
 export function t(lang, key, ...args) {

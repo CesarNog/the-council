@@ -4,6 +4,7 @@ import { tally, councilHeadline, shareText, downloadShareCard } from "./lib/shar
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
+import { updateProfile } from "./lib/auth.js";
 
 export function Sigil({ id }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
@@ -272,21 +273,27 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
   }, [phase, votesShown, debate]);
 
   // verdict: sequencia cinematografica — escurece, tally, headline+verdict, quote, resto
+  const { yes, no, dep } = tally(debate || { votes: [] });
+  const isEclipse = debate && (yes === debate.votes.length || no === debate.votes.length);
+  const eclipseVote = isEclipse ? (yes === debate.votes.length ? "yes" : "no") : null;
+
+  // verdict: sequencia cinematografica — escurece, tally, headline+verdict, quote, resto
+  // eclipse (unanimidade): tudo mais lento e solene, silencio mais longo antes do reveal
   const [verdictStage, setVerdictStage] = useState(0);
   useEffect(() => {
     if (phase !== "verdict") { setVerdictStage(0); return; }
-    const delays = [50, 900, 1000, 900]; // stage 0->1->2->3->4
+    const delays = isEclipse ? [2600, 1800, 1400, 1200] : [50, 900, 1000, 900];
     let stage = 0;
     const timers = delays.map(d => {
       stage += 1;
       const s = stage;
       return setTimeout(() => {
         setVerdictStage(s);
-        if (s === 2) vibrate([20, 40, 60]); // padrao mais marcado no reveal do veredito
+        if (s === 2) vibrate(isEclipse ? [30, 80, 30, 80, 120] : [20, 40, 60]);
       }, delays.slice(0, s).reduce((a, b) => a + b, 0));
     });
     return () => timers.forEach(clearTimeout);
-  }, [phase]);
+  }, [phase, isEclipse]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -325,7 +332,14 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
   const copyText = () => navigator.clipboard?.writeText(shareText(asked, debate, { language }));
 
-  const { yes, no, dep } = tally(debate || { votes: [] });
+  const recordedRef = useRef(null);
+  useEffect(() => {
+    if (phase !== "verdict" || !debate?.id || recordedRef.current === debate.id) return;
+    recordedRef.current = debate.id;
+    updateProfile({
+      recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
+    }).catch(() => {}); // anonimo (401) ou falha de rede — nao afeta a experiencia, so nao persiste
+  }, [phase, debate?.id]);
 
   const ambientColor = ringActive
     ? byId[ringActive].color
@@ -429,6 +443,15 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
             {phase === "reflecting" && (
               <div className="reflection">{t(language, "chamber_falls_quiet")}</div>
             )}
+            {phase === "reflecting" && debate.memoryEcho && (
+              <div className="memory-echo" style={{ color: byId[debate.memoryEcho.persona]?.color }}>
+                <div className="sig"><Sigil id={debate.memoryEcho.persona} /></div>
+                <div>
+                  <div className="memory-echo-label">{t(language, "memory_echo_label")}</div>
+                  <div className="memory-echo-line serif">{debate.memoryEcho.line}</div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -458,25 +481,36 @@ export function Chamber({ profile, preloaded, onExit, lifeModeSlot, language }) 
 
         {debate && phase === "verdict" && (
           <>
-            <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "")} />
+            <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "") + (isEclipse ? " eclipse-dim" : "")} />
 
-            <div className={"tally" + (verdictStage >= 1 ? " in" : "")}>
-              <i className={yes >= no && yes >= dep ? "winning" : ""} style={{ width: `${(yes / debate.votes.length) * 100}%`, background: "#D8C08A" }} />
-              <i className={dep > yes && dep > no ? "winning" : ""} style={{ width: `${(dep / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.28)" }} />
-              <i className={no > yes && no >= dep ? "winning" : ""} style={{ width: `${(no / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.1)" }} />
-            </div>
-            <div className={"tally-labels" + (verdictStage >= 1 ? " in" : "")}>
-              <span style={{ color: "#D8C08A" }}>{t(language, "yes")} {yes}</span>
-              <span>{t(language, "depends")} {dep}</span>
-              <span>{t(language, "no")} {no}</span>
-            </div>
+            {isEclipse ? (
+              <div className={"eclipse-mark" + (verdictStage >= 1 ? " in" : "")}>
+                <div className="eclipse-glyph">☉</div>
+                <div className="eclipse-title serif">{t(language, "council_eclipse")}</div>
+                <div className="eclipse-sub">{t(language, "eclipse_sub")}</div>
+              </div>
+            ) : (
+              <>
+                <div className={"tally" + (verdictStage >= 1 ? " in" : "")}>
+                  <i className={yes >= no && yes >= dep ? "winning" : ""} style={{ width: `${(yes / debate.votes.length) * 100}%`, background: "#D8C08A" }} />
+                  <i className={dep > yes && dep > no ? "winning" : ""} style={{ width: `${(dep / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.28)" }} />
+                  <i className={no > yes && no >= dep ? "winning" : ""} style={{ width: `${(no / debate.votes.length) * 100}%`, background: "rgba(237,232,222,.1)" }} />
+                </div>
+                <div className={"tally-labels" + (verdictStage >= 1 ? " in" : "")}>
+                  <span style={{ color: "#D8C08A" }}>{t(language, "yes")} {yes}</span>
+                  <span>{t(language, "depends")} {dep}</span>
+                  <span>{t(language, "no")} {no}</span>
+                </div>
+              </>
+            )}
 
-            <div className="verdict">
-              <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>
-              <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{councilHeadline(debate, language)}</div>
+            <div className={"verdict" + (isEclipse ? " eclipse" : "")}>
+              {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>}
+              <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{isEclipse ? t(language, "eclipse_headline", eclipseVote === "yes" ? t(language, "yes") : t(language, "no")) : councilHeadline(debate, language)}</div>
               <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
               {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>“{debate.quote}”</div>}
               <div className={"rule reveal" + (verdictStage >= 3 ? " in" : "")} />
+              {isEclipse && <div className={"eclipse-rarity reveal" + (verdictStage >= 3 ? " in" : "")}>{t(language, "eclipse_rarity")}</div>}
               {debate.question && <div className={"cq reveal" + (verdictStage >= 4 ? " in" : "")}>{debate.question}</div>}
 
               {debate.realities?.length > 0 && (
