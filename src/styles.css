@@ -201,7 +201,8 @@
   .ring-orbit, .node.breathing, .node.speaking-voice, .pulse, .dots i{animation:none !important;}
   .node.breathing{opacity:.55;}
   /* entrance animations: appear instantly without translate */
-  .fade-up, .turn, .vote{animation:none !important; opacity:1 !important; transform:none !important;}
+  .fade-up, .turn, .vote{animation:none !important; transform:none !important;}
+  .fade-up, .turn:not(.dimmed), .vote{opacity:1 !important;}
   /* cinematic reveal: keep opacity sequence, skip blur/translate */
   .reveal{transition:opacity .15s ease !important; filter:none !important; transform:none !important;}
   .reveal.in{filter:none !important; transform:none !important;}
@@ -328,7 +329,7 @@
 /* --- foco no turno ativo, resto recua --- */
 .turn{transition:opacity .5s ease, filter .5s ease, transform .5s ease, box-shadow .5s ease;}
 .turn.dimmed{opacity:.4; filter:blur(.4px);}
-.turn.focused{opacity:1; transform:scale(1.01); box-shadow:0 0 28px -6px currentColor;}
+.turn.focused{opacity:1; transform:scale(1.01); box-shadow:0 0 28px -6px currentcolor;}
 
 /* --- Council Eclipse --- */
 .verdict-dim.eclipse-dim{background:radial-gradient(60% 50% at 50% 20%, #1a1530, #0B0A12 75%);}
