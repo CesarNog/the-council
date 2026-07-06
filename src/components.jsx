@@ -55,7 +55,9 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
         );
       })}
       <div className="ring-center">
-        <span className={"glyph" + (phase === "summoning" ? " pulse" : "")}>⚖</span>
+        <span className={"glyph" + (phase === "summoning" ? " pulse" : "")}>
+          <CouncilLogo size={22} />
+        </span>
         {label && <span className="eyebrow" style={{ fontSize: 9, opacity: .8 }}>{label}</span>}
       </div>
     </div>
