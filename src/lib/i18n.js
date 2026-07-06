@@ -267,10 +267,10 @@ const S = {
     zh: "你想把什么决定带到议会？",
   },
   onb_decision_hint: {
-    en: "One real question. One sentence is enough.",
-    pt: "Uma decisão real. Uma frase já é suficiente.",
-    es: "Una decisión real. Una frase es suficiente.",
-    zh: "一个真实的问题，一句话就够了。",
+    en: "The more real the decision, the more interesting the debate.",
+    pt: "Quanto mais verdadeira for a decisão, mais interessante será o debate.",
+    es: "Cuanto más real sea la decisión, más interesante será el debate.",
+    zh: "决定越真实，辩论就越精彩。",
   },
   onb_decision_placeholder: {
     en: "e.g. Should I quit my job and start something of my own?",
