@@ -163,6 +163,27 @@ const S = {
   memory_echo_label: { en: "A memory surfaces", pt: "Uma lembrança ressurge", es: "Un recuerdo aflora", zh: "一段记忆浮现" },
   your_journey: { en: "Your journey with the Council", pt: "Sua jornada com o Conselho", es: "Tu viaje con el Consejo", zh: "你与议会的旅程" },
   past_questions: { en: "Questions you've brought before", pt: "Questões que você trouxe antes", es: "Preguntas que trajiste antes", zh: "你之前提出的问题" },
+
+  // shared verdict page
+  shared_gone_eyebrow: { en: "This verdict is gone", pt: "Este veredito desapareceu", es: "Este veredicto ha desaparecido", zh: "此裁决已消失" },
+  shared_gone_title: { en: "The Council has already adjourned.", pt: "O Conselho já encerrou a sessão.", es: "El Consejo ya levantó la sesión.", zh: "议会已经散会。" },
+  shared_gone_sub: { en: "Shared verdicts are ephemeral — they don't linger.", pt: "Os vereditos compartilhados são efêmeros — eles não persistem.", es: "Los veredictos compartidos son efímeros — no perduran.", zh: "共享的裁决是短暂的——它们不会久留。" },
+  shared_gone_cta: { en: "Consult The Council about your own decision", pt: "Consulte o Conselho sobre sua própria decisão", es: "Consulta al Consejo sobre tu propia decisión", zh: "就你自己的决定咨询议会" },
+  shared_loading: { en: "Recovering the record", pt: "Recuperando o registro", es: "Recuperando el registro", zh: "正在恢复记录" },
+  shared_conversion_text: { en: "What would your nine voices say?", pt: "O que suas nove vozes diriam?", es: "¿Qué dirían tus nueve voces?", zh: "你的九个声音会说什么？" },
+  shared_conversion_cta: { en: "⚖ Bring your own matter before The Council", pt: "⚖ Traga sua própria questão ao Conselho", es: "⚖ Lleva tu propio asunto ante el Consejo", zh: "⚖ 将你自己的问题带到议会" },
+
+  // navigation / general
+  back: { en: "← Back", pt: "← Voltar", es: "← Volver", zh: "← 返回" },
+
+  // login errors
+  login_error_unconfigured: { en: "Sign-in is temporarily unavailable.", pt: "O login está temporariamente indisponível.", es: "El inicio de sesión no está disponible temporalmente.", zh: "登录暂时不可用。" },
+  login_error_network: { en: "Could not reach the server. Check your connection.", pt: "Não foi possível conectar ao servidor. Verifique sua conexão.", es: "No se pudo conectar al servidor. Comprueba tu conexión.", zh: "无法连接到服务器，请检查网络连接。" },
+  login_error_generic: { en: "Sign-in failed. Please try again.", pt: "O login falhou. Por favor, tente novamente.", es: "El inicio de sesión falló. Inténtalo de nuevo.", zh: "登录失败，请重试。" },
+
+  // footer
+  developed_by: { en: "Developed by", pt: "Desenvolvido por", es: "Desarrollado por", zh: "开发者" },
+  buy_me_coffee: { en: "☕ Buy me a coffee", pt: "☕ Me pague um café", es: "☕ Cómprame un café", zh: "☕ 请我喝咖啡" },
 };
 
 export function t(lang, key, ...args) {
