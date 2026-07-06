@@ -200,6 +200,23 @@ const S = {
   login_error_network: { en: "Could not reach the server. Check your connection.", pt: "Não foi possível conectar ao servidor. Verifique sua conexão.", es: "No se pudo conectar al servidor. Comprueba tu conexión.", zh: "无法连接到服务器，请检查网络连接。" },
   login_error_generic: { en: "Sign-in failed. Please try again.", pt: "O login falhou. Por favor, tente novamente.", es: "El inicio de sesión falló. Inténtalo de nuevo.", zh: "登录失败，请重试。" },
 
+  // profile dashboard
+  profile_nav_profile:       { en: "My Profile",     pt: "Meu Perfil",    es: "Mi Perfil",       zh: "我的档案" },
+  profile_nav_notifications: { en: "Notifications",  pt: "Notificações",  es: "Notificaciones",  zh: "通知" },
+  profile_nav_privacy:       { en: "Privacy",        pt: "Privacidade",   es: "Privacidad",      zh: "隐私" },
+  profile_nav_security:      { en: "Security",       pt: "Segurança",     es: "Seguridad",       zh: "安全" },
+  profile_nav_preferences:   { en: "Preferences",    pt: "Preferências",  es: "Preferencias",    zh: "偏好" },
+  profile_nav_subscription:  { en: "Subscription",   pt: "Assinatura",    es: "Suscripción",     zh: "订阅" },
+  profile_nav_history:       { en: "History",        pt: "Histórico",     es: "Historial",       zh: "历史" },
+  coming_soon:               { en: "Soon",           pt: "Em breve",      es: "Pronto",          zh: "即将推出" },
+  profile_completeness:      { en: "Profile complete", pt: "Perfil completo", es: "Perfil completo", zh: "档案完成度" },
+  profile_check_photo:       { en: "Profile photo",  pt: "Foto de perfil", es: "Foto de perfil", zh: "个人头像" },
+  profile_check_name:        { en: "Name",           pt: "Nome",          es: "Nombre",          zh: "姓名" },
+  profile_check_about:       { en: "About you",      pt: "Sobre você",    es: "Sobre ti",        zh: "关于你" },
+  profile_check_values:      { en: "Values",         pt: "Valores",       es: "Valores",         zh: "价值观" },
+  save_changes:              { en: "Save changes",   pt: "Salvar alterações", es: "Guardar cambios", zh: "保存更改" },
+  changes_saved:             { en: "Changes saved",  pt: "Alterações salvas", es: "Cambios guardados", zh: "更改已保存" },
+
   // footer
   developed_by: { en: "Developed by", pt: "Desenvolvido por", es: "Desarrollado por", zh: "开发者" },
   buy_me_coffee: { en: "☕ Buy me a coffee", pt: "☕ Me pague um café", es: "☕ Cómprame un café", zh: "☕ 请我喝咖啡" },
