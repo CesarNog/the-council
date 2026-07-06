@@ -74,7 +74,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
   const richQs = useMemo(() => {
     const start = Math.floor(Math.random() * (richPool.length - 2));
     return richPool.slice(start, start + 3);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [language]);
   const recentQs = history.slice(0, 3);
   return (
     <div className="landing">

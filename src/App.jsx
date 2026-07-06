@@ -126,7 +126,7 @@ function SharedGate({ id, onExit, onEnter, language = "en" }) {
 }
 
 function userHasCompletedProfile(user) {
-  return !!(user?.name && user?.situation && user?.values?.length);
+  return !!(user?.name);
 }
 
 function decisionQuestionFromWindow() {

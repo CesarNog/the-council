@@ -72,7 +72,14 @@ async function checkRateLimit(ip) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const { question, profile, language, decisionContext } = req.body ?? {};
+  const { question, profile, language, decisionContext: rawCtx } = req.body ?? {};
+  const decisionContext = rawCtx && typeof rawCtx === "object"
+    ? {
+        decisionCategory: String(rawCtx.decisionCategory || "").slice(0, 60),
+        emotionalWeight: String(rawCtx.emotionalWeight || "").slice(0, 60),
+        mainFear: String(rawCtx.mainFear || "").slice(0, 200),
+      }
+    : {};
   if (!question || typeof question !== "string") return res.status(400).json({ error: "invalid question" });
   const q = question.trim();
   if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
