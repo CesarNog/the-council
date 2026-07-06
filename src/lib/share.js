@@ -44,9 +44,9 @@ export function shareText(question, debate, { max, language = "en" } = {}) {
   const tallyLine = `${lYes} ${yes} · ${lNo} ${no} · ${lDep} ${dep}`;
   // quote appears before tally so the punchy line grabs attention first
   const quoteLine = debate.quote ? `\n\n"${debate.quote}"` : "";
-  const full = `⚖ ${headline.toUpperCase()}\n\n"${question}"${quoteLine}\n\n${tallyLine}\n\n${debate.verdict}\n\n${tagline}`;
+  const full = `⚖️ ${headline.toUpperCase()}\n\n"${question}"${quoteLine}\n\n${tallyLine}\n\n${debate.verdict}\n\n${tagline}`;
   if (!max || full.length <= max) return full;
-  const shortPrefix = `⚖ ${t(language, "share_ruled")}\n\n"${question}"\n\n${tallyLine}\n\n`;
+  const shortPrefix = `⚖️ ${t(language, "share_ruled")}\n\n"${question}"\n\n${tallyLine}\n\n`;
   const room = max - shortPrefix.length;
   const shortVerdict = debate.verdict.length > room ? debate.verdict.slice(0, Math.max(room, 0)) + "…" : debate.verdict;
   return `${shortPrefix}${shortVerdict}`;

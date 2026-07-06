@@ -171,7 +171,7 @@ const S = {
   shared_gone_cta: { en: "Consult The Council about your own decision", pt: "Consulte o Conselho sobre sua própria decisão", es: "Consulta al Consejo sobre tu propia decisión", zh: "就你自己的决定咨询议会" },
   shared_loading: { en: "Recovering the record", pt: "Recuperando o registro", es: "Recuperando el registro", zh: "正在恢复记录" },
   shared_conversion_text: { en: "What would your nine voices say?", pt: "O que suas nove vozes diriam?", es: "¿Qué dirían tus nueve voces?", zh: "你的九个声音会说什么？" },
-  shared_conversion_cta: { en: "⚖ Bring your own matter before The Council", pt: "⚖ Traga sua própria questão ao Conselho", es: "⚖ Lleva tu propio asunto ante el Consejo", zh: "⚖ 将你自己的问题带到议会" },
+  shared_conversion_cta: { en: "⚖️ Bring your own matter before The Council", pt: "⚖️ Traga sua própria questão ao Conselho", es: "⚖️ Lleva tu propio asunto ante el Consejo", zh: "⚖️ 将你自己的问题带到议会" },
 
   // navigation / general
   back: { en: "← Back", pt: "← Voltar", es: "← Volver", zh: "← 返回" },
