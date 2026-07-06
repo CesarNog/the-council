@@ -1,3 +1,13 @@
+function parseGoogleJwt(credential) {
+  try {
+    const b64 = credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const p = JSON.parse(atob(b64));
+    return { name: p.name, email: p.email, googlePicture: p.picture, sub: p.sub, situation: "", values: [], debateHistory: [], _local: true };
+  } catch { return null; }
+}
+
+const LOCAL_KEY = "council:localSession";
+
 export async function signInWithGoogle(credential) {
   let res;
   try {
@@ -12,6 +22,12 @@ export async function signInWithGoogle(credential) {
     throw err;
   }
   if (res.status === 503) {
+    // Backend not configured — extract identity from the Google JWT client-side
+    const user = parseGoogleJwt(credential);
+    if (user) {
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(user)); } catch {}
+      return user;
+    }
     const err = new Error("unconfigured");
     err.kind = "unconfigured";
     throw err;
@@ -21,21 +37,38 @@ export async function signInWithGoogle(credential) {
     err.kind = "generic";
     throw err;
   }
+  try { localStorage.removeItem(LOCAL_KEY); } catch {}
   return res.json();
 }
 
 export async function signOut() {
   await fetch("/api/auth", { method: "DELETE" }).catch(() => {});
+  try { localStorage.removeItem(LOCAL_KEY); } catch {}
 }
 
 export async function getProfile() {
   const res = await fetch("/api/profile");
-  if (res.status === 401) return null;
+  if (res.status === 401) {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
   if (!res.ok) throw new Error("profile fetch failed");
+  try { localStorage.removeItem(LOCAL_KEY); } catch {}
   return res.json();
 }
 
 export async function updateProfile(patch) {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) {
+      const updated = { ...JSON.parse(raw), ...patch };
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
+      return updated;
+    }
+  } catch {}
   const res = await fetch("/api/profile", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
