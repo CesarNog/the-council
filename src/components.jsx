@@ -675,7 +675,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             )}
 
             <div className={"verdict" + (isEclipse ? " eclipse" : "")}>
-              {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>}
+              {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{dep}–{no} · {t(language, "yes")}–{t(language, "depends")}–{t(language, "no")}</div>}
               <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{isEclipse ? t(language, "eclipse_headline", eclipseVote === "yes" ? t(language, "yes") : t(language, "no")) : councilHeadline(debate, language)}</div>
               <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
               {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>"{debate.quote}"</div>}

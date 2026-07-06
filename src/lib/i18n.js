@@ -184,6 +184,15 @@ const S = {
   // footer
   developed_by: { en: "Developed by", pt: "Desenvolvido por", es: "Desarrollado por", zh: "开发者" },
   buy_me_coffee: { en: "☕ Buy me a coffee", pt: "☕ Me pague um café", es: "☕ Cómprame un café", zh: "☕ 请我喝咖啡" },
+  footer_privacy: { en: "Privacy", pt: "Privacidade", es: "Privacidad", zh: "隐私" },
+  footer_terms: { en: "Terms", pt: "Termos", es: "Términos", zh: "条款" },
+  footer_cookie_settings: { en: "Cookie Settings", pt: "Configurações de Cookies", es: "Ajustes de Cookies", zh: "Cookie设置" },
+
+  // 404
+  not_found_eyebrow: { en: "Lost", pt: "Perdido", es: "Perdido", zh: "迷失" },
+  not_found_title: { en: "This chamber is empty.", pt: "Esta câmara está vazia.", es: "Esta cámara está vacía.", zh: "此议室为空。" },
+  not_found_sub: { en: "The path you took leads nowhere the Council has been.", pt: "O caminho que você tomou não leva a lugar algum onde o Conselho já esteve.", es: "El camino que tomaste no lleva a ningún lugar donde el Consejo haya estado.", zh: "你所走的路，议会从未涉足。" },
+  not_found_cta: { en: "Return to the Council", pt: "Voltar ao Conselho", es: "Volver al Consejo", zh: "返回议会" },
 
   // landing personalization
   landing_greeting_named: {
