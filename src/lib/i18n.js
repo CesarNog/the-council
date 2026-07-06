@@ -353,6 +353,22 @@ export function personaTag(lang, id) {
   return PERSONA_TAGS[id]?.[lang] || PERSONA_TAGS[id]?.en || "";
 }
 
+const PERSONA_LINES = {
+  founder:     { en: "Speed is a moat.",                      pt: "Velocidade é um fosso.",                         es: "La velocidad es un foso.",                  zh: "速度就是护城河。" },
+  billionaire: { en: "Risk is what remains after you think.", pt: "Risco é o que sobra depois de pensar.",          es: "El riesgo es lo que queda después de pensar.", zh: "风险是思考之后残留的东西。" },
+  artist:      { en: "A life is a canvas, not a ledger.",     pt: "Uma vida é uma tela, não um balanço.",           es: "Una vida es un lienzo, no un libro de cuentas.", zh: "生命是画布，不是账本。" },
+  athlete:     { en: "Discipline decides.",                   pt: "A disciplina decide.",                           es: "La disciplina decide.",                     zh: "纪律决定一切。" },
+  monk:        { en: "What are you actually seeking?",        pt: "O que você está realmente buscando?",            es: "¿Qué es lo que realmente buscas?",          zh: "你真正在寻求什么？" },
+  scientist:   { en: "Show me the base rates.",               pt: "Me mostre as taxas base.",                       es: "Muéstrame las tasas base.",                 zh: "给我看基础概率。" },
+  explorer:    { en: "Regret weighs more than failure.",      pt: "O arrependimento pesa mais que o fracasso.",     es: "El arrepentimiento pesa más que el fracaso.", zh: "遗憾比失败更沉重。" },
+  romantic:    { en: "Who holds your hand through this?",     pt: "Quem segura sua mão nessa jornada?",             es: "¿Quién te sostiene la mano en esto?",       zh: "谁会在这一路上握着你的手？" },
+  shadow:      { en: "You already know. You're just afraid.", pt: "Você já sabe. Só está com medo.",                es: "Ya sabes. Solo tienes miedo.",              zh: "你早已知道。只是害怕而已。" },
+};
+
+export function personaLine(lang, id) {
+  return PERSONA_LINES[id]?.[lang] || PERSONA_LINES[id]?.en || "";
+}
+
 export const QUICK_QUESTIONS_I18N = {
   en: [
     "Should I quit my job and start something of my own?",
