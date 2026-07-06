@@ -6,9 +6,14 @@ export class GroqError extends Error {
   }
 }
 
-export async function callGroq(prompt, { maxTokens = 1700, timeoutMs = 9000 } = {}) {
+export async function callGroq(prompt, { maxTokens = 1700, timeoutMs = 9000, systemMessage } = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs); // plano hobby corta funcao em 10s
+
+  const messages = [
+    ...(systemMessage ? [{ role: "system", content: systemMessage }] : []),
+    { role: "user", content: prompt },
+  ];
 
   let r;
   try {
@@ -24,7 +29,7 @@ export async function callGroq(prompt, { maxTokens = 1700, timeoutMs = 9000 } = 
         max_tokens: maxTokens,
         reasoning_effort: "low", // reasoning tokens consomem max_tokens antes do content
         response_format: { type: "json_object" },
-        messages: [{ role: "user", content: prompt }],
+        messages,
       }),
     });
   } catch (e) {

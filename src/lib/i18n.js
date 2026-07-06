@@ -161,6 +161,8 @@ const S = {
     zh: "这一刻极为罕见。",
   },
   memory_echo_label: { en: "A memory surfaces", pt: "Uma lembrança ressurge", es: "Un recuerdo aflora", zh: "一段记忆浮现" },
+  chapter_debate: { en: "II · The Debate", pt: "II · O Debate", es: "II · El Debate", zh: "二 · 辩论" },
+  chapter_vote: { en: "III · The Vote", pt: "III · A Votação", es: "III · La Votación", zh: "三 · 投票" },
   your_journey: { en: "Your journey with the Council", pt: "Sua jornada com o Conselho", es: "Tu viaje con el Consejo", zh: "你与议会的旅程" },
   past_questions: { en: "Questions you've brought before", pt: "Questões que você trouxe antes", es: "Preguntas que trajiste antes", zh: "你之前提出的问题" },
 

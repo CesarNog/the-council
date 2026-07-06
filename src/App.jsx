@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Landing, Onboarding, Chamber, ErrorBoundary } from "./components.jsx";
+import { Landing, Onboarding, Chamber, ErrorBoundary, CouncilLogo } from "./components.jsx";
 import { GoogleSignIn, ProfileSettings } from "./auth-ui.jsx";
 import { LifeModeBanner } from "./life-mode.jsx";
 import { LanguageSelector } from "./language-selector.jsx";
@@ -382,7 +382,7 @@ function TheCouncilApp() {
       <div className="grain" />
       <header className="site-header">
         <button className="brand" onClick={() => { if (screen !== "landing" && !sharedId) setScreen("landing"); }}>
-          <span className="brand-glyph">⚖</span>
+          <CouncilLogo size={20} className="brand-logo" />
           <span className="brand-name">The Council</span>
         </button>
         <div className="header-right">
@@ -460,7 +460,7 @@ function TheCouncilApp() {
 
       <footer className="site-footer">
         <div className="footer-inner">
-          <span className="footer-brand">⚖ The Council</span>
+          <span className="footer-brand" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><CouncilLogo size={13} />The Council</span>
           <span className="footer-note">{t(language, "footer_disclaimer")}</span>
           <span className="footer-links">
             <a href="/privacy" onClick={e => { e.preventDefault(); setStaticPage("privacy"); }}>{t(language, "footer_privacy")}</a>

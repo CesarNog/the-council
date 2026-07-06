@@ -7,6 +7,18 @@ import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, pe
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 
+export function CouncilLogo({ size = 22, style, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 30 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style} className={className}>
+      <line x1="15" y1="2" x2="15" y2="22" strokeWidth="1.2"/>
+      <line x1="9" y1="22" x2="21" y2="22" strokeWidth="1.4"/>
+      <line x1="3" y1="7" x2="27" y2="7" strokeWidth="1.2"/>
+      <path d="M3 7 Q2.5 13 6 13.5 Q9.5 13.5 9 7" strokeWidth="1.1"/>
+      <path d="M21 7 Q20.5 14 24 14.5 Q27.5 14.5 27 7" strokeWidth="1.1"/>
+    </svg>
+  );
+}
+
 export function Sigil({ id }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
   switch (id) {
@@ -514,22 +526,24 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         background: `radial-gradient(50% 42% at 50% 12%, ${ambientColor}14, transparent 70%)`
       }} />
       <div className="chamber">
-        <div className="chamber-head">
-          <div>
-            <div className="eyebrow">{t(language, "chamber_label")}</div>
-            <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+        <div className="council-stage">
+          <div className="chamber-head">
+            <div>
+              <div className="eyebrow">{t(language, "chamber_label")}</div>
+              <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+            </div>
+            {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
           </div>
-          {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
-        </div>
 
-        <Ring
-          active={ringActive}
-          speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
-          mentioned={mentionedIds}
-          phase={phase}
-          language={language}
-          label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
-        />
+          <Ring
+            active={ringActive}
+            speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
+            mentioned={mentionedIds}
+            phase={phase}
+            language={language}
+            label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
+          />
+        </div>
 
         {phase === "idle" && lifeModeSlot}
 
@@ -572,6 +586,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         )}
 
         {debate && (phase === "debate" || phase === "reflecting" || phase === "voting" || phase === "verdict") && (
+          <>
+          {shown > 0 && <div className="chapter-eyebrow">{t(language, "chapter_debate")}</div>}
           <div className="feed" aria-live="polite" aria-atomic="false">
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
@@ -623,10 +639,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               </div>
             )}
           </div>
+          </>
         )}
 
         {debate && (phase === "voting" || phase === "verdict") && (
           <>
+            <div className="chapter-eyebrow">{t(language, "chapter_vote")}</div>
             <div className="vote-title">
               <div className="eyebrow">{t(language, "deliberation_closed")}</div>
               <h3 className="serif">{t(language, "council_votes")}</h3>
