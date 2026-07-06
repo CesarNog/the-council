@@ -38,7 +38,7 @@ Return ONLY valid JSON, no markdown fences, exactly this shape:
 
 Rules:
 - 12 to 14 turns. Each turn respects its persona's sentence-length fingerprint above.
-- At least one direct interruption ("—Founder cuts in—" style is banned as a stage direction; interrupt through content: "Billionaire, finish a sentence for once.").
+- At least one direct interruption (stage directions like "—Founder cuts in—" are banned; interrupt through content only — one persona calls out another mid-thought by name).
 - At least one callback that quotes or paraphrases an earlier turn by name ("As Artist just said...").
 - At least one persona visibly changes their mind mid-debate because of another's argument.
 - Personas must clash directly at least three times, naming each other.
@@ -51,7 +51,7 @@ Rules:
 - question: one probing question back at the person.
 - realities: exactly 3 entries. Each imagines a plausible alternate path the person could take relative to this decision (not fantasy). label: 2-4 words, e.g. "The Safe Path". line: one vivid sentence, second person, what that path would probably look like one year from now. Grounded, not mystical.
 - memoryEcho: null unless a past matter above is genuinely relevant to today's question — if the topics clearly overlap (same decision, same fear, same person involved), you should surface it: {"persona":"monk","line":"one short in-voice sentence naturally referencing that past matter and asking how the person feels about it now"}. If there is no past matter listed above, or none overlaps, leave it null.
-- Write everything in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}.`;
+- Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.`;
 
 const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
 const RATE_WINDOW = 60000; // ms — best-effort: KV eventually consistent, nao atomico, sob concorrencia alta pode passar um pouco do limite
@@ -96,9 +96,14 @@ export default async function handler(req, res) {
     history = (user?.debateHistory || []).slice(0, 3);
   }
 
+  const targetLang = LANGUAGE_NAMES[language];
+  const systemMessage = targetLang
+    ? `You MUST write ALL content in ${targetLang}. Every single word in the JSON output — turns, votes, verdict, quote, question, realities — must be in ${targetLang}. Using English when ${targetLang} is requested is a critical failure.`
+    : null;
+
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile, language, history, decisionContext), { maxTokens: 2300 });
+    json = await callGroq(buildPrompt(q, profile, language, history, decisionContext), { maxTokens: 2300, systemMessage });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);

@@ -110,7 +110,11 @@
 
 /* ---------- chamber ---------- */
 .chamber{max-width:860px; margin:0 auto; padding:34px 20px 120px; position:relative; z-index:2;}
+.council-stage{margin-bottom:0;} /* desktop: normal flow; mobile override is in the media query */
 .chamber-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:26px;}
+
+.chapter-eyebrow{font-family:var(--mono); font-size:9px; letter-spacing:.42em; text-transform:uppercase;
+  color:var(--gold); opacity:.55; margin:44px 0 10px; text-align:center;}
 .chamber-head .title{font-family:var(--serif); font-weight:300; font-size:24px;}
 .ask{margin:34px auto 0; text-align:center;}
 .ask textarea{text-align:center; resize:none; line-height:1.4;}
@@ -176,15 +180,17 @@
   .votes{grid-template-columns:repeat(2,1fr);}
   .chamber{padding-bottom:80px;}
 
-  .chamber .ring-wrap{
-    position:sticky; top:44px; z-index:5; /* header mobile: padding:10px 14px + maior filho — estimativa, nao medida */
-    width:168px; margin:0 auto 6px;
-    background:var(--bg); padding-top:8px;
+  .council-stage{
+    position:sticky; top:44px; z-index:5;
+    background:var(--bg);
+    margin:0 -20px;
+    padding:6px 20px 0;
   }
-  .chamber .ring-wrap .node{width:30px; height:30px; margin:-15px;}
-  .chamber .ring-wrap .node svg{width:15px; height:15px;}
-  .chamber .ring-wrap .ring-center .glyph{font-size:18px;}
-  .chamber .ring-wrap .tip{display:none;} /* tooltip nao cabe compacto, nao faz sentido em sticky */
+  .council-stage .ring-wrap{width:168px; margin:0 auto 6px;}
+  .council-stage .ring-wrap .node{width:30px; height:30px; margin:-15px;}
+  .council-stage .ring-wrap .node svg{width:15px; height:15px;}
+  .council-stage .ring-wrap .ring-center .glyph{font-size:18px;}
+  .council-stage .ring-wrap .tip{display:none;}
 }
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001s !important; transition-duration:.001s !important;}
@@ -242,7 +248,7 @@
   border-bottom:1px solid var(--line); background:rgba(11,10,18,.72); backdrop-filter:blur(10px);
   position:sticky; top:0; z-index:60;}
 .brand{display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; padding:0;}
-.brand-glyph{color:var(--gold); font-size:17px;}
+.brand-logo{color:var(--gold); flex-shrink:0;}
 .brand-name{font-family:var(--serif); font-size:16px; letter-spacing:.04em; color:var(--ivory);}
 .header-right{display:flex; align-items:center; gap:16px;}
 .theme-toggle{background:none; border:1px solid var(--line); color:var(--ivory-faint);
@@ -426,3 +432,64 @@
 .shared-conversion-text em{
   font-style:italic; color:var(--gold,#C9A96E);}
 .shared-conversion-btn{font-size:15px; padding:14px 28px;}
+
+/* ---------- compact sticky stage (mobile) ---------- */
+.stage-compact-content{display:none;}
+@media (max-width:640px){
+  .council-stage{transition:padding .25s ease;}
+  .council-stage.compact{
+    display:flex; flex-direction:row; align-items:center; gap:10px; padding:7px 16px !important;
+  }
+  .council-stage.compact .chamber-head{display:none;}
+  .council-stage.compact .ring-wrap{
+    width:52px !important; margin:0 !important; flex-shrink:0;
+  }
+  .council-stage.compact .ring-wrap .node{width:20px !important; height:20px !important; margin:-10px !important;}
+  .council-stage.compact .ring-wrap .node svg{width:10px !important; height:10px !important;}
+  .council-stage.compact .ring-wrap .ring-center .glyph{font-size:12px !important;}
+  .council-stage.compact .ring-wrap .ring-center .eyebrow{display:none !important;}
+  .council-stage.compact .ring-orbit{border-width:.8px;}
+  .council-stage.compact .stage-compact-content{
+    display:flex; flex-direction:column; flex:1; gap:4px; min-width:0; overflow:hidden;
+  }
+  .stage-compact-q{
+    font-family:var(--serif); font-size:12px; font-style:italic; color:var(--ivory-dim);
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    line-height:1.3; white-space:normal;
+  }
+  .stage-progress{height:2px; background:var(--line); border-radius:1px; overflow:hidden;}
+  .stage-progress-fill{height:100%; background:var(--gold); transition:width .6s ease; border-radius:1px;}
+  .stage-microcopy{
+    font-family:var(--mono); font-size:8px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--gold); opacity:.7;
+  }
+  .compact-new-q{padding:5px 10px !important; font-size:8px !important; letter-spacing:.12em !important; align-self:flex-end;}
+}
+
+/* ---------- expand/collapse long turns ---------- */
+.turn-expand{
+  display:inline-block; background:none; border:none; color:var(--gold); opacity:.65;
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+  cursor:pointer; padding:5px 0 0; transition:opacity .2s;
+}
+.turn-expand:hover{opacity:1;}
+
+/* ---------- realities numbered marker ---------- */
+.reality-num{
+  font-family:var(--serif); font-size:11px; font-style:italic; color:var(--gold); opacity:.55;
+  margin-bottom:4px; letter-spacing:.06em;
+}
+.reality-line{font-family:var(--serif); font-size:15px; line-height:1.55; color:var(--ivory-dim);}
+
+/* ---------- grouped share actions (chapter VI) ---------- */
+.actions-groups{margin-top:12px;}
+.actions-group{margin-bottom:22px;}
+.actions-group-label{
+  font-family:var(--mono); font-size:9px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--ivory-faint); margin-bottom:12px; text-align:center;
+}
+.actions-group-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+@media (max-width:480px){
+  .actions-group-row{gap:8px;}
+  .share-btn{padding:10px 14px !important; font-size:10px !important;}
+}

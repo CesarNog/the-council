@@ -7,6 +7,18 @@ import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, pe
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 
+export function CouncilLogo({ size = 22, style, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 30 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style} className={className}>
+      <line x1="15" y1="2" x2="15" y2="22" strokeWidth="1.2"/>
+      <line x1="9" y1="22" x2="21" y2="22" strokeWidth="1.4"/>
+      <line x1="3" y1="7" x2="27" y2="7" strokeWidth="1.2"/>
+      <path d="M3 7 Q2.5 13 6 13.5 Q9.5 13.5 9 7" strokeWidth="1.1"/>
+      <path d="M21 7 Q20.5 14 24 14.5 Q27.5 14.5 27 7" strokeWidth="1.1"/>
+    </svg>
+  );
+}
+
 export function Sigil({ id }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
   switch (id) {
@@ -353,7 +365,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const votingSpeaker = phase === "voting" && debate && votesShown > 0 && votesShown <= debate.votes.length
     ? debate.votes[votesShown - 1].p : null;
 
-  const ringActive = activeSpeaker || votingSpeaker;
+  const ringActive = viewportSpeaker || activeSpeaker || votingSpeaker;
 
   useEffect(() => {
     if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente
@@ -443,6 +455,50 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
   useEffect(() => stopSpeaking, []); // cleanup ao desmontar
 
+  // compact stage: fires when council-stage scrolls off on mobile
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setStageCompact(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(sentinelRef.current);
+    return () => obs.disconnect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (phase === "idle") setStageCompact(false); }, [phase]);
+
+  // active speaker scroll sync
+  useEffect(() => {
+    if (!debate?.turns?.length || phase === "idle" || phase === "summoning") { setViewportSpeaker(null); return; }
+    if (phase !== "debate" && phase !== "reflecting") { setViewportSpeaker(null); return; }
+    const refs = turnRefs.current.slice(0, shown).filter(Boolean);
+    if (!refs.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        let best = null, bestRatio = 0;
+        entries.forEach(e => {
+          if (e.isIntersecting && e.intersectionRatio > bestRatio) { bestRatio = e.intersectionRatio; best = e; }
+        });
+        if (best) {
+          const idx = parseInt(best.target.dataset.turnIndex, 10);
+          if (!isNaN(idx) && debate.turns[idx]) setViewportSpeaker(debate.turns[idx].p);
+        }
+      },
+      { threshold: [0.3, 0.6], rootMargin: "-15% 0px -20% 0px" }
+    );
+    refs.forEach(r => obs.observe(r));
+    return () => obs.disconnect();
+  }, [debate, shown, phase]);
+
+  const sentinelRef = useRef(null);
+  const turnRefs = useRef([]);
+  const [stageCompact, setStageCompact] = useState(false);
+  const [viewportSpeaker, setViewportSpeaker] = useState(null);
+  const [expandedTurns, setExpandedTurns] = useState(new Set());
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [cardSaved, setCardSaved] = useState(false);
+
   const [rateLimited, setRateLimited] = useState(false);
   const [retryIn, setRetryIn] = useState(0);
 
@@ -492,7 +548,39 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setPhase("idle"); setAsked(""); setDebate(null); setShown(0); setVotesShown(0);
   };
 
-  const copyText = () => navigator.clipboard?.writeText(shareText(asked, debate, { language }));
+  const appUrl = shareUrl(debate?.id);
+  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
+  const nativeShare = () => {
+    navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
+  };
+  const handleCopyLink = () => {
+    copyLink(appUrl).then(ok => { if (ok) { setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); } });
+  };
+  const handleCopyText = () => {
+    navigator.clipboard?.writeText(shareText(asked, debate, { language }))
+      .then(() => { setCopiedText(true); setTimeout(() => setCopiedText(false), 2000); })
+      .catch(() => {});
+  };
+  const handleDownloadCard = () => {
+    downloadShareCard(asked, debate, language);
+    setCardSaved(true);
+    setTimeout(() => setCardSaved(false), 2000);
+  };
+  const shareLinks = debate ? [
+    { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
+    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language }))}&url=${encodeURIComponent(appUrl)}` },
+    { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
+    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}` },
+  ] : [];
+  const totalRevealSteps = debate ? debate.turns.length + debate.votes.length : 0;
+  const doneSteps = debate ? Math.min(shown, debate.turns.length) + Math.min(votesShown, debate.votes.length) : 0;
+  const progressPct = totalRevealSteps > 0 ? (doneSteps / totalRevealSteps) * 100 : 0;
+  const compactMicrocopy = viewportSpeaker
+    ? personaShortName(language, viewportSpeaker).toUpperCase()
+    : phase === "verdict" ? t(language, "chapter_verdict")
+    : phase === "voting" ? t(language, "chapter_vote")
+    : (phase === "debate" || phase === "reflecting") && shown > 0 ? t(language, "chapter_debate")
+    : null;
 
   const recordedRef = useRef(null);
   useEffect(() => {
@@ -514,22 +602,38 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         background: `radial-gradient(50% 42% at 50% 12%, ${ambientColor}14, transparent 70%)`
       }} />
       <div className="chamber">
-        <div className="chamber-head">
-          <div>
-            <div className="eyebrow">{t(language, "chamber_label")}</div>
-            <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+        <div className={`council-stage${stageCompact && phase !== "idle" ? " compact" : ""}`}>
+          <div className="chamber-head">
+            <div>
+              <div className="eyebrow">{t(language, "chamber_label")}</div>
+              <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+            </div>
+            {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
           </div>
-          {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
-        </div>
 
-        <Ring
-          active={ringActive}
-          speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
-          mentioned={mentionedIds}
-          phase={phase}
-          language={language}
-          label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
-        />
+          <Ring
+            active={ringActive}
+            speaking={speaking !== null && debate ? debate.turns[speaking]?.p : null}
+            mentioned={mentionedIds}
+            phase={phase}
+            language={language}
+            label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
+          />
+
+          <div className="stage-compact-content">
+            {asked && <div className="stage-compact-q">"{asked}"</div>}
+            {debate && (
+              <div className="stage-progress">
+                <div className="stage-progress-fill" style={{ width: `${progressPct}%` }} />
+              </div>
+            )}
+            {compactMicrocopy && <div className="stage-microcopy">{compactMicrocopy}</div>}
+            {phase !== "idle" && (
+              <button className="btn small compact-new-q" onClick={reset}>{t(language, "new_question")}</button>
+            )}
+          </div>
+        </div>
+        <div ref={sentinelRef} style={{ height: 0, pointerEvents: "none" }} aria-hidden="true" />
 
         {phase === "idle" && lifeModeSlot}
 
@@ -551,8 +655,10 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         )}
 
         {phase !== "idle" && asked && (
-          <div className="question-banner" style={{ marginTop: 30 }}>
-            <div className="eyebrow">{debate?.offline ? t(language, "offline_banner") : t(language, "matter_before_council")}</div>
+          <>
+          <div className="chapter-eyebrow" style={{ marginTop: 24 }}>{debate?.offline ? t(language, "offline_banner") : t(language, "chapter_question")}</div>
+          <div className="question-banner" style={{ marginTop: 10 }}>
+            <div className="eyebrow" style={{ display: "none" }}></div>
             <div className="q">"{asked}"</div>
             {decisionContext && (decisionContext.decisionCategory || decisionContext.emotionalWeight || decisionContext.mainFear) && (
               <div className="context-chips">
@@ -562,6 +668,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               </div>
             )}
           </div>
+          </>
         )}
 
         {phase === "summoning" && (
@@ -572,16 +679,22 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         )}
 
         {debate && (phase === "debate" || phase === "reflecting" || phase === "voting" || phase === "verdict") && (
+          <>
+          {shown > 0 && <div className="chapter-eyebrow">{t(language, "chapter_debate")}</div>}
           <div className="feed" aria-live="polite" aria-atomic="false">
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
               const isPlaying = speaking === i;
               const isFocused = phase === "debate" && i === shown - 1;
               const isDimmed = phase === "debate" && i < shown - 1;
+              const isLong = turn.t.length > 280;
+              const isExpanded = expandedTurns.has(i);
               return (
                 <div
                   className={"turn" + (isPlaying ? " playing" : "") + (isFocused ? " focused" : "") + (isDimmed ? " dimmed" : "")}
                   key={i}
+                  ref={el => { turnRefs.current[i] = el; }}
+                  data-turn-index={i}
                   style={{ color: p.color }}
                 >
                   <div className="sig"><Sigil id={p.id} /></div>
@@ -589,7 +702,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                     <div className="who" style={{ color: p.color }}>
                       {personaName(language, p.id)} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {personaTag(language, p.id)}</span>
                     </div>
-                    <div className="txt">{turn.t}</div>
+                    <div className="txt">{isLong && !isExpanded ? turn.t.slice(0, 280) + "…" : turn.t}</div>
+                    {isLong && (
+                      <button className="turn-expand"
+                        onClick={() => setExpandedTurns(s => { const n = new Set(s); n.has(i) ? n.delete(i) : n.add(i); return n; })}>
+                        {isExpanded ? t(language, "read_less") : t(language, "read_more")}
+                      </button>
+                    )}
                   </div>
                   {voiceSupported && (
                     <button
@@ -623,10 +742,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               </div>
             )}
           </div>
+          </>
         )}
 
         {debate && (phase === "voting" || phase === "verdict") && (
           <>
+            <div className="chapter-eyebrow">{t(language, "chapter_vote")}</div>
             <div className="vote-title">
               <div className="eyebrow">{t(language, "deliberation_closed")}</div>
               <h3 className="serif">{t(language, "council_votes")}</h3>
@@ -652,6 +773,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {debate && phase === "verdict" && (
           <>
             <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "") + (isEclipse ? " eclipse-dim" : "")} />
+
+            <div className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24 }}>{t(language, "chapter_verdict")}</div>
 
             {isEclipse ? (
               <div className={"eclipse-mark" + (verdictStage >= 1 ? " in" : "")}>
@@ -685,10 +808,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
               {debate.realities?.length > 0 && (
                 <div className={"realities reveal" + (verdictStage >= 4 ? " in" : "")}>
-                  <div className="eyebrow" style={{ marginBottom: 16 }}>{t(language, "in_another_life")}</div>
+                  <div className="chapter-eyebrow" style={{ margin: "0 0 20px" }}>{t(language, "chapter_realities")}</div>
                   <div className="realities-grid">
                     {debate.realities.map((r, i) => (
                       <div className="reality" key={i}>
+                        <div className="reality-num">{["I", "II", "III"][i]}</div>
                         <div className="reality-label">{r.label}</div>
                         <div className="reality-line">{r.line}</div>
                       </div>
@@ -697,13 +821,41 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 </div>
               )}
 
-              <div className={"actions reveal" + (verdictStage >= 4 ? " in" : "")}>
-                <ShareBar asked={asked} debate={debate} language={language} />
-              </div>
-              <div className={"actions secondary reveal" + (verdictStage >= 4 ? " in" : "")}>
-                <button className="btn small" onClick={() => downloadShareCard(asked, debate, language)}>{t(language, "download_verdict")}</button>
-                <button className="btn small" onClick={copyText}>{t(language, "copy_as_text")}</button>
-                <button className="btn small" onClick={reset}>{t(language, "bring_another")}</button>
+              <div className={"actions-groups reveal" + (verdictStage >= 4 ? " in" : "")}>
+                <div className="chapter-eyebrow" style={{ margin: "36px 0 20px" }}>{t(language, "chapter_share")}</div>
+                <div className="actions-group">
+                  <div className="actions-group-label">{t(language, "share_group_share")}</div>
+                  <div className="actions-group-row">
+                    {canNativeShare && (
+                      <button className="btn share-btn" onClick={nativeShare}><ShareIcon /> {t(language, "share_native")}</button>
+                    )}
+                    {shareLinks.map(l => (
+                      <a key={l.label} className="btn share-btn" href={l.href} target="_blank" rel="noopener noreferrer">
+                        <ShareIcon /> {l.label}
+                      </a>
+                    ))}
+                    <button className="btn share-btn" onClick={handleCopyLink}>
+                      <ShareIcon /> {copiedLink ? t(language, "link_copied") : t(language, "copy_link")}
+                    </button>
+                  </div>
+                </div>
+                <div className="actions-group">
+                  <div className="actions-group-label">{t(language, "share_group_save")}</div>
+                  <div className="actions-group-row">
+                    <button className="btn small" onClick={handleDownloadCard}>
+                      {cardSaved ? t(language, "card_saved") : t(language, "download_verdict")}
+                    </button>
+                    <button className="btn small" onClick={handleCopyText}>
+                      {copiedText ? t(language, "copy_text_done") : t(language, "copy_as_text")}
+                    </button>
+                  </div>
+                </div>
+                <div className="actions-group">
+                  <div className="actions-group-label">{t(language, "share_group_continue")}</div>
+                  <div className="actions-group-row">
+                    <button className="btn small" onClick={reset}>{t(language, "bring_another")}</button>
+                  </div>
+                </div>
               </div>
             </div>
           </>
