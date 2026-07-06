@@ -347,6 +347,9 @@
   color:var(--ivory-dim); cursor:pointer; border-radius:2px; max-width:460px; width:100%;
   transition:border-color .25s, color .25s, background .25s; line-height:1.4; text-align:center;}
 .landing-chip:hover{border-color:var(--gold-dim); color:var(--ivory); background:rgba(201,169,110,.05);}
+.landing-chip--history{display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:3px; padding:11px 18px;}
+.landing-chip-q{font-family:var(--serif); font-size:14px; font-style:italic; font-weight:300; color:var(--ivory-dim);}
+.landing-chip-hl{font-family:var(--mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--gold-dim); opacity:.75;}
 
 /* Shared page conversion banner */
 .shared-conversion-banner{
