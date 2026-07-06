@@ -350,6 +350,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [votesShown, setVotesShown] = useState(0);
   const [speaking, setSpeaking] = useState(null); // index do turno tocando agora, ou null
   const endRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const turnRefs = useRef([]);
+  const [stageCompact, setStageCompact] = useState(false);
+  const [viewportSpeaker, setViewportSpeaker] = useState(null);
+  const [expandedTurns, setExpandedTurns] = useState(new Set());
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [cardSaved, setCardSaved] = useState(false);
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
   useEffect(() => {
@@ -489,15 +497,6 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     refs.forEach(r => obs.observe(r));
     return () => obs.disconnect();
   }, [debate, shown, phase]);
-
-  const sentinelRef = useRef(null);
-  const turnRefs = useRef([]);
-  const [stageCompact, setStageCompact] = useState(false);
-  const [viewportSpeaker, setViewportSpeaker] = useState(null);
-  const [expandedTurns, setExpandedTurns] = useState(new Set());
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedText, setCopiedText] = useState(false);
-  const [cardSaved, setCardSaved] = useState(false);
 
   const [rateLimited, setRateLimited] = useState(false);
   const [retryIn, setRetryIn] = useState(0);
