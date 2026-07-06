@@ -250,11 +250,21 @@ function TheCouncilApp() {
       return detectBrowserLanguage();
     }
   });
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem("council:theme") || "dark"; } catch { return "dark"; }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", theme === "light");
+    try { localStorage.setItem("council:theme", theme); } catch {}
+  }, [theme]);
 
   const changeLanguage = (code) => {
     setLanguage(code);
     try { localStorage.setItem("council:lang", code); } catch {}
   };
+
+  const toggleTheme = () => setTheme(th => th === "dark" ? "light" : "dark");
 
   useEffect(() => { initAnalytics(); initAds(); }, []);
 
@@ -377,6 +387,9 @@ function TheCouncilApp() {
         </button>
         <div className="header-right">
           <LanguageSelector language={language} onChange={changeLanguage} />
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
           {loginError && (
             <div className="login-error-tooltip" role="alert">
               {t(language, loginError)}

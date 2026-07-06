@@ -7,6 +7,25 @@
   --gold:#C9A96E; --gold-dim:rgba(201,169,110,.35);
   --serif:'Fraunces', Georgia, serif; --sans:'Inter', system-ui, sans-serif; --mono:'JetBrains Mono', monospace;
 }
+:root.light{
+  --bg:#F5F3EE; --bg2:#EDECEA; --surface:#E4E1DA; --line:rgba(0,0,0,.10);
+  --ivory:#1C1A28; --ivory-dim:rgba(28,26,40,.65); --ivory-faint:rgba(28,26,40,.38);
+  --gold:#7A5C28; --gold-dim:rgba(122,92,40,.35);
+}
+:root.light .site-header{background:rgba(245,243,238,.90);}
+:root.light .profile-overlay{background:rgba(245,243,238,.85);}
+:root.light .turn{background:linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,0,0,0));}
+:root.light .vote{background:rgba(0,0,0,.02);}
+:root.light .reality{background:rgba(0,0,0,.02);}
+:root.light .node{background:var(--bg2);}
+:root.light .node.active{background:var(--bg);}
+:root.light .verdict-dim{background:#F5F3EE;}
+:root.light .consent-banner{background:rgba(240,238,234,.97);}
+:root.light .consent-panel{background:var(--surface);}
+:root.light .profile-panel{background:var(--bg2);}
+:root.light .grain{opacity:.03;}
+:root.light .btn:hover{background:rgba(122,92,40,.07);}
+:root.light .btn.primary{background:rgba(122,92,40,.10);}
 *{box-sizing:border-box; margin:0; padding:0;}
 .council-root{
   -webkit-tap-highlight-color:transparent;
@@ -226,6 +245,10 @@
 .brand-glyph{color:var(--gold); font-size:17px;}
 .brand-name{font-family:var(--serif); font-size:16px; letter-spacing:.04em; color:var(--ivory);}
 .header-right{display:flex; align-items:center; gap:16px;}
+.theme-toggle{background:none; border:1px solid var(--line); color:var(--ivory-faint);
+  font-size:14px; width:30px; height:30px; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:all .2s; border-radius:2px; flex-shrink:0;}
+.theme-toggle:hover{border-color:var(--gold-dim); color:var(--gold);}
 
 .site-footer{border-top:1px solid var(--line); margin-top:70px; padding:26px;}
 .footer-inner{max-width:860px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
