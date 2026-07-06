@@ -126,7 +126,7 @@ function SharedGate({ id, onExit, onEnter, language = "en" }) {
 }
 
 function userHasCompletedProfile(user) {
-  return !!(user?.name && user?.situation && user?.values?.length);
+  return !!(user?.name);
 }
 
 function decisionQuestionFromWindow() {
@@ -150,6 +150,10 @@ function TheCouncilApp() {
   const [checkingSession, setCheckingSession] = useState(!sharedId);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [loginError, setLoginError] = useState(null);
+  const [displayName, setDisplayName] = useState(() => {
+    try { return localStorage.getItem("council:displayName") || ""; } catch { return ""; }
+  });
+  const [decisionContext, setDecisionContext] = useState(null);
   const [language, setLanguage] = useState(() => {
     try {
       const saved = localStorage.getItem("council:lang");
@@ -176,12 +180,18 @@ function TheCouncilApp() {
         setUser(u);
         if (userHasCompletedProfile(u)) {
           setProfile({ name: u.name, situation: u.situation, values: u.values });
+          // auto-init displayName from Google name if not yet set
+          if (!displayName && u.name) {
+            const given = u.name.split(" ")[0];
+            setDisplayName(given);
+            try { localStorage.setItem("council:displayName", given); } catch {}
+          }
           setScreen("chamber");
         }
       })
       .catch(() => {})
       .finally(() => setCheckingSession(false));
-  }, [sharedId]);
+  }, [sharedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCredential = async (credential) => {
     setLoginError(null);
@@ -190,6 +200,11 @@ function TheCouncilApp() {
       setUser(u);
       if (userHasCompletedProfile(u)) {
         setProfile({ name: u.name, situation: u.situation, values: u.values });
+        if (!displayName && u.name) {
+          const given = u.name.split(" ")[0];
+          setDisplayName(given);
+          try { localStorage.setItem("council:displayName", given); } catch {}
+        }
         setScreen("chamber");
       } else {
         setScreen("onboarding");
@@ -202,10 +217,21 @@ function TheCouncilApp() {
   };
 
   const handleOnboardingDone = (p) => {
-    setProfile(p);
+    const name = p.name || p.displayName || "";
+    setProfile({ name, situation: "", values: [] });
+    if (p.displayName) {
+      setDisplayName(p.displayName);
+      try { localStorage.setItem("council:displayName", p.displayName); } catch {}
+    }
+    if (p.emotionalWeight || p.decisionCategory || p.mainFear) {
+      setDecisionContext({ emotionalWeight: p.emotionalWeight, decisionCategory: p.decisionCategory, mainFear: p.mainFear });
+    }
+    if (p.question) {
+      setQuickQuestion(p.question);
+    }
     setScreen("chamber");
-    if (user) {
-      updateProfile({ situation: p.situation, values: p.values }).then(setUser).catch(() => {});
+    if (user && name) {
+      updateProfile({ name }).then(setUser).catch(() => {});
     }
   };
 
@@ -214,6 +240,7 @@ function TheCouncilApp() {
     setUser(null);
     setShowProfileSettings(false);
     setProfile({ name: "", situation: "", values: [] });
+    setDecisionContext(null);
     setScreen("landing");
   };
 
@@ -274,6 +301,7 @@ function TheCouncilApp() {
           language={language}
           history={loadHistory()}
           onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
+          displayName={displayName}
         />
       )}
       {screen === "onboarding" && (
@@ -281,6 +309,7 @@ function TheCouncilApp() {
           onDone={handleOnboardingDone}
           initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
           language={language}
+          googleNames={user?.name ? [user.name.split(" ")[0], user.name].filter((n, i, a) => a.indexOf(n) === i) : null}
         />
       )}
       {screen === "chamber" && (
@@ -289,6 +318,7 @@ function TheCouncilApp() {
           language={language}
           preloaded={eclipsePreview}
           initialQuestion={decisionQuestion || quickQuestion}
+          decisionContext={decisionContext}
           lifeModeSlot={user?.lifeMode && (
             <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
           )}

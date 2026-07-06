@@ -3,7 +3,7 @@ import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js"
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { saveToHistory } from "./lib/history.js";
-import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
+import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 
@@ -63,22 +63,32 @@ function Whisper({ language }) {
   const p = PERSONAS[i];
   return (
     <div style={{ marginTop: 34, minHeight: 46, transition: "opacity .6s ease", opacity: vis ? 1 : 0 }}>
-      <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>“{p.line}”</span>
+      <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>"{p.line}"</span>
       <div className="eyebrow" style={{ marginTop: 8, fontSize: 9, color: "var(--ivory-faint)" }}>— {personaName(language, p.id)}</div>
     </div>
   );
 }
 
-export function Landing({ onEnter, authSlot, language, history = [], onRevisit }) {
-  const quickQs = (QUICK_QUESTIONS_I18N[language] || QUICK_QUESTIONS_I18N.en).slice(0, 3);
+export function Landing({ onEnter, authSlot, language, history = [], onRevisit, displayName }) {
+  const richPool = RICH_QUESTIONS_I18N[language] || RICH_QUESTIONS_I18N.en;
+  const richQs = useMemo(() => {
+    const start = Math.floor(Math.random() * (richPool.length - 2));
+    return richPool.slice(start, start + 3);
+  }, [language]);
   const recentQs = history.slice(0, 3);
   return (
     <div className="landing">
       <div className="fade-up d1"><Ring language={language} /></div>
       <div className="eyebrow fade-up d2" style={{ marginTop: 40 }}>The Council</div>
+      {displayName && (
+        <div className="landing-greeting fade-up d2">{t(language, "landing_greeting_named", displayName)}</div>
+      )}
       <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
       <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
-      <button className="btn primary fade-up d4" onClick={() => onEnter()}>{t(language, "enter_chamber")}</button>
+      <div className="fade-up d4" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <button className="btn primary" onClick={() => onEnter()}>{t(language, "enter_chamber_cta")}</button>
+        <div className="cta-sub">{t(language, "enter_chamber_sub")}</div>
+      </div>
       {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
       {recentQs.length > 0 && (
         <div className="fade-up d4 landing-quick-section">
@@ -96,7 +106,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit }
       <div className="fade-up d5 landing-quick-section">
         <div className="landing-quick-label">{t(language, "try_example")}</div>
         <div className="landing-quick-chips">
-          {quickQs.map(q => (
+          {richQs.map(q => (
             <button key={q} className="landing-chip" onClick={() => onEnter(q)}>{q}</button>
           ))}
         </div>
@@ -106,61 +116,161 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit }
   );
 }
 
-const VALUE_KEYS = ["value_freedom", "value_security", "value_meaning", "value_ambition", "value_love", "value_peace", "value_truth", "value_adventure"];
+const WEIGHT_KEYS = ["onb_weight_light", "onb_weight_moderate", "onb_weight_heavy", "onb_weight_sleepless"];
+const WEIGHT_VALS = ["light", "moderate", "heavy", "sleepless"];
+const CAT_KEYS = ["onb_cat_career", "onb_cat_love", "onb_cat_money", "onb_cat_family", "onb_cat_life_change", "onb_cat_creativity", "onb_cat_emotional", "onb_cat_other"];
+const CAT_VALS = ["career", "love", "money", "family", "life_change", "creativity", "emotional", "other"];
+const FEAR_KEYS = ["onb_fear_security", "onb_fear_regret", "onb_fear_hurt", "onb_fear_fail", "onb_fear_judged", "onb_fear_start", "onb_fear_unknown"];
+const FEAR_VALS = ["security", "regret", "hurt", "fail", "judged", "start", "unknown"];
 
-export function Onboarding({ onDone, initial, language }) {
+export function Onboarding({ onDone, initial, language, googleNames }) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(initial?.name || "");
-  const [situation, setSituation] = useState(initial?.situation || "");
-  const [values, setValues] = useState(initial?.values || []);
+  // step 0: name
+  const [displayName, setDisplayName] = useState(initial?.name || "");
+  const [customName, setCustomName] = useState("");
+  const [nameMode, setNameMode] = useState(googleNames?.length ? "pick" : "type"); // pick | type | none
+  // step 1: decision question
+  const [question, setQuestion] = useState("");
+  // step 2: emotional weight
+  const [emotionalWeight, setEmotionalWeight] = useState("");
+  // step 3: category
+  const [decisionCategory, setDecisionCategory] = useState("");
+  // step 4: main fear
+  const [mainFear, setMainFear] = useState("");
 
-  const toggle = key => {
-    const canonical = t("en", key); // valor canonico enviado ao backend — independe do idioma de exibicao
-    setValues(cur =>
-      cur.includes(canonical) ? cur.filter(x => x !== canonical) : cur.length < 3 ? [...cur, canonical] : cur);
+  const totalSteps = 5;
+  const goBack = () => setStep(s => Math.max(0, s - 1));
+
+  const resolvedName = nameMode === "none" ? "" : (nameMode === "type" ? customName.trim() : displayName);
+
+  const finish = () => {
+    onDone({
+      name: resolvedName,
+      displayName: resolvedName,
+      question: question.trim(),
+      emotionalWeight,
+      decisionCategory,
+      mainFear,
+    });
   };
 
-  const next = () => step < 2 ? setStep(step + 1) : onDone({ name: name.trim(), situation: situation.trim(), values });
-  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); next(); } };
+  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (step === 1 && question.trim()) setStep(2); } };
 
   return (
     <div className="onb">
-      <div className="progress">{[0, 1, 2].map(i => <i key={i} className={i <= step ? "on" : ""} />)}</div>
+      <div className="progress">{Array.from({ length: totalSteps }, (_, i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>
+
+      {/* Step 0: Name */}
       {step === 0 && (
         <div className="onb-step" key="s0">
           <div className="eyebrow">{t(language, "onb_progress_1")}</div>
-          <h2>{t(language, "onb_name_q")}</h2>
-          <p className="hint">{t(language, "onb_name_hint")}</p>
-          <input type="text" autoFocus value={name} onChange={e => setName(e.target.value)} onKeyDown={onKey} placeholder={t(language, "onb_name_placeholder")} />
+          <h2>{googleNames?.length ? t(language, "onb_name_google_intro") : t(language, "onb_name_anon_intro")}</h2>
+          {googleNames?.length > 0 && (
+            <div className="name-chip-row">
+              {googleNames.map(n => (
+                <button key={n} className={"name-chip" + (nameMode === "pick" && displayName === n ? " on" : "")}
+                  onClick={() => { setDisplayName(n); setNameMode("pick"); }}>
+                  {n}
+                </button>
+              ))}
+              <button className={"name-chip" + (nameMode === "none" ? " on" : "")}
+                onClick={() => setNameMode("none")}>
+                {t(language, "onb_name_prefer_not")}
+              </button>
+            </div>
+          )}
+          {!googleNames?.length && (
+            <>
+              <input type="text" autoFocus value={customName} onChange={e => setCustomName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") setStep(1); }}
+                placeholder={t(language, "onb_name_placeholder")} />
+              <div style={{ marginTop: 12 }}>
+                <button className={"name-chip" + (nameMode === "none" ? " on" : "")}
+                  onClick={() => setNameMode(m => m === "none" ? "type" : "none")}>
+                  {t(language, "onb_name_prefer_not")}
+                </button>
+              </div>
+            </>
+          )}
+          {nameMode === "pick" && (
+            <div style={{ marginTop: 16 }}>
+              <input type="text" value={customName} onChange={e => { setCustomName(e.target.value); setNameMode("type"); }}
+                placeholder={t(language, "onb_name_custom_placeholder")} style={{ marginBottom: 0 }} />
+            </div>
+          )}
           <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={next} disabled={!name.trim()}>{t(language, "continue")}</button>
+            <button className="btn" onClick={() => setStep(1)}>{t(language, "continue")}</button>
           </div>
         </div>
       )}
+
+      {/* Step 1: Decision question */}
       {step === 1 && (
         <div className="onb-step" key="s1">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
           <div className="eyebrow">{t(language, "onb_progress_2")}</div>
-          <h2>{t(language, "onb_situation_q")}</h2>
-          <p className="hint">{t(language, "onb_situation_hint")}</p>
-          <textarea rows={2} autoFocus value={situation} onChange={e => setSituation(e.target.value)} onKeyDown={onKey}
-            placeholder={t(language, "onb_situation_placeholder")} />
+          <h2>{t(language, "onb_decision_q")}</h2>
+          <p className="hint">{t(language, "onb_decision_hint")}</p>
+          <textarea rows={2} autoFocus value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
+            placeholder={t(language, "onb_decision_placeholder")} />
           <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={next} disabled={!situation.trim()}>{t(language, "continue")}</button>
+            <button className="btn" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "continue")}</button>
           </div>
         </div>
       )}
+
+      {/* Step 2: Emotional weight */}
       {step === 2 && (
         <div className="onb-step" key="s2">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
           <div className="eyebrow">{t(language, "onb_progress_3")}</div>
-          <h2>{t(language, "onb_values_q")}</h2>
-          <p className="hint">{t(language, "onb_values_hint")}</p>
-          <div className="chips">
-            {VALUE_KEYS.map(key => (
-              <button key={key} className={"chip" + (values.includes(t("en", key)) ? " on" : "")} onClick={() => toggle(key)}>{t(language, key)}</button>
+          <h2>{t(language, "onb_weight_q")}</h2>
+          <p className="hint">{t(language, "onb_weight_hint")}</p>
+          <div className="onb-option-row">
+            {WEIGHT_KEYS.map((key, i) => (
+              <button key={key} className={"onb-option" + (emotionalWeight === WEIGHT_VALS[i] ? " on" : "")}
+                onClick={() => { setEmotionalWeight(WEIGHT_VALS[i]); setStep(3); }}>
+                {t(language, key)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Category */}
+      {step === 3 && (
+        <div className="onb-step" key="s3">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <div className="eyebrow">{t(language, "onb_progress_4")}</div>
+          <h2>{t(language, "onb_category_q")}</h2>
+          <div className="onb-cat-grid">
+            {CAT_KEYS.map((key, i) => (
+              <button key={key} className={"onb-option" + (decisionCategory === CAT_VALS[i] ? " on" : "")}
+                onClick={() => { setDecisionCategory(CAT_VALS[i]); setStep(4); }}>
+                {t(language, key)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Main fear */}
+      {step === 4 && (
+        <div className="onb-step" key="s4">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <div className="eyebrow">{t(language, "onb_progress_5")}</div>
+          <h2>{t(language, "onb_fear_q")}</h2>
+          <p className="hint">{t(language, "onb_fear_hint")}</p>
+          <div className="onb-option-row">
+            {FEAR_KEYS.map((key, i) => (
+              <button key={key} className={"onb-option" + (mainFear === FEAR_VALS[i] ? " on" : "")}
+                onClick={() => setMainFear(FEAR_VALS[i])}>
+                {t(language, key)}
+              </button>
             ))}
           </div>
           <div style={{ marginTop: 44 }}>
-            <button className="btn primary" onClick={next} disabled={values.length === 0}>{t(language, "convene")}</button>
+            <button className="btn primary" onClick={finish} disabled={!mainFear}>{t(language, "convene")}</button>
           </div>
         </div>
       )}
@@ -219,7 +329,7 @@ function vibrate(pattern) {
   if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(pattern);
 }
 
-export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeSlot, language }) {
+export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeSlot, language, decisionContext }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -343,7 +453,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
     try {
-      const result = await summonCouncil(qq, profile, language);
+      const result = await summonCouncil(qq, profile, language, decisionContext);
       setDebate(result); setPhase("debate");
     } catch (e) {
       if (e.kind === "rate_limited") {
@@ -443,7 +553,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {phase !== "idle" && asked && (
           <div className="question-banner" style={{ marginTop: 30 }}>
             <div className="eyebrow">{debate?.offline ? t(language, "offline_banner") : t(language, "matter_before_council")}</div>
-            <div className="q">“{asked}”</div>
+            <div className="q">"{asked}"</div>
+            {decisionContext && (decisionContext.decisionCategory || decisionContext.emotionalWeight || decisionContext.mainFear) && (
+              <div className="context-chips">
+                {decisionContext.decisionCategory && <span className="context-chip">{t(language, `onb_cat_${decisionContext.decisionCategory}`) || decisionContext.decisionCategory}</span>}
+                {decisionContext.emotionalWeight && <span className="context-chip">{t(language, `onb_weight_${decisionContext.emotionalWeight}`) || decisionContext.emotionalWeight}</span>}
+                {decisionContext.mainFear && <span className="context-chip">{t(language, `onb_fear_${decisionContext.mainFear}`) || decisionContext.mainFear}</span>}
+              </div>
+            )}
           </div>
         )}
 
@@ -561,7 +678,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>}
               <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{isEclipse ? t(language, "eclipse_headline", eclipseVote === "yes" ? t(language, "yes") : t(language, "no")) : councilHeadline(debate, language)}</div>
               <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
-              {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>“{debate.quote}”</div>}
+              {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>"{debate.quote}"</div>}
               <div className={"rule reveal" + (verdictStage >= 3 ? " in" : "")} />
               {isEclipse && <div className={"eclipse-rarity reveal" + (verdictStage >= 3 ? " in" : "")}>{t(language, "eclipse_rarity")}</div>}
               {debate.question && <div className={"cq reveal" + (verdictStage >= 4 ? " in" : "")}>{debate.question}</div>}

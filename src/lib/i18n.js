@@ -184,6 +184,121 @@ const S = {
   // footer
   developed_by: { en: "Developed by", pt: "Desenvolvido por", es: "Desarrollado por", zh: "开发者" },
   buy_me_coffee: { en: "☕ Buy me a coffee", pt: "☕ Me pague um café", es: "☕ Cómprame un café", zh: "☕ 请我喝咖啡" },
+
+  // landing personalization
+  landing_greeting_named: {
+    en: (name) => `${name}, bring the question you've been avoiding.`,
+    pt: (name) => `${name}, traga a pergunta que você vem evitando.`,
+    es: (name) => `${name}, trae la pregunta que has estado evitando.`,
+    zh: (name) => `${name}，带来那个你一直在回避的问题。`,
+  },
+  enter_chamber_cta: {
+    en: "Consult my Council",
+    pt: "Consultar meu Conselho",
+    es: "Consultar mi Consejo",
+    zh: "咨询我的议会",
+  },
+  enter_chamber_sub: {
+    en: "You'll ask a question. They'll disagree, debate, and vote.",
+    pt: "Você fará uma pergunta. Eles irão discordar, debater e votar.",
+    es: "Harás una pregunta. Ellos discutirán, debatirán y votarán.",
+    zh: "你会提出一个问题。他们会争论、辩论并投票。",
+  },
+
+  // extended onboarding
+  onb_progress_4: { en: "Rite of entry · IV", pt: "Ritual de entrada · IV", es: "Rito de entrada · IV", zh: "入场仪式 · 四" },
+  onb_progress_5: { en: "Rite of entry · V", pt: "Ritual de entrada · V", es: "Rito de entrada · V", zh: "入场仪式 · 五" },
+  onb_name_google_intro: {
+    en: "We found these names. Which should the Council use?",
+    pt: "Encontramos estes nomes. Qual o Conselho deve usar?",
+    es: "Encontramos estos nombres. ¿Cuál debería usar el Consejo?",
+    zh: "我们找到了这些名字，议会该用哪个？",
+  },
+  onb_name_anon_intro: {
+    en: "What shall the Council call you?",
+    pt: "Como o Conselho deve te chamar?",
+    es: "¿Cómo debería llamarte el Consejo?",
+    zh: "议会该怎么称呼你？",
+  },
+  onb_name_custom_placeholder: {
+    en: "Other name…",
+    pt: "Outro nome…",
+    es: "Otro nombre…",
+    zh: "其他名字……",
+  },
+  onb_name_prefer_not: {
+    en: "Prefer not to say",
+    pt: "Prefiro não dizer",
+    es: "Prefiero no decir",
+    zh: "不想说",
+  },
+  onb_decision_q: {
+    en: "What decision do you want to bring before the Council?",
+    pt: "Qual decisão você quer levar ao Conselho?",
+    es: "¿Qué decisión quieres llevar al Consejo?",
+    zh: "你想把什么决定带到议会？",
+  },
+  onb_decision_hint: {
+    en: "One real question. One sentence is enough.",
+    pt: "Uma decisão real. Uma frase já é suficiente.",
+    es: "Una decisión real. Una frase es suficiente.",
+    zh: "一个真实的问题，一句话就够了。",
+  },
+  onb_decision_placeholder: {
+    en: "e.g. Should I quit my job and start something of my own?",
+    pt: "ex: Devo largar meu emprego e começar algo próprio?",
+    es: "ej: ¿Debería dejar mi trabajo y empezar algo propio?",
+    zh: "例：我应该辞职去创业吗？",
+  },
+  onb_weight_q: {
+    en: "How much is this decision weighing on you?",
+    pt: "O quanto essa decisão está pesando para você?",
+    es: "¿Cuánto te está pesando esta decisión?",
+    zh: "这个决定对你来说有多重？",
+  },
+  onb_weight_hint: {
+    en: "This helps the Council calibrate the tone of the debate.",
+    pt: "Isso ajuda o Conselho a calibrar o tom do debate.",
+    es: "Esto ayuda al Consejo a calibrar el tono del debate.",
+    zh: "这有助于议会校准辩论的基调。",
+  },
+  onb_weight_light: { en: "Light", pt: "Leve", es: "Leve", zh: "轻微" },
+  onb_weight_moderate: { en: "Moderate", pt: "Moderada", es: "Moderada", zh: "适中" },
+  onb_weight_heavy: { en: "Heavy", pt: "Grande", es: "Grande", zh: "沉重" },
+  onb_weight_sleepless: { en: "Keeping me up at night", pt: "Está tirando meu sono", es: "Me está quitando el sueño", zh: "让我彻夜难眠" },
+  onb_category_q: {
+    en: "What kind of decision is this?",
+    pt: "Que tipo de decisão é essa?",
+    es: "¿Qué tipo de decisión es esta?",
+    zh: "这是什么类型的决定？",
+  },
+  onb_cat_career: { en: "Career", pt: "Carreira", es: "Carrera", zh: "事业" },
+  onb_cat_love: { en: "Love", pt: "Amor", es: "Amor", zh: "爱情" },
+  onb_cat_money: { en: "Money", pt: "Dinheiro", es: "Dinero", zh: "金钱" },
+  onb_cat_family: { en: "Family", pt: "Família", es: "Familia", zh: "家庭" },
+  onb_cat_life_change: { en: "Life change", pt: "Mudança de vida", es: "Cambio de vida", zh: "人生转变" },
+  onb_cat_creativity: { en: "Creativity", pt: "Criatividade", es: "Creatividad", zh: "创造力" },
+  onb_cat_emotional: { en: "Emotional health", pt: "Saúde emocional", es: "Salud emocional", zh: "情感健康" },
+  onb_cat_other: { en: "Other", pt: "Outro", es: "Otro", zh: "其他" },
+  onb_fear_q: {
+    en: "What's holding you back from deciding?",
+    pt: "O que mais te impede de decidir?",
+    es: "¿Qué te impide decidir?",
+    zh: "是什么阻止你做出决定？",
+  },
+  onb_fear_hint: {
+    en: "The Council needs to know where the knot is.",
+    pt: "O Conselho precisa saber onde está o nó.",
+    es: "El Consejo necesita saber dónde está el nudo.",
+    zh: "议会需要知道症结所在。",
+  },
+  onb_fear_security: { en: "Losing security", pt: "Perder segurança", es: "Perder seguridad", zh: "失去安全感" },
+  onb_fear_regret: { en: "Regretting it", pt: "Se arrepender", es: "Arrepentirse", zh: "事后后悔" },
+  onb_fear_hurt: { en: "Hurting someone", pt: "Machucar alguém", es: "Hacer daño a alguien", zh: "伤害别人" },
+  onb_fear_fail: { en: "Failing", pt: "Falhar", es: "Fracasar", zh: "失败" },
+  onb_fear_judged: { en: "Being judged", pt: "Ser julgado", es: "Ser juzgado", zh: "被评判" },
+  onb_fear_start: { en: "Not knowing where to begin", pt: "Não saber por onde começar", es: "No saber por dónde empezar", zh: "不知从何开始" },
+  onb_fear_unknown: { en: "I'm not sure exactly", pt: "Não sei exatamente", es: "No sé exactamente", zh: "我不确定" },
 };
 
 export function t(lang, key, ...args) {
@@ -261,5 +376,124 @@ export const QUICK_QUESTIONS_I18N = {
     "我应该回去读书吗？",
     "我应该要孩子吗？",
     "我应该走更安全的路还是更冒险的路？",
+  ],
+};
+
+export const RICH_QUESTIONS_I18N = {
+  en: [
+    // career
+    "Should I quit my job and start something of my own?",
+    "Should I take the promotion even if it means losing my freedom?",
+    "Should I pivot to a completely different career at 35?",
+    "Should I ask for a raise or start looking elsewhere?",
+    "Should I stay in corporate or go freelance?",
+    // love
+    "Should I end this relationship?",
+    "Should I tell this person how I really feel?",
+    "Should I give us one more chance?",
+    "Should I move in together even though I'm afraid?",
+    "Should I choose my career or this person?",
+    // life
+    "Should I move to another city or country?",
+    "Should I have children?",
+    "Should I go back to school?",
+    "Should I cut off someone who keeps hurting me?",
+    "Should I forgive what happened, or protect myself?",
+    // money
+    "Should I take the financial risk or play it safe?",
+    "Should I invest everything I have in this idea?",
+    "Should I sell now or wait for the right moment?",
+    "Should I lend money to someone I love?",
+    // creativity
+    "Should I publish what I've been hiding?",
+    "Should I quit the stable job to pursue what I actually love?",
+    "Should I share my work with the world, even if I'm not ready?",
+  ],
+  pt: [
+    // carreira
+    "Devo largar meu emprego e começar algo próprio?",
+    "Devo aceitar a promoção mesmo que signifique perder minha liberdade?",
+    "Devo mudar completamente de carreira aos 35 anos?",
+    "Devo pedir aumento ou começar a procurar outro lugar?",
+    "Devo ficar no corporativo ou virar freelancer?",
+    // amor
+    "Devo terminar este relacionamento?",
+    "Devo dizer para essa pessoa o que realmente sinto?",
+    "Devo dar mais uma chance?",
+    "Devo morar junto mesmo tendo medo?",
+    "Devo escolher minha carreira ou essa pessoa?",
+    // vida
+    "Devo me mudar para outra cidade ou país?",
+    "Devo ter filhos?",
+    "Devo voltar a estudar?",
+    "Devo cortar alguém que continua me machucando?",
+    "Devo perdoar o que aconteceu ou me proteger?",
+    // dinheiro
+    "Devo correr o risco financeiro ou ser mais conservador?",
+    "Devo investir tudo que tenho nessa ideia?",
+    "Devo vender agora ou esperar o momento certo?",
+    "Devo emprestar dinheiro para alguém que amo?",
+    // criatividade
+    "Devo publicar o que estou escondendo?",
+    "Devo largar o emprego estável para fazer o que realmente amo?",
+    "Devo mostrar meu trabalho para o mundo, mesmo sem estar pronto?",
+  ],
+  es: [
+    // carrera
+    "¿Debería dejar mi trabajo y empezar algo propio?",
+    "¿Debería aceptar el ascenso aunque signifique perder mi libertad?",
+    "¿Debería cambiar de carrera completamente a los 35?",
+    "¿Debería pedir un aumento o buscar otro lugar?",
+    "¿Debería quedarme en la empresa o volverme freelancer?",
+    // amor
+    "¿Debería terminar esta relación?",
+    "¿Debería decirle a esta persona lo que realmente siento?",
+    "¿Debería darle otra oportunidad?",
+    "¿Debería vivir juntos aunque tenga miedo?",
+    "¿Debería elegir mi carrera o esta persona?",
+    // vida
+    "¿Debería mudarme a otra ciudad o país?",
+    "¿Debería tener hijos?",
+    "¿Debería volver a estudiar?",
+    "¿Debería alejarme de alguien que me sigue haciendo daño?",
+    "¿Debería perdonar lo que pasó o protegerme?",
+    // dinero
+    "¿Debería asumir el riesgo financiero o ser más conservador?",
+    "¿Debería invertir todo lo que tengo en esta idea?",
+    "¿Debería vender ahora o esperar el momento correcto?",
+    "¿Debería prestarle dinero a alguien que quiero?",
+    // creatividad
+    "¿Debería publicar lo que he estado ocultando?",
+    "¿Debería dejar el trabajo estable para hacer lo que realmente amo?",
+    "¿Debería mostrarle mi trabajo al mundo, aunque no esté listo?",
+  ],
+  zh: [
+    // 事业
+    "我应该辞职去创业吗？",
+    "即使意味着失去自由，我也应该接受晋升吗？",
+    "35岁时，我应该彻底转行吗？",
+    "我应该要求加薪还是另谋高就？",
+    "我应该继续在企业工作还是成为自由职业者？",
+    // 爱情
+    "我应该结束这段感情吗？",
+    "我应该告诉这个人我真实的感受吗？",
+    "我应该再给一次机会吗？",
+    "即使心存恐惧，我也应该和对方同居吗？",
+    "我应该选择事业还是这个人？",
+    // 人生
+    "我应该搬到另一个城市或国家吗？",
+    "我应该要孩子吗？",
+    "我应该回去读书吗？",
+    "我应该断绝与一个不断伤害我的人的联系吗？",
+    "我应该原谅过去发生的事，还是保护自己？",
+    // 金钱
+    "我应该冒财务风险还是保守行事？",
+    "我应该把所有积蓄都投入这个想法吗？",
+    "我应该现在卖出还是等待合适时机？",
+    "我应该借钱给我爱的人吗？",
+    // 创造力
+    "我应该发表那些一直藏着的作品吗？",
+    "我应该辞去稳定工作去追求我真正热爱的事吗？",
+    "即使还没准备好，我也应该把作品分享给世界吗？",
   ],
 };
