@@ -25,27 +25,114 @@ function staticPageFromPath() {
   return null;
 }
 
+function isUnknownPath() {
+  if (typeof window === "undefined") return false;
+  const p = window.location.pathname;
+  if (p === "/" || p === "") return false;
+  if (/^\/r\/[a-z0-9]{4,20}$/i.test(p)) return false;
+  if (p === "/privacy" || p === "/terms" || p === "/cookies") return false;
+  return true;
+}
+
 function StaticPage({ page, onBack, language = "en" }) {
   const content = {
     privacy: {
-      title: "Privacy Policy",
-      body: `TODO: Legal review required before public launch.\n\nThe Council stores minimal data. Debate results are persisted only to power shareable links. We do not sell or share your data with third parties. Analytics (if consented) are used solely to improve the product.\n\nFor questions, contact: [your email here].`,
+      titleKey: "footer_privacy",
+      titleSuffix: " Policy",
+      body: `Last updated: July 2026
+
+1. What we collect
+When you use The Council, we may store:
+• Your debate result — saved for up to 30 days to power shareable links (/r/id). The question is stored as submitted.
+• A signed session cookie — set only when you sign in with Google. Contains your user ID only; expires with your browser session.
+• Your display name and decision context (emotional weight, category, fear) — stored in your browser's localStorage only, never sent to our servers unless you are signed in.
+
+2. Analytics (optional, with your consent)
+If you consent, we use Hotjar to collect anonymous, aggregate usage patterns — scroll depth, click areas. No questions, no names, no personal data. Withdraw consent at any time from Cookie Settings in the footer.
+
+3. What we never do
+• Sell your data.
+• Share your questions or debates with any third party.
+• Build advertising profiles.
+• Store your email address (we only receive your Google display name and profile picture URL when you sign in).
+
+4. Your rights
+Sign out to delete your session. Debate results expire automatically after 30 days. To request deletion of any stored data, email: cesarnogueira1210@gmail.com
+
+5. Children
+The Council is not directed at children under 13. Contact us immediately if you believe a child has submitted data.`,
     },
     terms: {
-      title: "Terms of Service",
-      body: `TODO: Legal review required before public launch.\n\nThe Council is a reflective decision tool. It does not provide legal, financial, medical, or professional advice. Use the personas' perspectives as creative prompts — not as authoritative guidance.\n\nBy using The Council, you accept these terms.`,
+      titleKey: "footer_terms",
+      titleSuffix: " of Service",
+      body: `Last updated: July 2026
+
+1. What The Council is
+The Council is a reflective decision-support tool. Nine AI personas — each representing a different facet of human perspective — debate the question you bring. It is designed to help you think, not to tell you what to do.
+
+2. What The Council is not
+The Council does not provide legal, financial, medical, psychological, or any other professional advice. The personas' perspectives are creative, generative prompts — not authoritative guidance. Never make consequential decisions based solely on AI output.
+
+3. Your responsibilities
+By using The Council, you agree to:
+• Use the service for lawful purposes only.
+• Not attempt to extract, scrape, reverse-engineer, or abuse the underlying AI system.
+• Not submit questions containing personal information of third parties without their consent.
+
+4. Availability
+The Council is offered as-is. We make no guarantees of uptime, accuracy, or fitness for any particular purpose. The service may change or be discontinued at any time without notice.
+
+5. Limitation of liability
+To the fullest extent permitted by applicable law, The Council and its creator are not liable for any decisions made or actions taken in reliance on the AI-generated output.
+
+6. Contact
+Questions or concerns: cesarnogueira1210@gmail.com`,
     },
     cookies: {
+      titleKey: null,
+      titleSuffix: null,
       title: "Cookie Policy",
-      body: `TODO: Legal review required before public launch.\n\nThe Council uses cookies and localStorage for:\n\n• Necessary: session continuity, language preference.\n• Analytics (optional): aggregate usage patterns via Hotjar. No personal data.\n• Advertising (optional): discreet ads that help keep The Council free.\n\nYou can update your preferences at any time from the footer.`,
+      body: `Last updated: July 2026
+
+The Council uses cookies and browser storage (localStorage) for the following purposes:
+
+Necessary (always active)
+• Session cookie — keeps you signed in across page reloads when using Google Sign-In. Expires with your browser session.
+• Language preference — remembers your chosen language between visits (localStorage).
+• Display name — remembers the name you chose for the Council to use (localStorage).
+
+Analytics (optional — requires your consent)
+• Hotjar — collects anonymous, aggregate usage patterns (scroll depth, click areas). No questions, no personal data. You may withdraw consent at any time from Cookie Settings in the footer.
+
+Advertising (optional — requires your consent)
+• Discreet ads help keep The Council free. Ad cookies are only set if you consent.
+
+Managing your preferences
+Click Cookie Settings in the footer at any time to review or change your choices.`,
     },
   };
-  const { title, body } = content[page] || { title: "Not Found", body: "" };
+  const c = content[page] || {};
+  const title = c.titleKey ? t(language, c.titleKey) + (c.titleSuffix || "") : (c.title || "Not Found");
+  const body = c.body || "";
   return (
     <div className="landing" style={{ maxWidth: 680, margin: "0 auto", padding: "60px 24px" }}>
       <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>{t(language, "back")}</button>
       <h1 className="serif" style={{ fontSize: "clamp(24px,3vw,36px)", marginBottom: 24 }}>{title}</h1>
       <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>{body}</pre>
+    </div>
+  );
+}
+
+function NotFoundPage({ onHome, language = "en" }) {
+  return (
+    <div className="landing">
+      <div className="fade-up d1" style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontWeight: 300, fontSize: "clamp(80px,16vw,160px)", color: "var(--gold)", opacity: 0.15, lineHeight: 1, marginTop: 32, letterSpacing: "-0.04em" }}>404</div>
+      <div className="eyebrow fade-up d2" style={{ marginTop: 24 }}>{t(language, "not_found_eyebrow")}</div>
+      <h1 className="fade-up d2">{t(language, "not_found_title")}</h1>
+      <p className="sub fade-up d3" style={{ maxWidth: 440 }}>{t(language, "not_found_sub")}</p>
+      <div className="fade-up d4" style={{ marginTop: 32 }}>
+        <button className="btn primary" onClick={onHome}>{t(language, "not_found_cta")}</button>
+      </div>
     </div>
   );
 }
@@ -139,6 +226,7 @@ function decisionQuestionFromWindow() {
 function TheCouncilApp() {
   const [sharedId, setSharedId] = useState(sharedIdFromPath);
   const [staticPage, setStaticPage] = useState(staticPageFromPath);
+  const [is404] = useState(isUnknownPath);
   const [eclipsePreview] = useState(eclipsePreviewDebate);
   const [decisionQuestion] = useState(decisionQuestionFromWindow);
   const [quickQuestion, setQuickQuestion] = useState(null);
@@ -263,7 +351,16 @@ function TheCouncilApp() {
     return (
       <div className="council-root">
         <div className="grain" />
-        <StaticPage page={staticPage} language={language} onBack={() => { window.history.back(); setStaticPage(null); }} />
+        <StaticPage page={staticPage} language={language} onBack={() => setStaticPage(null)} />
+      </div>
+    );
+  }
+
+  if (is404) {
+    return (
+      <div className="council-root">
+        <div className="grain" />
+        <NotFoundPage language={language} onHome={() => { window.history.pushState({}, "", "/"); }} />
       </div>
     );
   }
@@ -353,11 +450,11 @@ function TheCouncilApp() {
           <span className="footer-brand">⚖ The Council</span>
           <span className="footer-note">{t(language, "footer_disclaimer")}</span>
           <span className="footer-links">
-            <a href="/privacy" onClick={e => { e.preventDefault(); setStaticPage("privacy"); }}>Privacy</a>
+            <a href="/privacy" onClick={e => { e.preventDefault(); setStaticPage("privacy"); }}>{t(language, "footer_privacy")}</a>
             <span className="footer-sep">·</span>
-            <a href="/terms" onClick={e => { e.preventDefault(); setStaticPage("terms"); }}>Terms</a>
+            <a href="/terms" onClick={e => { e.preventDefault(); setStaticPage("terms"); }}>{t(language, "footer_terms")}</a>
             <span className="footer-sep">·</span>
-            <button className="footer-link-btn" onClick={() => setShowCookieSettings(true)}>Cookie Settings</button>
+            <button className="footer-link-btn" onClick={() => setShowCookieSettings(true)}>{t(language, "footer_cookie_settings")}</button>
             <span className="footer-sep">·</span>
             <a href="https://github.com/CesarNog/the-council" target="_blank" rel="noopener noreferrer">GitHub</a>
             <span className="footer-sep">·</span>

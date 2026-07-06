@@ -125,7 +125,7 @@ const S = {
   share_ruled: { en: "THE COUNCIL HAS RULED", pt: "O CONSELHO DECIDIU", es: "EL CONSEJO HA DECIDIDO", zh: "议会已裁决" },
   copy_link: { en: "Copy link", pt: "Copiar link", es: "Copiar enlace", zh: "复制链接" },
   link_copied: { en: "Copied!", pt: "Copiado!", es: "¡Copiado!", zh: "已复制！" },
-  try_example: { en: "Or see the Council in action →", pt: "Ou veja o Conselho em ação →", es: "O ve al Consejo en acción →", zh: "或先看看议会如何运作 →" },
+  try_example: { en: "Or see the Council in action →", pt: "Experimente com uma decisão pronta →", es: "O ve al Consejo en acción →", zh: "或先看看议会如何运作 →" },
   only_x_disagreed: { en: name => `Only ${name} disagreed.`, pt: name => `Só ${name} discordou.`, es: name => `Solo ${name} discrepó.`, zh: name => `只有${name}持不同意见。` },
   every_agreed_go: { en: "Every Council member agreed. Go.", pt: "Todo o Conselho concordou. Vá em frente.", es: "Todo el Consejo estuvo de acuerdo. Adelante.", zh: "议会全体一致同意。去做吧。" },
   every_agreed_dont: { en: "Every Council member agreed. Don't.", pt: "Todo o Conselho concordou. Não faça.", es: "Todo el Consejo estuvo de acuerdo. No lo hagas.", zh: "议会全体一致同意。别做。" },
@@ -171,7 +171,7 @@ const S = {
   shared_gone_cta: { en: "Consult The Council about your own decision", pt: "Consulte o Conselho sobre sua própria decisão", es: "Consulta al Consejo sobre tu propia decisión", zh: "就你自己的决定咨询议会" },
   shared_loading: { en: "Recovering the record", pt: "Recuperando o registro", es: "Recuperando el registro", zh: "正在恢复记录" },
   shared_conversion_text: { en: "What would your nine voices say?", pt: "O que suas nove vozes diriam?", es: "¿Qué dirían tus nueve voces?", zh: "你的九个声音会说什么？" },
-  shared_conversion_cta: { en: "⚖ Bring your own matter before The Council", pt: "⚖ Traga sua própria questão ao Conselho", es: "⚖ Lleva tu propio asunto ante el Consejo", zh: "⚖ 将你自己的问题带到议会" },
+  shared_conversion_cta: { en: "⚖️ Bring your own matter before The Council", pt: "⚖️ Traga sua própria questão ao Conselho", es: "⚖️ Lleva tu propio asunto ante el Consejo", zh: "⚖️ 将你自己的问题带到议会" },
 
   // navigation / general
   back: { en: "← Back", pt: "← Voltar", es: "← Volver", zh: "← 返回" },
@@ -184,6 +184,15 @@ const S = {
   // footer
   developed_by: { en: "Developed by", pt: "Desenvolvido por", es: "Desarrollado por", zh: "开发者" },
   buy_me_coffee: { en: "☕ Buy me a coffee", pt: "☕ Me pague um café", es: "☕ Cómprame un café", zh: "☕ 请我喝咖啡" },
+  footer_privacy: { en: "Privacy", pt: "Privacidade", es: "Privacidad", zh: "隐私" },
+  footer_terms: { en: "Terms", pt: "Termos", es: "Términos", zh: "条款" },
+  footer_cookie_settings: { en: "Cookie Settings", pt: "Configurações de Cookies", es: "Ajustes de Cookies", zh: "Cookie设置" },
+
+  // 404
+  not_found_eyebrow: { en: "Lost", pt: "Perdido", es: "Perdido", zh: "迷失" },
+  not_found_title: { en: "This chamber is empty.", pt: "Esta câmara está vazia.", es: "Esta cámara está vacía.", zh: "此议室为空。" },
+  not_found_sub: { en: "The path you took leads nowhere the Council has been.", pt: "O caminho que você tomou não leva a lugar algum onde o Conselho já esteve.", es: "El camino que tomaste no lleva a ningún lugar donde el Consejo haya estado.", zh: "你所走的路，议会从未涉足。" },
+  not_found_cta: { en: "Return to the Council", pt: "Voltar ao Conselho", es: "Volver al Consejo", zh: "返回议会" },
 
   // landing personalization
   landing_greeting_named: {
@@ -344,6 +353,22 @@ export function personaTag(lang, id) {
   return PERSONA_TAGS[id]?.[lang] || PERSONA_TAGS[id]?.en || "";
 }
 
+const PERSONA_LINES = {
+  founder:     { en: "Speed is a moat.",                      pt: "Velocidade é um fosso.",                         es: "La velocidad es un foso.",                  zh: "速度就是护城河。" },
+  billionaire: { en: "Risk is what remains after you think.", pt: "Risco é o que sobra depois de pensar.",          es: "El riesgo es lo que queda después de pensar.", zh: "风险是思考之后残留的东西。" },
+  artist:      { en: "A life is a canvas, not a ledger.",     pt: "Uma vida é uma tela, não um balanço.",           es: "Una vida es un lienzo, no un libro de cuentas.", zh: "生命是画布，不是账本。" },
+  athlete:     { en: "Discipline decides.",                   pt: "A disciplina decide.",                           es: "La disciplina decide.",                     zh: "纪律决定一切。" },
+  monk:        { en: "What are you actually seeking?",        pt: "O que você está realmente buscando?",            es: "¿Qué es lo que realmente buscas?",          zh: "你真正在寻求什么？" },
+  scientist:   { en: "Show me the base rates.",               pt: "Me mostre as taxas base.",                       es: "Muéstrame las tasas base.",                 zh: "给我看基础概率。" },
+  explorer:    { en: "Regret weighs more than failure.",      pt: "O arrependimento pesa mais que o fracasso.",     es: "El arrepentimiento pesa más que el fracaso.", zh: "遗憾比失败更沉重。" },
+  romantic:    { en: "Who holds your hand through this?",     pt: "Quem segura sua mão nessa jornada?",             es: "¿Quién te sostiene la mano en esto?",       zh: "谁会在这一路上握着你的手？" },
+  shadow:      { en: "You already know. You're just afraid.", pt: "Você já sabe. Só está com medo.",                es: "Ya sabes. Solo tienes miedo.",              zh: "你早已知道。只是害怕而已。" },
+};
+
+export function personaLine(lang, id) {
+  return PERSONA_LINES[id]?.[lang] || PERSONA_LINES[id]?.en || "";
+}
+
 export const QUICK_QUESTIONS_I18N = {
   en: [
     "Should I quit my job and start something of my own?",
@@ -382,61 +407,67 @@ export const QUICK_QUESTIONS_I18N = {
 export const RICH_QUESTIONS_I18N = {
   en: [
     // career
-    "Should I quit my job and start something of my own?",
-    "Should I take the promotion even if it means losing my freedom?",
-    "Should I pivot to a completely different career at 35?",
-    "Should I ask for a raise or start looking elsewhere?",
-    "Should I stay in corporate or go freelance?",
+    "Should I quit my job or am I just exhausted?",
+    "Should I take the safe offer or bet on something bigger?",
+    "Am I growing or just surviving at work?",
+    "Should I start something of my own even without a guarantee?",
+    "Am I staying out of strategy or out of fear?",
     // love
-    "Should I end this relationship?",
-    "Should I tell this person how I really feel?",
-    "Should I give us one more chance?",
-    "Should I move in together even though I'm afraid?",
-    "Should I choose my career or this person?",
+    "Should I keep trying or accept that it's over?",
+    "Does this person actually fit me, or just my loneliness?",
+    "Am I choosing love or fear of being alone?",
+    "Should I say what I feel or let it die in silence?",
+    "Does this relationship expand me or shrink me?",
     // life
-    "Should I move to another city or country?",
-    "Should I have children?",
-    "Should I go back to school?",
-    "Should I cut off someone who keeps hurting me?",
-    "Should I forgive what happened, or protect myself?",
+    "Should I move abroad or am I just running from my routine?",
+    "Which decision have I been avoiding for too long?",
+    "What would my 80-year-old self think of this choice?",
+    "Am I living my life or just keeping everything running?",
+    "Which part of me is asking for change?",
     // money
-    "Should I take the financial risk or play it safe?",
-    "Should I invest everything I have in this idea?",
-    "Should I sell now or wait for the right moment?",
-    "Should I lend money to someone I love?",
+    "Should I choose stability or freedom?",
+    "Is this risk courage or impulsiveness?",
+    "Am I playing small because I'm afraid to lose?",
+    "Should I invest in myself now or wait for more security?",
+    "How much of my caution is just fear in disguise?",
     // creativity
-    "Should I publish what I've been hiding?",
-    "Should I quit the stable job to pursue what I actually love?",
-    "Should I share my work with the world, even if I'm not ready?",
+    "Should I publish my project even if it's not perfect?",
+    "Am I waiting for the right moment or avoiding judgment?",
+    "Is this dream still mine or just an old idea?",
+    "Should I show my work before I feel ready?",
+    "What would I create if no one could laugh at me?",
   ],
   pt: [
     // carreira
-    "Devo largar meu emprego e começar algo próprio?",
-    "Devo aceitar a promoção mesmo que signifique perder minha liberdade?",
-    "Devo mudar completamente de carreira aos 35 anos?",
-    "Devo pedir aumento ou começar a procurar outro lugar?",
-    "Devo ficar no corporativo ou virar freelancer?",
+    "Devo largar meu emprego ou estou apenas cansado?",
+    "Devo aceitar uma proposta segura ou apostar em algo maior?",
+    "Estou crescendo ou apenas sobrevivendo no meu trabalho?",
+    "Devo começar algo próprio mesmo sem garantia?",
+    "Estou ficando por estratégia ou por medo?",
     // amor
-    "Devo terminar este relacionamento?",
-    "Devo dizer para essa pessoa o que realmente sinto?",
-    "Devo dar mais uma chance?",
-    "Devo morar junto mesmo tendo medo?",
-    "Devo escolher minha carreira ou essa pessoa?",
+    "Devo continuar tentando ou aceitar que acabou?",
+    "Essa pessoa combina comigo ou só com a minha carência?",
+    "Estou escolhendo amor ou medo de ficar sozinho?",
+    "Devo dizer o que sinto ou deixar isso morrer em silêncio?",
+    "Esse relacionamento me expande ou me diminui?",
     // vida
-    "Devo me mudar para outra cidade ou país?",
-    "Devo ter filhos?",
-    "Devo voltar a estudar?",
-    "Devo cortar alguém que continua me machucando?",
-    "Devo perdoar o que aconteceu ou me proteger?",
+    "Devo me mudar para outro país ou estou fugindo da minha rotina?",
+    "Qual decisão eu estou evitando há tempo demais?",
+    "O que minha versão de 80 anos acharia dessa escolha?",
+    "Estou vivendo minha vida ou apenas mantendo tudo funcionando?",
+    "Que parte de mim está pedindo mudança?",
     // dinheiro
-    "Devo correr o risco financeiro ou ser mais conservador?",
-    "Devo investir tudo que tenho nessa ideia?",
-    "Devo vender agora ou esperar o momento certo?",
-    "Devo emprestar dinheiro para alguém que amo?",
+    "Devo escolher estabilidade ou liberdade?",
+    "Esse risco é coragem ou impulsividade?",
+    "Estou jogando pequeno por medo de perder?",
+    "Devo investir em mim agora ou esperar mais segurança?",
+    "Quanto da minha prudência é apenas medo bem vestido?",
     // criatividade
-    "Devo publicar o que estou escondendo?",
-    "Devo largar o emprego estável para fazer o que realmente amo?",
-    "Devo mostrar meu trabalho para o mundo, mesmo sem estar pronto?",
+    "Devo publicar meu projeto mesmo sem estar perfeito?",
+    "Estou esperando o momento certo ou evitando julgamento?",
+    "Esse sonho ainda é meu ou só uma ideia antiga?",
+    "Devo mostrar meu trabalho antes de me sentir pronto?",
+    "O que eu criaria se ninguém pudesse rir de mim?",
   ],
   es: [
     // carrera

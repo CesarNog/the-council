@@ -3,7 +3,7 @@ import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js"
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { saveToHistory } from "./lib/history.js";
-import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
+import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName, personaLine } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 
@@ -63,7 +63,7 @@ function Whisper({ language }) {
   const p = PERSONAS[i];
   return (
     <div style={{ marginTop: 34, minHeight: 46, transition: "opacity .6s ease", opacity: vis ? 1 : 0 }}>
-      <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>"{p.line}"</span>
+      <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>"{personaLine(language, p.id)}"</span>
       <div className="eyebrow" style={{ marginTop: 8, fontSize: 9, color: "var(--ivory-faint)" }}>— {personaName(language, p.id)}</div>
     </div>
   );
@@ -675,7 +675,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             )}
 
             <div className={"verdict" + (isEclipse ? " eclipse" : "")}>
-              {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{no}–{dep} · yes–no–depends</div>}
+              {!isEclipse && <div className={"eyebrow reveal" + (verdictStage >= 2 ? " in" : "")}>{yes}–{dep}–{no} · {t(language, "yes")}–{t(language, "depends")}–{t(language, "no")}</div>}
               <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{isEclipse ? t(language, "eclipse_headline", eclipseVote === "yes" ? t(language, "yes") : t(language, "no")) : councilHeadline(debate, language)}</div>
               <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
               {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>"{debate.quote}"</div>}
