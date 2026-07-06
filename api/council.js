@@ -7,7 +7,7 @@ const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
 const LANGUAGE_NAMES = { en: "English", pt: "Brazilian Portuguese", es: "Spanish", zh: "Simplified Chinese" };
 
-const buildPrompt = (question, profile = {}, language, history = []) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
+const buildPrompt = (question, profile = {}, language, history = [], ctx = {}) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
 
 Voice fingerprints (violate these and the persona is unrecognizable — that is a failure):
 - founder: short imperative sentences (under 16 words). Startup jargon. Impatient, interrupts others mid-thought.
@@ -27,7 +27,7 @@ Baseline relationship dynamics — bake these into who agrees, interrupts, or ch
 - scientist challenges weak logic from anyone, especially founder and artist.
 - explorer occasionally sides unexpectedly with shadow or monk, surprising the room.
 
-The person: ${profile.name || "the seeker"}. Context: ${profile.situation || "unknown"}. Values most: ${(profile.values || []).join(", ") || "unknown"}.
+The person: ${profile.name || "the seeker"}. Context: ${profile.situation || "unknown"}. Values most: ${(profile.values || []).join(", ") || "unknown"}.${ctx.decisionCategory ? ` Decision type: ${ctx.decisionCategory}.` : ""}${ctx.emotionalWeight ? ` Weight on them: ${ctx.emotionalWeight}.` : ""}${ctx.mainFear ? ` What holds them back: ${ctx.mainFear}.` : ""}
 Their question: "${question}"
 ${history.length > 0 ? `
 Past matters this person already brought to the Council (most recent first) — reference ONE only if it is genuinely relevant to today's question, never force it, never reference more than one:
@@ -72,7 +72,7 @@ async function checkRateLimit(ip) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const { question, profile, language } = req.body ?? {};
+  const { question, profile, language, decisionContext } = req.body ?? {};
   if (!question || typeof question !== "string") return res.status(400).json({ error: "invalid question" });
   const q = question.trim();
   if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
 
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile, language, history), { maxTokens: 2300 });
+    json = await callGroq(buildPrompt(q, profile, language, history, decisionContext), { maxTokens: 2300 });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
