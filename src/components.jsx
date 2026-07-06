@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
+import { saveToHistory } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
@@ -68,8 +69,9 @@ function Whisper({ language }) {
   );
 }
 
-export function Landing({ onEnter, authSlot, language }) {
+export function Landing({ onEnter, authSlot, language, history = [], onRevisit }) {
   const quickQs = (QUICK_QUESTIONS_I18N[language] || QUICK_QUESTIONS_I18N.en).slice(0, 3);
+  const recentQs = history.slice(0, 3);
   return (
     <div className="landing">
       <div className="fade-up d1"><Ring language={language} /></div>
@@ -78,6 +80,19 @@ export function Landing({ onEnter, authSlot, language }) {
       <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
       <button className="btn primary fade-up d4" onClick={() => onEnter()}>{t(language, "enter_chamber")}</button>
       {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
+      {recentQs.length > 0 && (
+        <div className="fade-up d4 landing-quick-section">
+          <div className="landing-quick-label">{t(language, "past_questions")}</div>
+          <div className="landing-quick-chips">
+            {recentQs.map(h => (
+              <button key={h.id} className="landing-chip landing-chip--history" onClick={() => onRevisit(h.question)}>
+                <span className="landing-chip-q">{h.question}</span>
+                {h.headline && <span className="landing-chip-hl">{h.headline}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="fade-up d5 landing-quick-section">
         <div className="landing-quick-label">{t(language, "try_example")}</div>
         <div className="landing-quick-chips">
@@ -376,6 +391,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     updateProfile({
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
     }).catch(() => {}); // anonimo (401) ou falha de rede — nao afeta a experiencia, so nao persiste
+    if (!debate.offline) saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, "en") });
   }, [phase, debate?.id]);
 
   const ambientColor = ringActive

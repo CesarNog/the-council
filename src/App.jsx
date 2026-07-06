@@ -9,6 +9,7 @@ import { initAnalytics, trackPageView } from "./lib/analytics.js";
 import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
 import { detectBrowserLanguage, t } from "./lib/i18n.js";
+import { loadHistory } from "./lib/history.js";
 
 function sharedIdFromPath() {
   const m = typeof window !== "undefined" ? window.location.pathname.match(/^\/r\/([a-z0-9]{4,20})$/i) : null;
@@ -257,6 +258,8 @@ function TheCouncilApp() {
           }}
           authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
           language={language}
+          history={loadHistory()}
+          onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
         />
       )}
       {screen === "onboarding" && (

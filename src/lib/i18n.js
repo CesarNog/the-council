@@ -162,6 +162,7 @@ const S = {
   },
   memory_echo_label: { en: "A memory surfaces", pt: "Uma lembrança ressurge", es: "Un recuerdo aflora", zh: "一段记忆浮现" },
   your_journey: { en: "Your journey with the Council", pt: "Sua jornada com o Conselho", es: "Tu viaje con el Consejo", zh: "你与议会的旅程" },
+  past_questions: { en: "Questions you've brought before", pt: "Questões que você trouxe antes", es: "Preguntas que trajiste antes", zh: "你之前提出的问题" },
 };
 
 export function t(lang, key, ...args) {
