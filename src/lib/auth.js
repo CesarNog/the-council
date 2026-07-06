@@ -1,10 +1,26 @@
 export async function signInWithGoogle(credential) {
-  const res = await fetch("/api/auth", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ credential }),
-  });
-  if (!res.ok) throw new Error("auth failed");
+  let res;
+  try {
+    res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential }),
+    });
+  } catch {
+    const err = new Error("network_error");
+    err.kind = "network_error";
+    throw err;
+  }
+  if (res.status === 503) {
+    const err = new Error("unconfigured");
+    err.kind = "unconfigured";
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error("auth_failed");
+    err.kind = "generic";
+    throw err;
+  }
   return res.json();
 }
 

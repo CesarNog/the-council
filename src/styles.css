@@ -185,6 +185,10 @@
 .profile-panel .chips{margin-top:10px;}
 .user-badge{display:flex; align-items:center; gap:8px; cursor:pointer; background:none; border:none; padding:0;}
 .user-badge img{width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid var(--gold-dim);}
+.user-initial{display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%; background:var(--gold-dim); color:var(--ink,#0d0d0a); font-size:13px; font-weight:600; font-family:var(--mono); border:1px solid var(--gold);}
+.login-error-tooltip{display:flex; align-items:center; gap:8px; background:rgba(200,50,50,.15); border:1px solid rgba(200,50,50,.35); border-radius:8px; padding:5px 10px; font-size:12px; font-family:var(--mono); color:var(--ivory); max-width:240px;}
+.login-error-dismiss{background:none; border:none; cursor:pointer; color:var(--ivory-dim); font-size:11px; padding:0; line-height:1; flex-shrink:0;}
+.login-error-dismiss:hover{color:var(--ivory);}
 
 .life-mode{max-width:520px; margin:0 auto 30px; animation:fadeUp .8s cubic-bezier(.2,.7,.2,1) both;}
 .life-mode-teaser{display:flex; align-items:center; gap:12px; width:100%; background:rgba(255,255,255,.03);
@@ -335,6 +339,7 @@
 .consent-toggle.disabled{cursor:default; opacity:.5;}
 .footer-link-btn{background:none; border:none; padding:0; color:inherit; font:inherit;
   cursor:pointer; text-decoration:underline; text-underline-offset:3px; opacity:.7;}
+.footer-link-coffee{color:var(--gold) !important; border-bottom-color:var(--gold) !important;}
 .footer-link-btn:hover{opacity:1;}
 
 /* Landing quick-question chips */

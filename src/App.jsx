@@ -25,7 +25,7 @@ function staticPageFromPath() {
   return null;
 }
 
-function StaticPage({ page, onBack }) {
+function StaticPage({ page, onBack, language = "en" }) {
   const content = {
     privacy: {
       title: "Privacy Policy",
@@ -43,7 +43,7 @@ function StaticPage({ page, onBack }) {
   const { title, body } = content[page] || { title: "Not Found", body: "" };
   return (
     <div className="landing" style={{ maxWidth: 680, margin: "0 auto", padding: "60px 24px" }}>
-      <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>← Back</button>
+      <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>{t(language, "back")}</button>
       <h1 className="serif" style={{ fontSize: "clamp(24px,3vw,36px)", marginBottom: 24 }}>{title}</h1>
       <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>{body}</pre>
     </div>
@@ -69,20 +69,20 @@ function eclipsePreviewDebate() {
   };
 }
 
-function SharedConversionBanner({ onEnter }) {
+function SharedConversionBanner({ onEnter, language = "en" }) {
   return (
     <div className="shared-conversion-banner">
       <p className="shared-conversion-text">
-        What would <em>your</em> nine voices say?
+        {t(language, "shared_conversion_text")}
       </p>
       <button className="btn primary shared-conversion-btn" onClick={onEnter}>
-        ⚖ Bring your own matter before The Council
+        {t(language, "shared_conversion_cta")}
       </button>
     </div>
   );
 }
 
-function SharedGate({ id, onExit, onEnter }) {
+function SharedGate({ id, onExit, onEnter, language = "en" }) {
   const [result, setResult] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -96,13 +96,13 @@ function SharedGate({ id, onExit, onEnter }) {
   if (failed) {
     return (
       <div className="landing">
-        <div className="eyebrow">This verdict is gone</div>
-        <h1 style={{ fontSize: "clamp(28px,4vw,44px)" }}>The Council has already adjourned.</h1>
+        <div className="eyebrow">{t(language, "shared_gone_eyebrow")}</div>
+        <h1 style={{ fontSize: "clamp(28px,4vw,44px)" }}>{t(language, "shared_gone_title")}</h1>
         <p style={{ opacity: 0.6, marginTop: 16, fontSize: 15 }}>
-          Shared verdicts are ephemeral — they don't linger.
+          {t(language, "shared_gone_sub")}
         </p>
         <button className="btn primary" style={{ marginTop: 30 }} onClick={onEnter || onExit}>
-          ⚖ Consult The Council about your own decision
+          {t(language, "shared_gone_cta")}
         </button>
       </div>
     );
@@ -112,7 +112,7 @@ function SharedGate({ id, onExit, onEnter }) {
       <div className="landing">
         <div className="speaking" style={{ justifyContent: "center" }}>
           <span className="dots"><i /><i /><i /></span>
-          Recovering the record
+          {t(language, "shared_loading")}
         </div>
       </div>
     );
@@ -120,7 +120,7 @@ function SharedGate({ id, onExit, onEnter }) {
   return (
     <>
       <Chamber profile={{}} preloaded={result} onExit={onExit} />
-      <SharedConversionBanner onEnter={onEnter || onExit} />
+      <SharedConversionBanner onEnter={onEnter || onExit} language={language} />
     </>
   );
 }
@@ -149,6 +149,7 @@ function TheCouncilApp() {
   const [user, setUser] = useState(null); // null = anonimo ou ainda carregando
   const [checkingSession, setCheckingSession] = useState(!sharedId);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [loginError, setLoginError] = useState(null);
   const [language, setLanguage] = useState(() => {
     try {
       const saved = localStorage.getItem("council:lang");
@@ -183,6 +184,7 @@ function TheCouncilApp() {
   }, [sharedId]);
 
   const handleCredential = async (credential) => {
+    setLoginError(null);
     try {
       const u = await signInWithGoogle(credential);
       setUser(u);
@@ -192,8 +194,10 @@ function TheCouncilApp() {
       } else {
         setScreen("onboarding");
       }
-    } catch {
-      // sign-in falhou silenciosamente — usuario continua no fluxo anonimo normal
+    } catch (err) {
+      if (err.kind === "network_error") setLoginError("login_error_network");
+      else if (err.kind === "unconfigured") setLoginError("login_error_unconfigured");
+      else setLoginError("login_error_generic");
     }
   };
 
@@ -220,8 +224,11 @@ function TheCouncilApp() {
   };
 
   const userBadge = user ? (
-    <button className="user-badge" onClick={() => setShowProfileSettings(true)}>
-      {(user.customPicture || user.googlePicture) && <img src={user.customPicture || user.googlePicture} alt="" />}
+    <button className="user-badge" onClick={() => setShowProfileSettings(true)} aria-label="Profile settings">
+      {(user.customPicture || user.googlePicture)
+        ? <img src={user.customPicture || user.googlePicture} alt="" />
+        : <span className="user-initial">{(user.name || "?")[0].toUpperCase()}</span>
+      }
     </button>
   ) : null;
 
@@ -229,7 +236,7 @@ function TheCouncilApp() {
     return (
       <div className="council-root">
         <div className="grain" />
-        <StaticPage page={staticPage} onBack={() => { window.history.back(); setStaticPage(null); }} />
+        <StaticPage page={staticPage} language={language} onBack={() => { window.history.back(); setStaticPage(null); }} />
       </div>
     );
   }
@@ -246,6 +253,12 @@ function TheCouncilApp() {
         </button>
         <div className="header-right">
           <LanguageSelector language={language} onChange={changeLanguage} />
+          {loginError && (
+            <div className="login-error-tooltip" role="alert">
+              {t(language, loginError)}
+              <button className="login-error-dismiss" onClick={() => setLoginError(null)} aria-label="Dismiss">✕</button>
+            </div>
+          )}
           {userBadge}
         </div>
       </header>
@@ -254,6 +267,7 @@ function TheCouncilApp() {
         <Landing
           onEnter={(q) => {
             if (q) { setQuickQuestion(q); setScreen("chamber"); }
+            else if (user && userHasCompletedProfile(user)) setScreen("chamber");
             else setScreen("onboarding");
           }}
           authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
@@ -283,8 +297,14 @@ function TheCouncilApp() {
       {screen === "shared" && sharedId && (
         <SharedGate
           id={sharedId}
+          language={language}
           onExit={exitShared}
-          onEnter={() => { window.history.pushState({}, "", "/"); setSharedId(null); setScreen("onboarding"); }}
+          onEnter={() => {
+            window.history.pushState({}, "", "/");
+            setSharedId(null);
+            if (user && userHasCompletedProfile(user)) setScreen("chamber");
+            else setScreen("onboarding");
+          }}
         />
       )}
 
@@ -310,6 +330,10 @@ function TheCouncilApp() {
             <button className="footer-link-btn" onClick={() => setShowCookieSettings(true)}>Cookie Settings</button>
             <span className="footer-sep">·</span>
             <a href="https://github.com/CesarNog/the-council" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <span className="footer-sep">·</span>
+            <a href="https://buymeacoffee.com/cesarnog" target="_blank" rel="noopener noreferrer" className="footer-link-coffee">{t(language, "buy_me_coffee")}</a>
+            <span className="footer-sep">·</span>
+            <span>{t(language, "developed_by")} <a href="https://github.com/CesarNog" target="_blank" rel="noopener noreferrer">CesarNog</a></span>
             <span className="footer-sep">·</span>
             <span>© 2026</span>
           </span>
