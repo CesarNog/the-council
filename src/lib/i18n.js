@@ -228,7 +228,7 @@ const S = {
   consent_text: {
     en: "The Council uses cookies to remember your preferences and understand how people use the product. We don't sell your data.",
     pt: "O Conselho usa cookies para lembrar suas preferências e entender como as pessoas usam o produto. Não vendemos seus dados.",
-    es: "The Council usa cookies para recordar tus preferencias y entender cómo usan el producto. No vendemos tus datos.",
+    es: "El Consejo usa cookies para recordar tus preferencias y entender cómo usan el producto. No vendemos tus datos.",
     zh: "议会使用Cookie来记住您的偏好并了解人们如何使用该产品。我们不出售您的数据。",
   },
   consent_manage: { en: "Manage", pt: "Gerenciar", es: "Gestionar", zh: "管理" },

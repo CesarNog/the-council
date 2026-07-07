@@ -404,7 +404,7 @@ function TheCouncilApp() {
           {loginError && (
             <div className="login-error-tooltip" role="alert">
               {t(language, loginError)}
-              <button className="login-error-dismiss" onClick={() => setLoginError(null)} aria-label="Dismiss">✕</button>
+              <button className="login-error-dismiss" onClick={() => setLoginError(null)} aria-label={t(language, "dismiss")}>✕</button>
             </div>
           )}
           {userBadge}
