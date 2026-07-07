@@ -13,7 +13,7 @@ _Last updated: July 2026_
 **Current coverage:**
 - `personas.test.js` — validates all 9 personas have required keys in `PERSONAS`, `INTENSITY`, `PACE`
 - `share.test.js` — tests `tally()`, `headline()`, `shareText()`
-- `api/_session.test.js` — tests HMAC signing, verification, timing-safe comparison
+- `api/_session.test.js` — tests HMAC signing, verification, timing-safe comparison, tampered/expired/malformed token rejection, `clearSessionCookie` Max-Age
 
 **To add:**
 - `i18n.test.js` — all `t(lang, key)` calls return strings; no missing keys in any language
@@ -36,10 +36,10 @@ _Last updated: July 2026_
 ### 3. API Tests (planned — Vitest + node-fetch or supertest)
 
 **To add:**
-- `council.test.js` — validates input, rate limits, returns expected shape
-- `result.test.js` — fetches by ID, 404 for unknown IDs
-- `auth.test.js` — POST verifies token, POST 400 on missing credential, DELETE clears cookie
-- `profile.test.js` — GET requires session, PATCH validates fields, picture size check
+- `council.test.js` — validates input (500-char limit, single `invalid question` error), rate limits, returns expected shape
+- `result.test.js` — fetches by ID, 404 for unknown IDs, 502 on KV failure
+- `auth.test.js` — POST verifies token, POST 400 on missing credential, POST 429 on rate limit, DELETE clears cookie, startup failure when `SESSION_SECRET` missing
+- `profile.test.js` — GET requires session, PATCH validates fields, picture MIME prefix + size check, history cap at 10 entries
 - `share-page.test.js` — returns HTML with OG tags
 
 ### 4. End-to-End Tests (planned — Playwright)
@@ -133,11 +133,13 @@ npx playwright test --ui  # interactive mode
 
 ## CI Integration
 
-Tests run automatically on every push/PR. Planned CI pipeline:
+Current CI (GitHub Actions on push/PR to `main`):
 1. `npm install`
-2. `npm run lint` (once ESLint is configured)
-3. `npm test` (Vitest)
-4. `npm run build` (Vite build)
-5. `npx playwright test` (once configured)
+2. `npm test` (Vitest)
+3. `npm run build` (Vite build)
+
+Planned additions:
+- `npm run lint` (once ESLint is configured)
+- `npx playwright test` (once E2E suite is written)
 
 All steps must pass before merging to `main`.

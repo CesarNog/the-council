@@ -36,8 +36,16 @@ _Follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventions._
 - Premium cinematic UI/UX pass on Chamber, Landing, and Onboarding components
 - Improved typography, spacing, and visual hierarchy throughout
 
+### Security
+- Added `Content-Security-Policy` header to `vercel.json` (blocks XSS at HTTP level)
+- Added rate limiting to `/api/auth` (10 req/min/IP via KV counter `rl:auth:<ip>`)
+- Added `SESSION_SECRET` startup guard in `api/_session.js` — server throws on startup if env var is missing
+- Added `vitest.config.js` and `vitest.setup.js` to set env vars before module imports in tests
+
 ### Fixed
 - CSS unclosed `@media` bracket in `styles.css`
+- Blank loading state on session check — now shows animated dots during `GET /api/profile`
+- `StaticPage` body rendered with semantic `<p>` tags instead of `<pre>`
 
 ---
 

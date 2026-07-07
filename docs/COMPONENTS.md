@@ -2,7 +2,7 @@
 
 _Last updated: July 2026_
 
-All UI components live in one of four files. The codebase deliberately avoids fragmentation — don't split into more files without strong justification.
+All UI components live in one of five files. The codebase deliberately avoids fragmentation — don't split into more files without strong justification.
 
 ---
 

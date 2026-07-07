@@ -25,25 +25,10 @@ Groq responses are awaited fully before being returned to the client. On slow co
 
 ## Security
 
-### No Rate Limit on `/api/auth`
-The sign-in endpoint has no IP-based rate limit. A bot could submit unlimited Google token verification attempts.
+### `/api/tts` Not Rate-Limited
+The text-to-speech endpoint has no IP-based rate limit, leaving Gemini API quota unprotected.
 
-**Plan:** Add 10 req/min/IP guard (same pattern as `/api/council`).
-
-### `SESSION_SECRET` Fallback Unsecured
-If `SESSION_SECRET` is not set in the Vercel environment, `createHmac('sha256', undefined)` produces a deterministic insecure key. All sessions would be trivially forgeable.
-
-**Plan:** Add startup guard: `if (!process.env.SESSION_SECRET) throw new Error(...)`.
-
-### No MIME Validation on Picture Upload
-`PATCH /api/profile` with a `picture` field only checks byte size. A non-image data URI passes validation.
-
-**Plan:** Validate that `picture` starts with `data:image/` before storing.
-
-### No Content-Security-Policy
-XSS is not blocked at the HTTP level. Any future injection of inline scripts would be unprotected.
-
-**Plan:** Add CSP header to `vercel.json`.
+**Plan:** Add 5 req/min/IP guard (same pattern as `/api/council`).
 
 ---
 
@@ -62,11 +47,6 @@ Anonymous users' debate history lives only in `localStorage`. Clearing browser d
 ---
 
 ## UX
-
-### Loading State Flash
-On page load, there is a ~100–300ms blank white screen while `GET /api/profile` is pending.
-
-**Plan:** Show a skeleton or spinner during session check.
 
 ### Language Switch Doesn't Persist Across Hard Nav
 After a hard page reload, the app briefly uses the browser's detected language before reading `localStorage`.

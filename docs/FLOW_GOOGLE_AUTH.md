@@ -127,7 +127,6 @@ If `/api/auth` returns 503 (GOOGLE_CLIENT_ID not set in Vercel env):
 
 ## Future Improvements
 
-- Add rate limiting to `/api/auth` (10 req/min/IP) — see SECURITY.md.
 - Add deduplication guard for GSI script injection.
 - Add explicit error toast for auth failures.
 - Support additional OAuth providers (Apple, GitHub).

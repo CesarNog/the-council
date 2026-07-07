@@ -81,7 +81,7 @@ Restore the user's session on page load. If the user previously signed in with G
 | Cookie missing | 401; silent fail; sign-in shown |
 | Cookie tampered | 401; silent fail |
 | Cookie expired | 401; silent fail |
-| `SESSION_SECRET` missing | Insecure HMAC (bug — see SECURITY.md); add startup guard |
+| `SESSION_SECRET` missing | Server throws on startup — function will not serve requests |
 | KV unreachable | 500; user treated as signed out |
 | Network failure | User treated as signed out |
 
@@ -89,13 +89,13 @@ Restore the user's session on page load. If the user previously signed in with G
 
 ## Loading State
 
-Currently: a brief blank white screen (~100–300ms) while `GET /api/profile` is pending. A skeleton loader or spinner should be shown during this time (tracked in AUDIT.md).
+An animated dots spinner is shown during the `GET /api/profile` check, preventing the blank white screen.
 
 ---
 
 ## Future Improvements
 
-- Add skeleton/shimmer during session check.
+- Implement token refresh (extend session expiry on active use).
 - Implement token refresh (extend session expiry on active use).
 - Provide "remember me" / explicit session duration control.
 - Emit analytics event on session restore vs. fresh visit.

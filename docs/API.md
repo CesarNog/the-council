@@ -36,7 +36,7 @@ None required. Rate-limited by IP.
 
 | Field | Type | Required | Constraints |
 |---|---|---|---|
-| `question` | string | Yes | Max 400 chars |
+| `question` | string | Yes | Max 500 chars |
 | `profile.name` | string | No | Displayed to LLM |
 | `profile.situation` | string | No | Context for LLM |
 | `profile.values` | string[] | No | Up to 3 items |
@@ -68,8 +68,7 @@ None required. Rate-limited by IP.
 ### Error responses
 | Status | Body | Cause |
 |---|---|---|
-| 400 | `{ "error": "question required" }` | Missing or empty question |
-| 400 | `{ "error": "question too long" }` | Question > 400 chars |
+| 400 | `{ "error": "invalid question" }` | Missing, empty, or question > 500 chars |
 | 429 | `{ "error": "rate_limited", "retryAfter": 42 }` | IP rate limit hit |
 | 500 | `{ "error": "council_unavailable" }` | Groq call failed |
 | 503 | `{ "error": "groq_not_configured" }` | `GROQ_API_KEY` not set |
@@ -89,14 +88,14 @@ None required.
 | `id` | string | Yes |
 
 ### Response 200
-Same shape as `/api/council` response (without `id` field at top level — it's inside `asked`).
+Same shape as `/api/council` response, with `id` included at the top level of the returned object.
 
 ### Error responses
 | Status | Body | Cause |
 |---|---|---|
-| 400 | `{ "error": "id required" }` | Missing `id` param |
-| 404 | `{ "error": "not found" }` | ID not in KV |
-| 500 | `{ "error": "kv_error" }` | Cloudflare KV unreachable |
+| 400 | `{ "error": "invalid id" }` | Missing or invalid `id` param |
+| 404 | `{ "error": "not_found" }` | ID not in KV |
+| 502 | `{ "error": "store_unavailable" }` | Cloudflare KV unreachable |
 
 ---
 
@@ -210,7 +209,7 @@ Requires `council_session` cookie.
 | `values` | string[] | Max 3 items, each a string |
 | `picture` | string | Max 300,000 bytes (data URI) |
 | `dismissLifeMode` | boolean | Clears `lifeMode` from profile |
-| `recordDebate` | object | Appends to `debateHistory` (max 20 entries) |
+| `recordDebate` | object | Appends to `debateHistory` (max 10 entries) |
 
 ### Response 200
 Updated user profile object (same shape as GET /api/profile).

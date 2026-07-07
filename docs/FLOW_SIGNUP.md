@@ -87,7 +87,7 @@ Introduce new users to The Council and collect optional context (name, situation
 ## Edge Cases
 
 - **First visit with no localStorage:** Onboarding data is empty; clean start.
-- **Browser cookies disabled:** Session cookie cannot be set; fallback to localStorage session.
+- **Browser cookies disabled:** Server-issued session cookie is not stored; user is effectively anonymous on every page load. Debate history and onboarding data in `localStorage` still persist normally.
 - **Returning anonymous user:** `localStorage` data is read and pre-fills onboarding on next visit.
 - **Sign-in after using the app:** Profile merges Google identity with any locally stored preferences.
 

@@ -130,7 +130,7 @@ Section gaps use `--space-2xl` to `--space-3xl` for cinematic chapter rhythm.
 | 2 (raised) | `0 4px 16px rgba(0,0,0,0.4)` | Active cards, dropdowns |
 | 3 (modal) | `0 8px 32px rgba(0,0,0,0.6)` | Modals, overlays |
 | Glow (gold) | `0 0 20px rgba(201,169,110,0.2)` | CTA focus |
-| Glow (persona) | `0 0 16px <persona-color-40%>` | Active speaker |
+| Glow (persona) | `0 0 16px rgba(r, g, b, 0.4)` | Active speaker (r/g/b from `PERSONAS[p].color`) |
 
 ---
 

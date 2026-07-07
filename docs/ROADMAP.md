@@ -13,17 +13,17 @@ The Council is a premium AI deliberation product. The long-term goal is a platfo
 ## Now (Q3 2026) — Stabilization
 
 ### Security
-- [ ] Add Content-Security-Policy header
-- [ ] Rate limit `/api/auth` (10 req/min/IP)
-- [ ] Guard `SESSION_SECRET` startup check
-- [ ] Server-side MIME validation for picture upload
-- [ ] Add KV TTL (30 days) to debate results
+- [x] Add Content-Security-Policy header
+- [x] Rate limit `/api/auth` (10 req/min/IP)
+- [x] Guard `SESSION_SECRET` startup check
+- [x] Server-side MIME validation for picture upload
+- [x] Add KV TTL (30 days) to debate results
 
 ### Quality
 - [ ] Add ESLint with minimal ruleset
 - [ ] Add Playwright E2E tests (happy path + auth)
-- [ ] Fix loading state flash during session check
-- [ ] Fix StaticPage `<pre>` → semantic HTML
+- [x] Fix loading state flash during session check
+- [x] Fix StaticPage `<pre>` → semantic HTML
 - [ ] Deduplicate Google GSI script injection
 
 ### UX

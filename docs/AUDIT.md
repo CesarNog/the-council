@@ -31,7 +31,7 @@ Browser (React 19 SPA)
 
 1. **Minimal dependencies** — only 4 runtime deps (react, react-dom, jose, impeccable). No bloat.
 2. **Single-file-per-concern** architecture is easy to navigate for a small team.
-3. **Security baseline is solid:** HMAC-signed session cookie with timing-safe comparison, SameSite=Lax, HttpOnly, Secure. IP-based rate limiting on `/api/council`. Input validation on all PATCH endpoints.
+3. **Security baseline is solid:** HMAC-signed session cookie with timing-safe comparison, SameSite=Lax, HttpOnly, Secure. IP-based rate limiting on `/api/council` and `/api/auth`. `SESSION_SECRET` startup guard prevents insecure fallback. Content-Security-Policy header. MIME prefix validation on picture uploads. Input validation on all PATCH endpoints.
 4. **i18n coverage** — 4 languages (en, pt, es, zh) with a clean `t(lang, key, ...args)` API.
 5. **Consent-gated analytics and ads** — Hotjar and AdSense are never loaded without user consent.
 6. **Offline fallback** — `FALLBACK_DEBATE` in `src/lib/api.js` means the app works without a backend.
@@ -45,18 +45,15 @@ Browser (React 19 SPA)
 ## Weaknesses
 
 ### Critical
-- **No Content-Security-Policy header.** XSS is not blocked at the HTTP level.
 - **No ESLint.** No linting configured — typos, bad patterns, dead code go undetected.
 - **No Playwright / E2E tests.** The happy path (onboarding → council → result → share) is not automatically tested.
-- **No rate limiting on `/api/auth`.** A bot can brute-force token submission attempts.
-- **SESSION_SECRET fallback not enforced.** If `SESSION_SECRET` is missing from env, `createHmac` will silently use `undefined`, producing a deterministic but insecure key.
 - **`/api/tts` not rate-limited.** Gemini TTS calls have no IP-level protection.
 
 ### High
 - **No TypeScript.** Type errors are silent until runtime.
 - **No CSP nonce for inline scripts.** `index.html` has no inline scripts currently but any future addition would be unprotected.
 - **`console.log` calls throughout production code** — leaks debug info in production.
-- **`profile.js` PATCH: picture upload has no server-side MIME verification.** Only size is checked; a disguised non-image data URI would pass.
+- **`profile.js` PATCH: picture upload only checks MIME prefix and size** — no full image validation (e.g. no decoding to verify it is a valid image).
 - **KV rate limiting is best-effort, not atomic** — under high concurrency, more than 3 requests/minute can get through.
 - **No structured error logging.** Errors are logged with `console.error` only; no external error tracker is wired.
 
@@ -70,11 +67,9 @@ Browser (React 19 SPA)
 - **`GoogleSignIn` component adds a `<script>` tag to `<head>` on each effect run** — no deduplication if effect fires twice in StrictMode dev.
 
 ### Low
-- **Missing `loading` state** for the session check on initial render (currently shows blank white screen for ~100–300ms).
 - **`profile-history-mobile` shows on mobile but history entries are unbounded** — could render 10+ entries with no scroll limit.
 - **`CouncilLogo` SVG is rendered inline** on every component that imports it; better as a sprite.
-- **`StaticPage` body uses `<pre>` tag** — not semantic HTML.
-- **No `aria-live` region** for debate loading state.
+- **No `aria-live` region** for debate loading state — screen readers have no feedback during the 5–15s wait.
 - **TTS (`/api/tts`) is only mentioned in `.env.example`** — no UI toggle for voice playback in the current app.
 
 ---
@@ -86,10 +81,6 @@ Browser (React 19 SPA)
 | Convert to TypeScript | entire `src/` | High |
 | Add ESLint + Prettier | repo root | Low |
 | Add Playwright E2E suite | `e2e/` | Medium |
-| Add CSP header | `vercel.json` | Low |
-| Add rate limit on `/api/auth` | `api/auth.js` | Low |
-| Add `SESSION_SECRET` presence guard | `api/_session.js` | Low |
-| Replace `<pre>` in static pages | `src/App.jsx` | Low |
 | Add server-side MIME check for picture | `api/profile.js` | Low |
 | Deduplicate Google GSI script injection | `src/auth-ui.jsx` | Low |
 | Add structured error logging | all `api/*.js` | Medium |
@@ -100,24 +91,18 @@ Browser (React 19 SPA)
 
 ## High Priority Fixes
 
-1. Add Content-Security-Policy header to `vercel.json`.
-2. Add rate limiting to `/api/auth` (10 req/min/IP).
-3. Guard `SESSION_SECRET` — throw on startup if missing.
-4. Add ESLint with a minimal ruleset.
-5. Add Playwright happy-path test.
-6. Fix blank loading state on session check.
-7. Add MIME type guard on picture upload in `api/profile.js`.
+1. Add ESLint with a minimal ruleset.
+2. Add Playwright happy-path test.
+3. Add rate limiting to `/api/tts` (5 req/min/IP).
+4. Add `aria-live` region for debate loading feedback.
 
 ---
 
 ## Medium Priority Fixes
 
-1. Replace `<pre>` in `StaticPage` with proper semantic HTML (paragraphs, headings).
-2. Add `aria-live` region for debate loading feedback.
-3. Paginate profile debate history (show 5, with "view all" link).
-4. Deduplicate Google GSI script injection in `GoogleSignIn`.
-5. Add structured logging (Sentry or similar) to API functions.
-6. Add `/api/tts` rate limiting.
+1. Paginate profile debate history (show 5, with "view all" link).
+2. Deduplicate Google GSI script injection in `GoogleSignIn`.
+3. Add structured logging (Sentry or similar) to API functions.
 
 ---
 

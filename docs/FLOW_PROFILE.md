@@ -39,7 +39,7 @@ Mobile: horizontal tab strip + no sidebar.
 ### History Tab (planned)
 
 - List of past debates with date, question preview, verdict direction.
-- Paginated (max 20 server-side; UI pagination planned).
+- Paginated (max 10 server-side; UI pagination planned).
 
 ---
 

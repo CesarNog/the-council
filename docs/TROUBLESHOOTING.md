@@ -114,7 +114,7 @@ npm test
 **Fix:**
 1. Ensure `SESSION_SECRET` is set in Vercel env vars.
 2. If recently rotated, all sessions are invalidated — users must re-sign-in.
-3. If missing, the app uses an insecure deterministic key (security bug — see SECURITY.md).
+3. If missing, the server refuses to start — check Vercel function logs for a startup error.
 
 ---
 

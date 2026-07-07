@@ -21,11 +21,7 @@ Google Sign-In (OAuth 2.0 / OIDC). The browser receives a Google ID token (JWT),
 If `GOOGLE_CLIENT_ID` is not set in Vercel env, `/api/auth` returns 503. The browser falls back to decoding the Google JWT client-side (no signature verification — trust is implicit from the Google-controlled delivery). User data is stored in `localStorage` under `council:localSession`. This mode is intentional for local/preview environments but **must not be used in production** with real user data.
 
 ### Known gaps
-- **No rate limiting on `/api/auth`.** Recommended: add 10 req/min/IP guard (same pattern as `/api/council`).
-- **`SESSION_SECRET` absence** — if the env var is missing, `process.env.SESSION_SECRET` is `undefined`, causing `createHmac('sha256', undefined)` which Node accepts but produces a deterministic insecure key. Add a startup guard:
-  ```js
-  if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET is required');
-  ```
+- **`/api/tts` has no rate limiting.** Recommended: add 5 req/min/IP guard to protect Gemini quota.
 
 ---
 
@@ -33,14 +29,12 @@ If `GOOGLE_CLIENT_ID` is not set in Vercel env, `/api/auth` returns 503. The bro
 
 | Endpoint | Validated fields |
 |---|---|
-| `POST /api/council` | `question` (string, max 400 chars), `profile` fields, `language` whitelist, `decisionContext` (each field sliced to max length) |
+| `POST /api/council` | `question` (string, max 500 chars), `profile` fields, `language` whitelist, `decisionContext` (each field sliced to max length) |
 | `PATCH /api/profile` | `situation` (string, max 200), `values` (array max 3, each a string), `picture` (string max 300,000 bytes), `dismissLifeMode` (boolean), `recordDebate` (object with required fields) |
 | `POST /api/auth` | `credential` (string, presence check) |
 | `GET /api/result` | `id` (URL param, no further validation — KV key prefixed with `result:` prevents injection) |
 
-**Missing:** Server-side MIME type validation for uploaded pictures. Currently only byte size is checked. A malicious client could send a non-image data URI that passes the size check.
-
-**Recommendation:** Validate that `picture` starts with `data:image/` before storing.
+**MIME validation:** `picture` must start with `data:image/` — validated server-side before storing. Only byte size and MIME prefix are checked; no image decoding is performed.
 
 ---
 
@@ -57,8 +51,9 @@ If `GOOGLE_CLIENT_ID` is not set in Vercel env, `/api/auth` returns 503. The bro
 - **Recommendation:** Add same IP-based limiter (5 req/min) to protect Gemini API quota
 
 ### `/api/auth`
-- No rate limiting currently
-- **Recommendation:** Add 10 req/min/IP to mitigate token replay attempts
+- 10 requests per 60 seconds per IP
+- Implemented via Cloudflare KV counter (`rl:auth:<ip>`)
+- **Best-effort only** — same eventual-consistency caveat as `/api/council`
 
 ---
 
@@ -95,11 +90,8 @@ Configured in `vercel.json`:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables sensitive browser APIs |
 | `Cache-Control: no-store` | API routes only | Prevents caching of sensitive responses |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' https://accounts.google.com https://static.hotjar.com https://pagead2.googlesyndication.com; connect-src 'self' https://www.googleapis.com https://pagead2.googlesyndication.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self';` | XSS mitigation |
 
-**Missing: Content-Security-Policy.** Recommendation:
-```
-Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com https://static.hotjar.com; connect-src 'self' https://www.googleapis.com https://pagead2.googlesyndication.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com;
-```
 Note: `'unsafe-inline'` in `style-src` is required due to inline styles in React components. Migrate to CSS Modules or CSS custom properties to remove it.
 
 ---

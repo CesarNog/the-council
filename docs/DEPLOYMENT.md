@@ -103,7 +103,7 @@ Every branch push creates a preview deployment at a unique URL. Preview deployme
 
 Key settings:
 - Rewrites: `/r/:id` → `index.html` (SPA), `/decisions/:slug` → `index.html`
-- Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy
+- Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, Content-Security-Policy
 - Function config: Node.js runtime for all `api/*.js`
 
 ---

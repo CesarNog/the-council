@@ -65,7 +65,7 @@ Get it from: Cloudflare Dashboard → My Profile → API Tokens
 
 - Used in: `api/_session.js`
 - Format: minimum 32 bytes, cryptographically random
-- If missing: `createHmac` receives `undefined` → insecure deterministic key (bug)
+- If missing: server throws on startup — deployment will fail at function invocation time
 - Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - Rotation: invalidates all existing sessions
 

@@ -6,7 +6,7 @@ _Last updated: July 2026_
 
 ## Purpose
 
-Admin capabilities for the operator (CesarNog / cesarnogueira1210@gmail.com) to monitor usage, inspect debates, manage users, and configure the platform.
+Admin capabilities for the operator to monitor usage, inspect debates, manage users, and configure the platform.
 
 ---
 
@@ -82,7 +82,7 @@ Admin panel would be gated on a hardcoded admin `sub` list or a separate admin r
 ## Security Notes
 
 - No admin API routes exist; all admin access requires Cloudflare/Vercel dashboard credentials.
-- The operator email (`cesarnogueira1210@gmail.com`) has no special in-app privileges.
+- The operator account has no special in-app privileges — access control is entirely at the Cloudflare/Vercel level.
 - All debate and user data is stored in Cloudflare KV under the account associated with `CLOUDFLARE_API_TOKEN`.
 
 ---

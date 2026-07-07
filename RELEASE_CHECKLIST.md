@@ -26,7 +26,7 @@ Use this before every production deployment.
 ### Security
 - [ ] No secrets in source code or committed `.env` files
 - [ ] Vercel security headers present (curl -I and check)
-- [ ] Rate limiting functional (3 req/min test)
+- [ ] Rate limiting functional: `/api/council` (3 req/min) and `/api/auth` (10 req/min)
 - [ ] Auth flow tested (sign-in → profile → sign-out)
 
 ### Manual QA
