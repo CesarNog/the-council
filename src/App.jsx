@@ -464,9 +464,13 @@ function TheCouncilApp() {
         <ProfileSettings
           user={user}
           language={language}
+          theme={theme}
+          onThemeToggle={toggleTheme}
+          onLanguageChange={changeLanguage}
           onSave={(u) => { setUser(u); setProfile(p => ({ ...p, situation: u.situation, values: u.values })); setShowProfileSettings(false); }}
           onClose={() => setShowProfileSettings(false)}
           onSignOut={handleSignOut}
+          onRevisit={(q) => { setQuickQuestion(q); setShowProfileSettings(false); setScreen("chamber"); }}
         />
       )}
 

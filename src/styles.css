@@ -619,6 +619,23 @@
 .footer-link-coffee{color:var(--gold) !important; border-bottom-color:var(--gold) !important;}
 .footer-link-btn:hover{opacity:1;}
 
+/* ─── profile panel sections ─────────────────────────── */
+.prof-section{padding-bottom:24px; margin-bottom:24px; border-bottom:1px solid var(--line);}
+.prof-section:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+.prof-feat-row{display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--ivory-dim); padding:5px 0; line-height:1.5;}
+.prof-feat-row.locked{opacity:.4;}
+.prof-feat-check{color:var(--gold); font-size:11px; flex-shrink:0; margin-top:2px;}
+.prof-feat-lock{opacity:.6; font-size:12px; flex-shrink:0; margin-top:2px;}
+.prof-plan-badge{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; border:1px solid var(--gold-dim); color:var(--gold); padding:3px 10px; border-radius:3px;}
+.prof-session-card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-bottom:14px; background:rgba(255,255,255,.02);}
+.prof-session-name{font-family:var(--serif); font-size:15px; margin-bottom:4px;}
+.prof-session-sub{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ivory-faint);}
+.prof-hist-entry{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+.prof-hist-entry:last-child{border-bottom:none;}
+.prof-hist-q{font-size:13px; color:var(--ivory-dim); line-height:1.4;}
+.prof-hist-meta{font-family:var(--mono); font-size:10px; color:var(--ivory-faint); margin-top:3px;}
+.prof-hist-empty{font-size:14px; color:var(--ivory-dim); text-align:center; padding:48px 0; line-height:1.7;}
+
 /* Landing quick-question chips */
 .landing-quick-section{margin-top:48px; display:flex; flex-direction:column; align-items:center; gap:16px; max-width:600px;}
 .landing-quick-label{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
