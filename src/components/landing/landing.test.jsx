@@ -32,9 +32,17 @@ describe("Landing page", () => {
   it("calls onEnter with example question", () => {
     const onEnter = vi.fn();
     render(<Landing language="pt" onEnter={onEnter} history={[]} onRevisit={vi.fn()} />);
-    const chip = screen.getByRole("button", { name: /Devo largar meu emprego/i });
-    fireEvent.click(chip);
+    const chips = screen.getAllByRole("button", { name: /Devo largar meu emprego/i });
+    fireEvent.click(chips[0]);
     expect(onEnter).toHaveBeenCalledWith(expect.stringContaining("emprego"));
+  });
+
+  it("uses first name only in greeting", () => {
+    render(
+      <Landing language="en" onEnter={vi.fn()} history={[]} onRevisit={vi.fn()} displayName="César Augusto Nogueira" />
+    );
+    expect(screen.getByText(/César, bring the question/i)).toBeTruthy();
+    expect(screen.queryByText(/Augusto/i)).toBeNull();
   });
 
   it("shows personalized greeting when displayName set", () => {
