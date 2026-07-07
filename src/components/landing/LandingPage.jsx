@@ -4,6 +4,7 @@ import { HowItWorks } from "./HowItWorks.jsx";
 import { PersonaPreview } from "./PersonaPreview.jsx";
 import { ExampleDecisionGrid } from "./ExampleDecisionGrid.jsx";
 import { SampleVerdictPreview } from "./SampleVerdictPreview.jsx";
+import { PremiumTeaser } from "./PremiumTeaser.jsx";
 import { useReducedMotion } from "../../hooks/useReducedMotion.js";
 import { supportsWebGL, preferLandingFallback } from "../../lib/webgl.js";
 import { firstName } from "../../lib/name.js";
@@ -150,6 +151,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
       <PersonaPreview language={language} />
       <ExampleDecisionGrid language={language} onSelect={(q) => onEnter(q)} authenticated={authenticated} />
       <SampleVerdictPreview language={language} />
+      <PremiumTeaser language={language} />
 
       <section className="landing-section landing-final-cta">
         <h2 className="landing-section-title">{t(language, "landing_final_cta_title")}</h2>

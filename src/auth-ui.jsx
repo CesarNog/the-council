@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { updateProfile, resizeImageToDataUrl } from "./lib/auth.js";
 import { t, LANGUAGES } from "./lib/i18n.js";
 import { loadHistory, clearHistory } from "./lib/history.js";
+import { joinWaitlist } from "./lib/waitlist.js";
 
 export function GoogleSignIn({ onCredential }) {
   const ref = useRef(null);
@@ -172,6 +173,9 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
   const [onWaitlist, setOnWaitlist] = useState(() => {
     try { return !!localStorage.getItem("council:premium_waitlist"); } catch { return false; }
   });
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistState, setWaitlistState] = useState("idle"); // idle | sending | done | error
+  const [waitlistError, setWaitlistError] = useState("");
 
   const MAX_SITUATION = 140;
   const avatarSrc = picture || user.googlePicture;
@@ -249,13 +253,24 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
     setTimeout(() => setHistCleared(false), 2500);
   };
 
-  const handleWaitlist = () => {
-    const next = !onWaitlist;
-    setOnWaitlist(next);
+  const handleWaitlist = async () => {
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmed = waitlistEmail.trim();
+    if (!trimmed || !EMAIL_RE.test(trimmed)) {
+      setWaitlistError(t(language, "sub_email_invalid"));
+      return;
+    }
+    setWaitlistError("");
+    setWaitlistState("sending");
     try {
-      if (next) localStorage.setItem("council:premium_waitlist", "1");
-      else localStorage.removeItem("council:premium_waitlist");
-    } catch {}
+      await joinWaitlist({ email: trimmed, language });
+      setWaitlistState("done");
+      setOnWaitlist(true);
+      try { localStorage.setItem("council:premium_waitlist", "1"); } catch {}
+    } catch {
+      setWaitlistState("error");
+      setWaitlistError(t(language, "sub_email_error"));
+    }
   };
 
   const heading = t(language, NAV_HEADING_KEY[activeNav] || "your_presence");
@@ -563,6 +578,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
               <div style={{ fontFamily: "var(--serif)", fontSize: 18 }}>{t(language, "sub_heading")}</div>
               <span className="prof-plan-badge">{t(language, "sub_current_plan")}</span>
             </div>
+
             <div className="prof-section">
               <div className="hint" style={{ marginBottom: 12 }}>{t(language, "sub_included")}</div>
               {["sub_free_1","sub_free_2","sub_free_3","sub_free_4"].map(k => (
@@ -572,23 +588,57 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                 </div>
               ))}
             </div>
-            <div className="prof-section">
-              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "sub_premium_label")}</div>
-              {["sub_premium_1","sub_premium_2","sub_premium_3","sub_premium_4"].map(k => (
-                <div key={k} className="prof-feat-row locked">
-                  <span className="prof-feat-lock">◌</span>
-                  <span>{t(language, k)}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 20 }}>
-                <button
-                  className={"btn small" + (onWaitlist ? " primary" : "")}
-                  onClick={handleWaitlist}
-                  aria-pressed={onWaitlist}
-                >
-                  {onWaitlist ? t(language, "sub_on_waitlist") : t(language, "sub_notify_me")}
-                </button>
+
+            <div className="prof-section prof-premium-card">
+              <div className="prof-premium-header">
+                <span className="prof-premium-label">{t(language, "sub_teaser_label")}</span>
               </div>
+              <div className="prof-premium-sub">{t(language, "sub_teaser_sub")}</div>
+              <div className="prof-premium-features">
+                {[
+                  { key: "sub_premium_1", icon: "∞" },
+                  { key: "sub_premium_2", icon: "◈" },
+                  { key: "sub_premium_3", icon: "✦" },
+                  { key: "sub_premium_4", icon: "⊠" },
+                ].map(({ key, icon }) => (
+                  <div key={key} className="prof-feat-row prof-feat-row--premium">
+                    <span className="prof-feat-premium-icon">{icon}</span>
+                    <span>{t(language, key)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {onWaitlist || waitlistState === "done" ? (
+                <div className="prof-waitlist-done">
+                  <span className="prof-feat-check">✓</span>
+                  {t(language, "sub_on_waitlist")}
+                </div>
+              ) : (
+                <div className="prof-waitlist-form">
+                  <input
+                    type="email"
+                    className={"prof-waitlist-input" + (waitlistError ? " error" : "")}
+                    placeholder={t(language, "sub_email_placeholder")}
+                    value={waitlistEmail}
+                    onChange={e => { setWaitlistEmail(e.target.value); setWaitlistError(""); }}
+                    onKeyDown={e => e.key === "Enter" && handleWaitlist()}
+                    disabled={waitlistState === "sending"}
+                    aria-label={t(language, "sub_notify_me")}
+                  />
+                  <button
+                    className="btn small prof-waitlist-btn"
+                    onClick={handleWaitlist}
+                    disabled={waitlistState === "sending"}
+                  >
+                    {waitlistState === "sending"
+                      ? t(language, "sub_email_sending")
+                      : t(language, "sub_email_join")}
+                  </button>
+                  {waitlistError && (
+                    <div className="prof-waitlist-error" role="alert">{waitlistError}</div>
+                  )}
+                </div>
+              )}
             </div>
           </>)}
 
