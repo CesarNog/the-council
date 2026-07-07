@@ -1,12 +1,13 @@
 import { Suspense, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import { CouncilScene } from "./PersonaOrbit3D.jsx";
+import { CouncilScene } from "./CouncilScene.jsx";
 
 export default function LandingHero3D({
   activePersona,
   onPersonaHover,
   ctaHover,
   reducedMotion,
+  mobile = false,
 }) {
   const mouse = useRef({ x: 0, y: 0 });
 
@@ -17,10 +18,15 @@ export default function LandingHero3D({
   };
 
   return (
-    <div className="landing-hero-canvas" onPointerMove={onPointerMove} role="presentation">
+    <div
+      className="landing-hero-canvas"
+      onPointerMove={onPointerMove}
+      role="img"
+      aria-label="An abstract 3D council chamber with nine symbolic seats surrounding a glowing decision orb."
+    >
       <Canvas
-        camera={{ position: [0, 1.55, 5.2], fov: 38 }}
-        dpr={[1, 1.75]}
+        camera={{ position: [0, 2.35, 7.8], fov: mobile ? 40 : 33 }}
+        dpr={mobile ? [1, 1.5] : [1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         frameloop={reducedMotion ? "demand" : "always"}
         style={{ background: "transparent" }}
@@ -32,6 +38,7 @@ export default function LandingHero3D({
             ctaHover={ctaHover}
             mouse={mouse}
             reducedMotion={reducedMotion}
+            mobile={mobile}
           />
         </Suspense>
       </Canvas>
