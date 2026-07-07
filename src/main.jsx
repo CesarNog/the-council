@@ -1,7 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import TheCouncil from "./App.jsx";
+import { initSentry } from "./lib/sentry.js";
 import "./styles.css";
+
+initSentry();
 
 document.addEventListener("visibilitychange", () => {
   document.documentElement.classList.toggle("tab-hidden", document.hidden);
