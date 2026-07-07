@@ -210,7 +210,7 @@ function SharedGate({ id, onExit, onEnter, language = "en" }) {
   }
   return (
     <>
-      <Chamber profile={{}} preloaded={result} onExit={onExit} />
+      <Chamber profile={{}} preloaded={result} onExit={onExit} language={language} />
       <SharedConversionBanner onEnter={onEnter || onExit} language={language} />
     </>
   );

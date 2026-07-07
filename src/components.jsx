@@ -590,7 +590,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     updateProfile({
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
     }).catch(() => {}); // anonimo (401) ou falha de rede — nao afeta a experiencia, so nao persiste
-    if (!debate.offline) saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, "en") });
+    if (!debate.offline) saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, language) });
   }, [phase, debate?.id]);
 
   const ambientColor = ringActive
