@@ -115,12 +115,12 @@ Click Cookie Settings in the footer at any time to review or change your choices
   const title = c.titleKey ? t(language, c.titleKey) + (c.titleSuffix || "") : (c.title || "Not Found");
   const body = c.body || "";
   return (
-    <div className="landing" style={{ maxWidth: 680, margin: "0 auto", padding: "60px 24px" }}>
+    <div className="landing static-page">
       <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>{t(language, "back")}</button>
-      <h1 className="serif" style={{ fontSize: "clamp(24px,3vw,36px)", marginBottom: 24 }}>{title}</h1>
-      <div style={{ fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>
+      <h1 className="serif">{title}</h1>
+      <div className="static-body">
         {body.split("\n\n").map((para) => (
-          <p key={para.slice(0, 40)} style={{ marginBottom: "1.2em", whiteSpace: "pre-wrap" }}>{para}</p>
+          <p key={para.slice(0, 40)}>{para}</p>
         ))}
       </div>
     </div>
@@ -361,38 +361,69 @@ function TheCouncilApp() {
     </button>
   ) : null;
 
-  if (staticPage) {
-    return (
-      <div className="council-root">
-        <div className="grain" />
-        <StaticPage page={staticPage} language={language} onBack={() => setStaticPage(null)} />
-      </div>
-    );
-  }
-
-  if (is404) {
-    return (
-      <div className="council-root">
-        <div className="grain" />
-        <NotFoundPage language={language} onHome={() => { window.history.pushState({}, "", "/"); }} />
-      </div>
-    );
-  }
-
   if (checkingSession) return (
     <div className="council-root">
       <div className="grain" />
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} aria-label={t(language, "loading")} role="status">
+      <div className="page-main" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh" }} aria-label={t(language, "loading")} role="status">
         <span className="dots"><i /><i /><i /></span>
       </div>
     </div>
   );
 
+  const rootClass = [
+    "council-root",
+    consentBannerVisible && !showCookieSettings ? "consent-banner-active" : "",
+  ].filter(Boolean).join(" ");
+
+  const footer = (
+    <footer className="site-footer">
+      <div className="footer-inner">
+        <span className="footer-brand" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><CouncilLogo size={13} />The Council</span>
+        <span className="footer-note">{t(language, "footer_disclaimer")}</span>
+        <span className="footer-links">
+          <a href="/privacy" onClick={e => { e.preventDefault(); setStaticPage("privacy"); }}>{t(language, "footer_privacy")}</a>
+          <span className="footer-sep">·</span>
+          <a href="/terms" onClick={e => { e.preventDefault(); setStaticPage("terms"); }}>{t(language, "footer_terms")}</a>
+          <span className="footer-sep">·</span>
+          <button className="footer-link-btn" onClick={() => setShowCookieSettings(true)}>{t(language, "footer_cookie_settings")}</button>
+          <span className="footer-sep">·</span>
+          <a href="https://github.com/CesarNog/the-council" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <span className="footer-sep">·</span>
+          <a href="https://buymeacoffee.com/cesarnog" target="_blank" rel="noopener noreferrer" className="footer-link-coffee">{t(language, "buy_me_coffee")}</a>
+          <span className="footer-sep">·</span>
+          <span>{t(language, "developed_by")} <a href="https://github.com/CesarNog" target="_blank" rel="noopener noreferrer">CesarNog</a></span>
+          <span className="footer-sep">·</span>
+          <span>© 2026</span>
+        </span>
+      </div>
+    </footer>
+  );
+
+  const consentUi = (
+    <>
+      {consentBannerVisible && !showCookieSettings && (
+        <ConsentBanner
+          language={language}
+          onAccept={() => { acceptAll(); initAnalytics(); initAds(); dismissConsentBanner(); }}
+          onReject={() => { rejectOptional(); dismissConsentBanner(); }}
+          onSettings={() => setShowCookieSettings(true)}
+        />
+      )}
+      {showCookieSettings && (
+        <CookieSettings
+          language={language}
+          onSave={() => { initAnalytics(); initAds(); setShowCookieSettings(false); dismissConsentBanner(); }}
+          onClose={() => setShowCookieSettings(false)}
+        />
+      )}
+    </>
+  );
+
   return (
-    <div className="council-root">
+    <div className={rootClass}>
       <div className="grain" />
       <header className="site-header">
-        <button className="brand" onClick={() => { if (screen !== "landing" && !sharedId) setScreen("landing"); }}>
+        <button className="brand" onClick={() => { if (staticPage) setStaticPage(null); else if (screen !== "landing" && !sharedId) setScreen("landing"); }}>
           <CouncilLogo size={20} className="brand-logo" />
           <span className="brand-name">The Council</span>
         </button>
@@ -410,55 +441,66 @@ function TheCouncilApp() {
           {userBadge}
         </div>
       </header>
-      {screen === "landing" && <div className="ambient" style={{ background: "radial-gradient(50% 40% at 50% 30%, rgba(201,169,110,.08), transparent 70%)" }} />}
-      {screen === "landing" && (
-        <Landing
-          onEnter={(q) => {
-            if (q) { setQuickQuestion(q); setScreen("chamber"); }
-            else if (user && userHasCompletedProfile(user)) setScreen("chamber");
-            else setScreen("onboarding");
-          }}
-          authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
-          language={language}
-          history={loadHistory()}
-          onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
-          displayName={displayName}
-        />
-      )}
-      {screen === "onboarding" && (
-        <Onboarding
-          onDone={handleOnboardingDone}
-          initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
-          language={language}
-          googleNames={user?.name ? [user.name.split(" ")[0], user.name].filter((n, i, a) => a.indexOf(n) === i) : null}
-          initialDisplayName={displayName}
-        />
-      )}
-      {screen === "chamber" && (
-        <Chamber
-          profile={profile}
-          language={language}
-          preloaded={eclipsePreview}
-          initialQuestion={decisionQuestion || quickQuestion}
-          decisionContext={decisionContext}
-          lifeModeSlot={user?.lifeMode && (
-            <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
-          )}
-        />
-      )}
-      {screen === "shared" && sharedId && (
-        <SharedGate
-          id={sharedId}
-          language={language}
-          onExit={exitShared}
-          onEnter={() => {
-            window.history.pushState({}, "", "/");
-            setSharedId(null);
-            if (user && userHasCompletedProfile(user)) setScreen("chamber");
-            else setScreen("onboarding");
-          }}
-        />
-      )}
+
+      <main className="page-main">
+        {staticPage ? (
+          <StaticPage page={staticPage} language={language} onBack={() => setStaticPage(null)} />
+        ) : is404 ? (
+          <NotFoundPage language={language} onHome={() => { window.history.pushState({}, "", "/"); window.location.reload(); }} />
+        ) : (
+          <>
+            {screen === "landing" && <div className="ambient" style={{ background: "radial-gradient(50% 40% at 50% 30%, rgba(201,169,110,.08), transparent 70%)" }} />}
+            {screen === "landing" && (
+              <Landing
+                onEnter={(q) => {
+                  if (q) { setQuickQuestion(q); setScreen("chamber"); }
+                  else if (user && userHasCompletedProfile(user)) setScreen("chamber");
+                  else setScreen("onboarding");
+                }}
+                authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
+                language={language}
+                history={loadHistory()}
+                onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
+                displayName={displayName}
+              />
+            )}
+            {screen === "onboarding" && (
+              <Onboarding
+                onDone={handleOnboardingDone}
+                initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
+                language={language}
+                googleNames={user?.name ? [user.name.split(" ")[0], user.name].filter((n, i, a) => a.indexOf(n) === i) : null}
+                initialDisplayName={displayName}
+              />
+            )}
+            {screen === "chamber" && (
+              <Chamber
+                profile={profile}
+                language={language}
+                preloaded={eclipsePreview}
+                initialQuestion={decisionQuestion || quickQuestion}
+                decisionContext={decisionContext}
+                lifeModeSlot={user?.lifeMode && (
+                  <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
+                )}
+              />
+            )}
+            {screen === "shared" && sharedId && (
+              <SharedGate
+                id={sharedId}
+                language={language}
+                onExit={exitShared}
+                onEnter={() => {
+                  window.history.pushState({}, "", "/");
+                  setSharedId(null);
+                  if (user && userHasCompletedProfile(user)) setScreen("chamber");
+                  else setScreen("onboarding");
+                }}
+              />
+            )}
+          </>
+        )}
+      </main>
 
       {showProfileSettings && user && (
         <ProfileSettings
@@ -470,44 +512,8 @@ function TheCouncilApp() {
         />
       )}
 
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <span className="footer-brand" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><CouncilLogo size={13} />The Council</span>
-          <span className="footer-note">{t(language, "footer_disclaimer")}</span>
-          <span className="footer-links">
-            <a href="/privacy" onClick={e => { e.preventDefault(); setStaticPage("privacy"); }}>{t(language, "footer_privacy")}</a>
-            <span className="footer-sep">·</span>
-            <a href="/terms" onClick={e => { e.preventDefault(); setStaticPage("terms"); }}>{t(language, "footer_terms")}</a>
-            <span className="footer-sep">·</span>
-            <button className="footer-link-btn" onClick={() => setShowCookieSettings(true)}>{t(language, "footer_cookie_settings")}</button>
-            <span className="footer-sep">·</span>
-            <a href="https://github.com/CesarNog/the-council" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <span className="footer-sep">·</span>
-            <a href="https://buymeacoffee.com/cesarnog" target="_blank" rel="noopener noreferrer" className="footer-link-coffee">{t(language, "buy_me_coffee")}</a>
-            <span className="footer-sep">·</span>
-            <span>{t(language, "developed_by")} <a href="https://github.com/CesarNog" target="_blank" rel="noopener noreferrer">CesarNog</a></span>
-            <span className="footer-sep">·</span>
-            <span>© 2026</span>
-          </span>
-        </div>
-      </footer>
-
-      {consentBannerVisible && !showCookieSettings && (
-        <ConsentBanner
-          language={language}
-          onAccept={() => { acceptAll(); initAnalytics(); initAds(); dismissConsentBanner(); }}
-          onReject={() => { rejectOptional(); dismissConsentBanner(); }}
-          onSettings={() => setShowCookieSettings(true)}
-        />
-      )}
-
-      {showCookieSettings && (
-        <CookieSettings
-          language={language}
-          onSave={() => { initAnalytics(); initAds(); setShowCookieSettings(false); dismissConsentBanner(); }}
-          onClose={() => setShowCookieSettings(false)}
-        />
-      )}
+      {footer}
+      {consentUi}
     </div>
   );
 }

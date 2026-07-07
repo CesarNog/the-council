@@ -898,7 +898,7 @@ export class ErrorBoundary extends React.Component {
     let lang = "en";
     try { lang = localStorage.getItem("council:lang") || "en"; } catch {}
     return (
-      <div className="council-root" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", flexDirection: "column", gap: 20, textAlign: "center", padding: 24 }}>
+      <div className="council-root" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh", flexDirection: "column", gap: 20, textAlign: "center", padding: 24 }}>
         <div className="eyebrow">{t(lang, "something_interrupted")}</div>
         <div className="serif" style={{ fontSize: 22, maxWidth: "30ch" }}>{t(lang, "council_needs_moment")}</div>
         <button className="btn primary" onClick={() => window.location.reload()}>{t(lang, "reload")}</button>
