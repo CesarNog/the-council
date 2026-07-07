@@ -68,7 +68,8 @@ If `GOOGLE_CLIENT_ID` is not set in Vercel env, `/api/auth` returns 503. The bro
 | `SESSION_SECRET` | Vercel env var | Must be a cryptographically random 32+ byte value |
 | `GOOGLE_CLIENT_ID` | Vercel env var + `vite.config.js` constant | **Not a secret** — baked into the frontend bundle; Google enforces allowed origins |
 | `VITE_GOOGLE_CLIENT_ID` | Vercel env var (overrides build-time constant) | Same as above |
-| `GEMINI_TTS_API_KEY` | Vercel env var | Never exposed to client |
+| `OPENAI_API_KEY` | Vercel env var | Primary TTS key; never exposed to client; used only in `api/tts.js` |
+| `GEMINI_TTS_API_KEY` | Vercel env var | Fallback TTS key; never exposed to client |
 | `VITE_HOTJAR_ID` | Vercel env var | Non-secret, public |
 | `VITE_ADSENSE_PUBLISHER_ID` | Vercel env var | Non-secret, public |
 
