@@ -431,6 +431,7 @@ function TheCouncilApp() {
           initial={user ? { name: user.name, situation: user.situation, values: user.values } : null}
           language={language}
           googleNames={user?.name ? [user.name.split(" ")[0], user.name].filter((n, i, a) => a.indexOf(n) === i) : null}
+          initialDisplayName={displayName}
         />
       )}
       {screen === "chamber" && (
