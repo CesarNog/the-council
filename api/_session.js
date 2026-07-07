@@ -1,5 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET env var is required for session security");
+}
+
 const COOKIE_NAME = "council_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 dias
 

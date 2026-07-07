@@ -118,7 +118,11 @@ Click Cookie Settings in the footer at any time to review or change your choices
     <div className="landing" style={{ maxWidth: 680, margin: "0 auto", padding: "60px 24px" }}>
       <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>{t(language, "back")}</button>
       <h1 className="serif" style={{ fontSize: "clamp(24px,3vw,36px)", marginBottom: 24 }}>{title}</h1>
-      <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>{body}</pre>
+      <div style={{ fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>
+        {body.split("\n\n").map((para, i) => (
+          <p key={i} style={{ marginBottom: "1.2em", whiteSpace: "pre-wrap" }}>{para}</p>
+        ))}
+      </div>
     </div>
   );
 }
@@ -375,7 +379,14 @@ function TheCouncilApp() {
     );
   }
 
-  if (checkingSession) return <div className="council-root"><div className="grain" /></div>;
+  if (checkingSession) return (
+    <div className="council-root">
+      <div className="grain" />
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} aria-label="Loading" role="status">
+        <span className="dots"><i /><i /><i /></span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="council-root">
