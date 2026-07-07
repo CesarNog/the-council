@@ -479,6 +479,7 @@ function TheCouncilApp({ clerkSignOut }) {
                 history={loadHistory()}
                 onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
                 displayName={displayName}
+                authenticated={!!user}
               />
             )}
             {screen === "onboarding" && (

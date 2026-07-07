@@ -1,0 +1,144 @@
+import { lazy, Suspense, useState, useEffect } from "react";
+import { LandingHeroFallback } from "./LandingHeroFallback.jsx";
+import { HowItWorks } from "./HowItWorks.jsx";
+import { PersonaPreview } from "./PersonaPreview.jsx";
+import { ExampleDecisionGrid } from "./ExampleDecisionGrid.jsx";
+import { SampleVerdictPreview } from "./SampleVerdictPreview.jsx";
+import { useReducedMotion } from "../../hooks/useReducedMotion.js";
+import { supportsWebGL, preferLandingFallback } from "../../lib/webgl.js";
+import { t, personaShortName } from "../../lib/i18n.js";
+import { Events } from "../../lib/analytics.js";
+
+const LandingHero3D = lazy(() => import("./LandingHero3D.jsx"));
+
+export function Landing({ onEnter, authSlot, language, history = [], onRevisit, displayName, authenticated }) {
+  const reducedMotion = useReducedMotion();
+  const [use3D, setUse3D] = useState(false);
+  const [webglReady, setWebglReady] = useState(false);
+  const [activePersona, setActivePersona] = useState(null);
+  const [ctaHover, setCtaHover] = useState(false);
+  const [tabHidden, setTabHidden] = useState(false);
+
+  useEffect(() => {
+    const ok = supportsWebGL() && !reducedMotion && !preferLandingFallback();
+    setUse3D(ok);
+    setWebglReady(true);
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    const onVis = () => setTabHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  const recentQs = history.slice(0, 3);
+  const greeting = displayName
+    ? t(language, "landing_greeting_named", displayName)
+    : authenticated
+      ? t(language, "landing_greeting_anon")
+      : null;
+
+  const heroVisual = use3D && !tabHidden ? (
+    <Suspense fallback={<LandingHeroFallback language={language} reducedMotion={reducedMotion} ctaHover={ctaHover} />}>
+      <LandingHero3D
+        activePersona={activePersona}
+        onPersonaHover={setActivePersona}
+        ctaHover={ctaHover}
+        reducedMotion={reducedMotion}
+      />
+    </Suspense>
+  ) : (
+    <LandingHeroFallback
+      language={language}
+      activePersona={activePersona}
+      onPersonaHover={setActivePersona}
+      ctaHover={ctaHover}
+      reducedMotion={reducedMotion}
+    />
+  );
+
+  const personaHint = activePersona ? (
+    <div className="landing-persona-hint fade-up" aria-live="polite">
+      <span style={{ color: "var(--gold)" }}>{personaShortName(language, activePersona)}</span>
+      <span> — {t(language, `landing_hover_${activePersona}`)}</span>
+    </div>
+  ) : null;
+
+  return (
+    <div className="landing-page">
+      <section className="landing-hero">
+        <div className="landing-hero-visual" data-webgl={webglReady && use3D ? "true" : "false"}>
+          {heroVisual}
+        </div>
+        <div className="landing-hero-copy">
+          <div className="eyebrow fade-up d1">The Council</div>
+          {greeting && <p className="landing-greeting fade-up d2">{greeting}</p>}
+          <h1 className="fade-up d2">
+            {t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em>
+          </h1>
+          <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
+          <p className="landing-trust fade-up d3">{t(language, "landing_trust")}</p>
+          {personaHint}
+          <div className="fade-up d4 cta-group landing-cta-group">
+            <button
+              className="btn primary landing-cta-primary"
+              onClick={() => { Events.landingCta({ action: "primary", authenticated: !!authenticated, language }); onEnter(); }}
+              onMouseEnter={() => setCtaHover(true)}
+              onMouseLeave={() => setCtaHover(false)}
+              onFocus={() => setCtaHover(true)}
+              onBlur={() => setCtaHover(false)}
+            >
+              {t(language, "enter_chamber_cta")}
+            </button>
+            <button
+              type="button"
+              className="btn small landing-cta-secondary"
+              onClick={() => {
+                Events.landingCta({ action: "demo", authenticated: !!authenticated, language });
+                document.getElementById("sample-verdict")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+              }}
+            >
+              {t(language, "landing_secondary_cta")}
+            </button>
+            <div className="cta-sub">{t(language, "enter_chamber_sub")}</div>
+            {authSlot && (
+              <div className="auth-slot-wrap">
+                <div className="auth-divider"><span>{t(language, "auth_or")}</span></div>
+                {authSlot}
+              </div>
+            )}
+          </div>
+          {recentQs.length > 0 && (
+            <div className="fade-up d4 landing-quick-section landing-quick-compact">
+              <div className="landing-quick-label">{t(language, "past_questions")}</div>
+              <div className="landing-quick-chips">
+                {recentQs.map(h => (
+                  <button key={h.id} type="button" className="landing-chip landing-chip--history" onClick={() => onRevisit(h.question)}>
+                    <span className="landing-chip-q">{h.question}</span>
+                    {h.headline && <span className="landing-chip-hl">{h.headline}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <HowItWorks language={language} />
+      <PersonaPreview language={language} />
+      <ExampleDecisionGrid language={language} onSelect={(q) => onEnter(q)} authenticated={authenticated} />
+      <SampleVerdictPreview language={language} />
+
+      <section className="landing-section landing-final-cta">
+        <h2 className="landing-section-title">{t(language, "landing_final_cta_title")}</h2>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => { Events.landingCta({ action: "footer", authenticated: !!authenticated, language }); onEnter(); }}
+        >
+          {t(language, "enter_chamber_cta")}
+        </button>
+      </section>
+    </div>
+  );
+}

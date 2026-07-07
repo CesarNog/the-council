@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
+import { Sigil } from "./lib/sigil.jsx";
+import { CouncilLogo } from "./components/CouncilLogo.jsx";
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
 import { saveToHistory } from "./lib/history.js";
@@ -9,33 +11,9 @@ import { updateProfile } from "./lib/auth.js";
 import { captureError } from "./lib/sentry.js";
 import { Events } from "./lib/analytics.js";
 
-export function CouncilLogo({ size = 22, style, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 30 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style} className={className}>
-      <line x1="15" y1="2" x2="15" y2="22" strokeWidth="1.2"/>
-      <line x1="9" y1="22" x2="21" y2="22" strokeWidth="1.4"/>
-      <line x1="3" y1="7" x2="27" y2="7" strokeWidth="1.2"/>
-      <path d="M3 7 Q2.5 13 6 13.5 Q9.5 13.5 9 7" strokeWidth="1.1"/>
-      <path d="M21 7 Q20.5 14 24 14.5 Q27.5 14.5 27 7" strokeWidth="1.1"/>
-    </svg>
-  );
-}
-
-export function Sigil({ id }) {
-  const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" };
-  switch (id) {
-    case "founder":     return <svg viewBox="0 0 24 24"><path {...s} d="M13 2 6.5 13H11l-2 9L18.5 9H13l1.5-7Z"/></svg>;
-    case "billionaire": return <svg viewBox="0 0 24 24"><path {...s} d="M12 3 21 20H3L12 3Z"/><path {...s} d="M7.6 14h8.8"/></svg>;
-    case "artist":      return <svg viewBox="0 0 24 24"><path {...s} d="M12 12c0-1.2 1.9-1.2 1.9 0 0 2.2-3.8 2.2-3.8 0 0-3.6 5.7-3.6 5.7 0 0 5-8.6 5-8.6 0 0-6.4 11.5-6.4 11.5 0"/></svg>;
-    case "athlete":     return <svg viewBox="0 0 24 24"><path {...s} d="M2 16.5h5.5L11 6.5l3.5 13 2-8H22"/></svg>;
-    case "monk":        return <svg viewBox="0 0 24 24"><path {...s} d="M18.8 7.2A8.4 8.4 0 1 0 20.4 12"/></svg>;
-    case "scientist":   return <svg viewBox="0 0 24 24"><ellipse {...s} cx="12" cy="12" rx="9" ry="3.6" transform="rotate(58 12 12)"/><ellipse {...s} cx="12" cy="12" rx="9" ry="3.6" transform="rotate(-58 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>;
-    case "explorer":    return <svg viewBox="0 0 24 24"><circle {...s} cx="12" cy="12" r="8.6"/><path {...s} d="M12 6.4 14.4 12 12 17.6 9.6 12Z"/></svg>;
-    case "romantic":    return <svg viewBox="0 0 24 24"><circle {...s} cx="9.4" cy="12" r="5.4"/><circle {...s} cx="14.6" cy="12" r="5.4"/></svg>;
-    case "shadow":      return <svg viewBox="0 0 24 24"><circle {...s} cx="12" cy="12" r="8.4"/><circle cx="14.8" cy="9.4" r="3.4" fill="currentColor" opacity=".85"/></svg>;
-    default:            return null;
-  }
-}
+export { CouncilLogo } from "./components/CouncilLogo.jsx";
+export { Sigil } from "./lib/sigil.jsx";
+export { Landing } from "./components/landing/LandingPage.jsx";
 
 export function Ring({ active, speaking, mentioned, phase, label, language = "en" }) {
   return (
@@ -62,77 +40,6 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
         </span>
         {label && <span className="eyebrow" style={{ fontSize: 9, opacity: .8 }}>{label}</span>}
       </div>
-    </div>
-  );
-}
-
-function Whisper({ language }) {
-  const [i, setI] = useState(0);
-  const [vis, setVis] = useState(true);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setVis(false);
-      setTimeout(() => { setI(n => (n + 1) % PERSONAS.length); setVis(true); }, 600);
-    }, 4200);
-    return () => clearInterval(timer);
-  }, []);
-  const p = PERSONAS[i];
-  return (
-    <div style={{ marginTop: 34, minHeight: 46, transition: "opacity .6s ease", opacity: vis ? 1 : 0 }}>
-      <span className="serif" style={{ fontStyle: "italic", fontSize: 17, color: p.color }}>"{personaLine(language, p.id)}"</span>
-      <div className="eyebrow" style={{ marginTop: 8, fontSize: 9, color: "var(--ivory-faint)" }}>— {personaName(language, p.id)}</div>
-    </div>
-  );
-}
-
-export function Landing({ onEnter, authSlot, language, history = [], onRevisit, displayName }) {
-  const richPool = RICH_QUESTIONS_I18N[language] || RICH_QUESTIONS_I18N.en;
-  const richQs = useMemo(() => {
-    const start = Math.floor(Math.random() * (richPool.length - 2));
-    return richPool.slice(start, start + 3);
-  }, [language]);
-  const recentQs = history.slice(0, 3);
-  return (
-    <div className="landing">
-      <div className="fade-up d1"><Ring language={language} /></div>
-      <div className="eyebrow fade-up d2" style={{ marginTop: 40 }}>The Council</div>
-      {displayName && (
-        <div className="landing-greeting fade-up d2">{t(language, "landing_greeting_named", displayName)}</div>
-      )}
-      <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
-      <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
-      <div className="fade-up d4 cta-group">
-        <button className="btn primary" onClick={() => onEnter()}>{t(language, "enter_chamber_cta")}</button>
-        <div className="cta-sub">{t(language, "enter_chamber_sub")}</div>
-        {authSlot && (
-          <div className="auth-slot-wrap">
-            <div className="auth-divider"><span>{t(language, "auth_or")}</span></div>
-            {authSlot}
-          </div>
-        )}
-      </div>
-      {recentQs.length > 0 && (
-        <div className="fade-up d4 landing-quick-section">
-          <div className="landing-quick-label">{t(language, "past_questions")}</div>
-          <div className="landing-quick-chips">
-            {recentQs.map(h => (
-              <button key={h.id} className="landing-chip landing-chip--history" onClick={() => onRevisit(h.question)}>
-                <span className="landing-chip-q">{h.question}</span>
-                {h.headline && <span className="landing-chip-hl">{h.headline}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="fade-up d5 landing-quick-section">
-        <div className="landing-quick-label">{t(language, "try_example")}</div>
-        <div className="landing-quick-chips">
-          {richQs.map(q => (
-            <button key={q} className="landing-chip" onClick={() => onEnter(q)}>{q}</button>
-          ))}
-        </div>
-      </div>
-      <div className="fade-up d5"><Whisper language={language} /></div>
     </div>
   );
 }
