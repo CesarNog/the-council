@@ -759,7 +759,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 const cls = v.v === "yes" ? "yes" : v.v === "no" ? "no" : "dep";
                 const label = v.v === "yes" ? t(language, "vote_yes") : v.v === "no" ? t(language, "vote_no") : t(language, "vote_depends");
                 return (
-                  <div className="vote" key={i} style={{ color: p.color, animationDelay: `${i * .04}s` }}>
+                  <div className="vote" key={i} style={{ color: p.color, animationDelay: `${i * .09}s` }}>
                     <div className="sig"><Sigil id={p.id} /></div>
                     <div className="nm" style={{ color: p.color }}>{personaShortName(language, p.id)}</div>
                     <div className={"vv " + cls}>{label}</div>
@@ -835,7 +835,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                         <ShareIcon /> {l.label}
                       </a>
                     ))}
-                    <button className="btn share-btn" onClick={handleCopyLink}>
+                    <button className={"btn share-btn" + (copiedLink ? " feedback" : "")} onClick={handleCopyLink}>
                       <ShareIcon /> {copiedLink ? t(language, "link_copied") : t(language, "copy_link")}
                     </button>
                   </div>
@@ -843,10 +843,10 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 <div className="actions-group">
                   <div className="actions-group-label">{t(language, "share_group_save")}</div>
                   <div className="actions-group-row">
-                    <button className="btn small" onClick={handleDownloadCard}>
+                    <button className={"btn small" + (cardSaved ? " feedback" : "")} onClick={handleDownloadCard}>
                       {cardSaved ? t(language, "card_saved") : t(language, "download_verdict")}
                     </button>
-                    <button className="btn small" onClick={handleCopyText}>
+                    <button className={"btn small" + (copiedText ? " feedback" : "")} onClick={handleCopyText}>
                       {copiedText ? t(language, "copy_text_done") : t(language, "copy_as_text")}
                     </button>
                   </div>
