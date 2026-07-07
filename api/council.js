@@ -5,6 +5,7 @@ import { getSessionFromRequest } from "./_session.js";
 import { enforceRateLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
 import { councilBodySchema, parseBody } from "./_validate.js";
+import { isSupabaseConfigured, persistDecisionBundle, upsertProfileFromUser } from "./_supabase.js";
 
 const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
@@ -75,11 +76,12 @@ export default async function handler(req, res) {
   if (!(await enforceRateLimit(req, res, "rl:council", COUNCIL_RATE))) return;
 
   let history = [];
+  let sessionUser = null;
   const session = getSessionFromRequest(req);
   if (session) {
     const raw = await kvGet(`user:${session.sub}`).catch(() => null);
-    const user = raw ? JSON.parse(raw) : null;
-    history = (user?.debateHistory || []).slice(0, 3);
+    sessionUser = raw ? JSON.parse(raw) : null;
+    history = (sessionUser?.debateHistory || []).slice(0, 3);
   }
 
   const targetLang = LANGUAGE_NAMES[language];
@@ -113,6 +115,20 @@ export default async function handler(req, res) {
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
     .catch(e => console.error("council: persist failed", e.message));
+
+  if (isSupabaseConfigured()) {
+    const profileRow = sessionUser
+      ? await upsertProfileFromUser({ sub: session.sub, ...sessionUser }).catch(() => null)
+      : null;
+    persistDecisionBundle({
+      userId: profileRow?.id || null,
+      question: q,
+      language,
+      decisionContext,
+      debate: json,
+      publicSlug: id,
+    }).catch(e => console.error("council: supabase persist failed", e.message));
+  }
 
   return res.status(200).json({ id, ...json });
 }
