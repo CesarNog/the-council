@@ -1070,6 +1070,7 @@ button,a{min-width:0;}
   .landing-orbit-node{width:40px; height:40px;}
 }
 @media (prefers-reduced-motion: reduce){
-  .landing-orbit-table,.landing-orbit-fallback .landing-orbit-table{animation:none !important;}
+  .landing-orbit-table,.landing-orbit-fallback .landing-orbit-table,
+  .landing-orbit-orb,.landing-hero-canvas-loading::before,.landing-hero-canvas-loading::after{animation:none !important;}
   .landing-how-card:hover,.landing-verdict-card:hover,.landing-example-chip:hover{transform:none;}
 }
