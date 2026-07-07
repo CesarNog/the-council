@@ -64,10 +64,10 @@ describe("summonCouncil", () => {
     expect(err.retryAfter).toBeUndefined();
   });
 
-  it("throws unreachable on non-429 error", async () => {
+  it("throws API error code on non-429 error", async () => {
     const summonCouncil = await freshSummon(makeFetch(502, { error: "gateway_error" }));
     const err = await summonCouncil("q", {}, "en").catch(e => e);
-    expect(err.kind).toBe("unreachable");
+    expect(err.kind).toBe("gateway_error");
   });
 
   it("throws on bad debate shape", async () => {

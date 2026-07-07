@@ -8,8 +8,8 @@ export async function summonCouncil(question, profile, language, decisionContext
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    const err = new Error("council unreachable");
-    err.kind = res.status === 429 ? "rate_limited" : "unreachable";
+    const err = new Error(body.error || "council unreachable");
+    err.kind = res.status === 429 ? "rate_limited" : (body.error || "unreachable");
     if (body.retryAfter) err.retryAfter = body.retryAfter;
     throw err;
   }

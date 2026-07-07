@@ -107,6 +107,12 @@ const S = {
     es: n => `Reintentando en ${n}s…`,
     zh: n => `${n} 秒后重试…`,
   },
+  rate_limited_sign_in: {
+    en: "Sign in for a higher daily limit.",
+    pt: "Entre para um limite diário maior.",
+    es: "Inicia sesión para un límite diario mayor.",
+    zh: "登录以获得更高的每日限额。",
+  },
 
   listen: { en: name => `Listen: ${name}`, pt: name => `Ouvir: ${name}`, es: name => `Escuchar: ${name}`, zh: name => `收听：${name}` },
   listen_title: { en: "Listen", pt: "Ouvir", es: "Escuchar", zh: "收听" },
