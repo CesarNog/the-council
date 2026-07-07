@@ -2,6 +2,9 @@ import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { PERSONAS } from "../src/lib/personas.js";
 import { getSessionFromRequest } from "./_session.js";
+import { enforceRateLimit } from "./_rateLimit.js";
+import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
+import { councilBodySchema, parseBody } from "./_validate.js";
 
 const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
@@ -53,40 +56,23 @@ Rules:
 - memoryEcho: null unless a past matter above is genuinely relevant to today's question — if the topics clearly overlap (same decision, same fear, same person involved), you should surface it: {"persona":"monk","line":"one short in-voice sentence naturally referencing that past matter and asking how the person feels about it now"}. If there is no past matter listed above, or none overlaps, leave it null.
 - Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.`;
 
-const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
-const RATE_WINDOW = 60000; // ms — best-effort: KV eventually consistent, nao atomico, sob concorrencia alta pode passar um pouco do limite
-
-async function checkRateLimit(ip) {
-  const key = `rl:${ip}`;
-  const raw = await kvGet(key).catch(() => null);
-  const now = Date.now();
-  let state = raw ? JSON.parse(raw) : { c: 0, t: now };
-  if (now - state.t > RATE_WINDOW) state = { c: 0, t: now };
-  if (state.c >= RATE_LIMIT) {
-    return { allowed: false, retryAfter: Math.ceil((state.t + RATE_WINDOW - now) / 1000) };
-  }
-  state.c += 1;
-  await kvPut(key, JSON.stringify(state), 120).catch(() => {}); // falha de escrita nao bloqueia a requisicao
-  return { allowed: true };
-}
+const COUNCIL_RATE = { limit: 3, windowMs: 60_000 }; // per IP; org Groq TPM is the real ceiling
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const { question, profile, language, decisionContext: rawCtx } = req.body ?? {};
-  const decisionContext = rawCtx && typeof rawCtx === "object"
-    ? {
-        decisionCategory: String(rawCtx.decisionCategory || "").slice(0, 60),
-        emotionalWeight: String(rawCtx.emotionalWeight || "").slice(0, 60),
-        mainFear: String(rawCtx.mainFear || "").slice(0, 200),
-      }
-    : {};
-  if (!question || typeof question !== "string") return res.status(400).json({ error: "invalid question" });
-  const q = question.trim();
-  if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
+  if (req.method !== "POST") return methodNotAllowed(res, "POST");
+  if (bodyTooLarge(req, res)) return;
 
-  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
-  const { allowed, retryAfter } = await checkRateLimit(ip).catch(() => ({ allowed: true })); // KV fora do ar nao deve derrubar o produto
-  if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down", retryAfter });
+  const parsed = parseBody(councilBodySchema, req.body);
+  if (!parsed.ok) return badRequest(res, parsed.detail);
+
+  const { question: q, profile = {}, language, decisionContext: rawCtx = {} } = parsed.data;
+  const decisionContext = {
+    decisionCategory: rawCtx.decisionCategory || "",
+    emotionalWeight: rawCtx.emotionalWeight || "",
+    mainFear: rawCtx.mainFear || "",
+  };
+
+  if (!(await enforceRateLimit(req, res, "rl:council", COUNCIL_RATE))) return;
 
   let history = [];
   const session = getSessionFromRequest(req);
@@ -108,7 +94,7 @@ export default async function handler(req, res) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
       const statusByKind = { timeout: 504, network_error: 504, rate_limited: 429, gateway_error: 502, unparseable_response: 502, truncated_response: 502 };
-      return res.status(statusByKind[e.kind] || 502).json({ error: e.kind, detail: e.detail });
+      return safeError(res, statusByKind[e.kind] || 502, e.kind, e.detail);
     }
     throw e;
   }
