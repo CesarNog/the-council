@@ -19,8 +19,8 @@ export default function LandingHero3D({
   return (
     <div className="landing-hero-canvas" onPointerMove={onPointerMove} role="presentation">
       <Canvas
-        camera={{ position: [0, 1.8, 5.5], fov: 42 }}
-        dpr={[1, 1.5]}
+        camera={{ position: [0, 1.55, 5.2], fov: 38 }}
+        dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         frameloop={reducedMotion ? "demand" : "always"}
         style={{ background: "transparent" }}

@@ -6,7 +6,8 @@ import { ExampleDecisionGrid } from "./ExampleDecisionGrid.jsx";
 import { SampleVerdictPreview } from "./SampleVerdictPreview.jsx";
 import { useReducedMotion } from "../../hooks/useReducedMotion.js";
 import { supportsWebGL, preferLandingFallback } from "../../lib/webgl.js";
-import { t, personaShortName } from "../../lib/i18n.js";
+import { firstName } from "../../lib/name.js";
+import { t, personaShortName, LANDING_EXAMPLE_KEYS } from "../../lib/i18n.js";
 import { Events } from "../../lib/analytics.js";
 
 const LandingHero3D = lazy(() => import("./LandingHero3D.jsx"));
@@ -31,9 +32,10 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
     return () => document.removeEventListener("visibilitychange", onVis);
   }, []);
 
-  const recentQs = history.slice(0, 3);
-  const greeting = displayName
-    ? t(language, "landing_greeting_named", displayName)
+  const recentQs = history.slice(0, 2);
+  const greetingName = firstName(displayName);
+  const greeting = greetingName
+    ? t(language, "landing_greeting_named", greetingName)
     : authenticated
       ? t(language, "landing_greeting_anon")
       : null;
@@ -67,7 +69,9 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
   return (
     <div className="landing-page">
       <section className="landing-hero">
+        <div className="landing-hero-atmosphere" aria-hidden="true" />
         <div className="landing-hero-visual" data-webgl={webglReady && use3D ? "true" : "false"}>
+          <div className="landing-hero-visual-vignette" aria-hidden="true" />
           {heroVisual}
         </div>
         <div className="landing-hero-copy">
@@ -109,7 +113,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
             )}
           </div>
           {recentQs.length > 0 && (
-            <div className="fade-up d4 landing-quick-section landing-quick-compact">
+            <div className="fade-up d4 landing-quick-section landing-quick-compact landing-quick-hero">
               <div className="landing-quick-label">{t(language, "past_questions")}</div>
               <div className="landing-quick-chips">
                 {recentQs.map(h => (
@@ -121,6 +125,24 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
               </div>
             </div>
           )}
+          <div className="fade-up d4 landing-hero-examples">
+            {LANDING_EXAMPLE_KEYS.slice(0, 3).map((key) => {
+              const q = t(language, key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className="landing-hero-example-chip"
+                  onClick={() => {
+                    Events.landingCta({ action: "hero_example", authenticated: !!authenticated, language });
+                    onEnter(q);
+                  }}
+                >
+                  {q}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
