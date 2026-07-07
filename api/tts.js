@@ -1,5 +1,18 @@
-// Persona → Gemini prebuilt voice mapping
-const VOICES = {
+// Persona → OpenAI voice mapping (gpt-4o-mini-tts voices)
+const OPENAI_VOICES = {
+  founder:     "onyx",    // authoritative, deep
+  billionaire: "ash",     // confident, measured
+  artist:      "nova",    // expressive, warm
+  athlete:     "echo",    // energetic, clear
+  monk:        "fable",   // calm, wise
+  scientist:   "alloy",   // neutral, precise
+  explorer:    "verse",   // curious, adventurous
+  romantic:    "coral",   // intimate, warm
+  shadow:      "ballad",  // low, mysterious
+};
+
+// Persona → Gemini prebuilt voice mapping (fallback)
+const GEMINI_VOICES = {
   founder:     "Orus",
   billionaire: "Charon",
   artist:      "Aoede",
@@ -24,7 +37,7 @@ function pcmToWav(pcmBuf, sampleRate = 24000) {
   buf.write("WAVE", 8);
   buf.write("fmt ", 12);
   buf.writeUInt32LE(16, 16);
-  buf.writeUInt16LE(1, 20);          // PCM format
+  buf.writeUInt16LE(1, 20);
   buf.writeUInt16LE(numChannels, 22);
   buf.writeUInt32LE(sampleRate, 24);
   buf.writeUInt32LE(byteRate, 28);
@@ -36,19 +49,32 @@ function pcmToWav(pcmBuf, sampleRate = 24000) {
   return buf;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+async function openaiTts(text, persona, apiKey) {
+  const voice = OPENAI_VOICES[persona] || "alloy";
+  const res = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini-tts",
+      input: text,
+      voice,
+      response_format: "mp3",
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`OpenAI TTS ${res.status}: ${detail}`);
+  }
+  return { buffer: Buffer.from(await res.arrayBuffer()), contentType: "audio/mpeg" };
+}
 
-  const apiKey = process.env.GEMINI_TTS_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: "TTS not configured" });
-
-  const { text, persona } = req.body || {};
-  if (!text) return res.status(400).json({ error: "text required" });
-
-  const voice = VOICES[persona] || "Aoede";
-
-  const upstream = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+async function geminiTts(text, persona, apiKey) {
+  const voice = GEMINI_VOICES[persona] || "Aoede";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-tts:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,21 +89,47 @@ export default async function handler(req, res) {
       }),
     }
   );
-
-  if (!upstream.ok) {
-    const detail = await upstream.text().catch(() => "");
-    return res.status(502).json({ error: "Gemini TTS failed", detail });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Gemini TTS ${res.status}: ${detail}`);
   }
-
-  const json = await upstream.json();
+  const json = await res.json();
   const part = json.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-  if (!part?.data) return res.status(502).json({ error: "no audio in response" });
-
+  if (!part?.data) throw new Error("no audio in Gemini response");
   const rateMatch = (part.mimeType || "").match(/rate=(\d+)/);
   const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+  return { buffer: pcmToWav(Buffer.from(part.data, "base64"), sampleRate), contentType: "audio/wav" };
+}
 
-  const wav = pcmToWav(Buffer.from(part.data, "base64"), sampleRate);
-  res.setHeader("Content-Type", "audio/wav");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(wav);
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const geminiKey = process.env.GEMINI_TTS_API_KEY;
+  if (!openaiKey && !geminiKey) return res.status(503).json({ error: "TTS not configured" });
+
+  const { text, persona } = req.body || {};
+  if (!text) return res.status(400).json({ error: "text required" });
+
+  try {
+    const result = openaiKey
+      ? await openaiTts(text, persona, openaiKey)
+      : await geminiTts(text, persona, geminiKey);
+
+    res.setHeader("Content-Type", result.contentType);
+    res.setHeader("Cache-Control", "no-store");
+    res.end(result.buffer);
+  } catch (e) {
+    // If OpenAI failed and Gemini key exists, try Gemini as fallback
+    if (openaiKey && geminiKey) {
+      try {
+        const result = await geminiTts(text, persona, geminiKey);
+        res.setHeader("Content-Type", result.contentType);
+        res.setHeader("Cache-Control", "no-store");
+        res.end(result.buffer);
+        return;
+      } catch {}
+    }
+    res.status(502).json({ error: "TTS failed", detail: e.message });
+  }
 }
