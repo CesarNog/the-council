@@ -119,8 +119,8 @@ Click Cookie Settings in the footer at any time to review or change your choices
       <button className="btn small" style={{ marginBottom: 32 }} onClick={onBack}>{t(language, "back")}</button>
       <h1 className="serif" style={{ fontSize: "clamp(24px,3vw,36px)", marginBottom: 24 }}>{title}</h1>
       <div style={{ fontSize: 15, lineHeight: 1.7, opacity: 0.85 }}>
-        {body.split("\n\n").map((para, i) => (
-          <p key={i} style={{ marginBottom: "1.2em", whiteSpace: "pre-wrap" }}>{para}</p>
+        {body.split("\n\n").map((para) => (
+          <p key={para.slice(0, 40)} style={{ marginBottom: "1.2em", whiteSpace: "pre-wrap" }}>{para}</p>
         ))}
       </div>
     </div>
