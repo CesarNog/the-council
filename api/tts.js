@@ -24,6 +24,14 @@ const GEMINI_VOICES = {
   shadow:      "Schedar",
 };
 
+const TTS_TIMEOUT_MS = 10000;
+
+function withTimeout(ms) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, clear: () => clearTimeout(id) };
+}
+
 // Wraps raw PCM (linear16) in a RIFF WAV container so browsers can play it.
 function pcmToWav(pcmBuf, sampleRate = 24000) {
   const numChannels = 1;
@@ -51,6 +59,7 @@ function pcmToWav(pcmBuf, sampleRate = 24000) {
 
 async function openaiTts(text, persona, apiKey) {
   const voice = OPENAI_VOICES[persona] || "alloy";
+  const { signal, clear } = withTimeout(TTS_TIMEOUT_MS);
   const res = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {
@@ -63,7 +72,9 @@ async function openaiTts(text, persona, apiKey) {
       voice,
       response_format: "mp3",
     }),
+    signal,
   });
+  clear();
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     throw new Error(`OpenAI TTS ${res.status}: ${detail}`);
@@ -73,11 +84,13 @@ async function openaiTts(text, persona, apiKey) {
 
 async function geminiTts(text, persona, apiKey) {
   const voice = GEMINI_VOICES[persona] || "Aoede";
+  const { signal, clear } = withTimeout(TTS_TIMEOUT_MS);
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-tts:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal,
       body: JSON.stringify({
         contents: [{ parts: [{ text }] }],
         generationConfig: {
@@ -89,6 +102,7 @@ async function geminiTts(text, persona, apiKey) {
       }),
     }
   );
+  clear();
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     throw new Error(`Gemini TTS ${res.status}: ${detail}`);
@@ -128,7 +142,9 @@ export default async function handler(req, res) {
         res.setHeader("Cache-Control", "no-store");
         res.end(result.buffer);
         return;
-      } catch {}
+      } catch (fallbackErr) {
+        console.error("Gemini fallback also failed:", fallbackErr.message);
+      }
     }
     res.status(502).json({ error: "TTS failed", detail: e.message });
   }
