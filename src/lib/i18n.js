@@ -385,6 +385,65 @@ const S = {
   onb_fear_judged: { en: "Being judged", pt: "Ser julgado", es: "Ser juzgado", zh: "被评判" },
   onb_fear_start: { en: "Not knowing where to begin", pt: "Não saber por onde começar", es: "No saber por dónde empezar", zh: "不知从何开始" },
   onb_fear_unknown: { en: "I'm not sure exactly", pt: "Não sei exatamente", es: "No sé exactamente", zh: "我不确定" },
+
+  // notifications panel
+  notif_heading:       { en: "Notifications",    pt: "Notificações",    es: "Notificaciones",    zh: "通知" },
+  notif_digest:        { en: "Weekly digest",    pt: "Resumo semanal",  es: "Resumen semanal",   zh: "每周摘要" },
+  notif_digest_desc:   { en: "A prompt to bring a new matter before the Council each week", pt: "Um convite para trazer um novo assunto ao Conselho a cada semana", es: "Un recordatorio para traer un nuevo asunto al Consejo cada semana", zh: "每周提示你向议会提出新问题" },
+  notif_lifemode:      { en: "Life Mode check-ins",     pt: "Check-ins do Life Mode",      es: "Check-ins del Modo Vida",      zh: "生活模式签到" },
+  notif_lifemode_desc: { en: "Proactive reflections on your ongoing decisions", pt: "Reflexões proativas sobre decisões em andamento", es: "Reflexiones proactivas sobre decisiones en curso", zh: "对持续决策的主动反思" },
+  notif_features:      { en: "New features",    pt: "Novidades do Conselho",  es: "Novedades del Consejo",  zh: "新功能" },
+  notif_features_desc: { en: "Be the first to know when new Council capabilities arrive", pt: "Seja o primeiro a saber quando novas capacidades chegarem ao Conselho", es: "Sé el primero en saber cuándo llegan nuevas capacidades al Consejo", zh: "第一时间了解议会的新功能" },
+  notif_saved:         { en: "Preferences saved",  pt: "Preferências salvas", es: "Preferencias guardadas", zh: "偏好已保存" },
+
+  // privacy panel
+  privacy_heading:          { en: "Your data",         pt: "Seus dados",        es: "Tus datos",          zh: "你的数据" },
+  privacy_on_device:        { en: "On this device",    pt: "Neste dispositivo", es: "En este dispositivo", zh: "在此设备上" },
+  privacy_on_device_items:  { en: "Language, theme, display name, debate history (last 10)", pt: "Idioma, tema, nome exibido, histórico de debates (últimos 10)", es: "Idioma, tema, nombre visible, historial de debates (últimos 10)", zh: "语言、主题、显示名称、辩论记录（最近10条）" },
+  privacy_in_cloud:         { en: "In the cloud (signed-in accounts)", pt: "Na nuvem (contas conectadas)", es: "En la nube (cuentas conectadas)", zh: "在云端（已登录账户）" },
+  privacy_in_cloud_items:   { en: "Display name, situation, values, profile picture", pt: "Nome exibido, situação, valores, foto de perfil", es: "Nombre visible, situación, valores, foto de perfil", zh: "显示名称、情况、价值观、头像" },
+  privacy_clear_local:      { en: "Clear local data",  pt: "Limpar dados locais",  es: "Borrar datos locales",  zh: "清除本地数据" },
+  privacy_cleared:          { en: "Local data cleared", pt: "Dados locais apagados", es: "Datos locales borrados", zh: "本地数据已清除" },
+  privacy_read_policy:      { en: "Read the Privacy Policy", pt: "Ler a Política de Privacidade", es: "Leer la Política de Privacidad", zh: "阅读隐私政策" },
+  privacy_deletion_contact: { en: "To request full deletion of your data, contact:", pt: "Para solicitar exclusão completa dos seus dados, contate:", es: "Para solicitar la eliminación completa de tus datos, contacta:", zh: "如需完全删除你的数据，请联系：" },
+
+  // security panel
+  security_heading:           { en: "Security",        pt: "Segurança",         es: "Seguridad",          zh: "安全" },
+  security_active_session:    { en: "Active session",  pt: "Sessão ativa",      es: "Sesión activa",      zh: "活跃会话" },
+  security_signed_in_as:      { en: name => `Signed in as ${name}`, pt: name => `Conectado como ${name}`, es: name => `Conectado como ${name}`, zh: name => `已以 ${name} 登录` },
+  security_this_device:       { en: "This device",     pt: "Este dispositivo",  es: "Este dispositivo",   zh: "此设备" },
+  security_deletion_heading:  { en: "Account deletion", pt: "Exclusão de conta", es: "Eliminación de cuenta", zh: "账户删除" },
+  security_deletion_desc:     { en: "To delete your Council profile and all server data, email:", pt: "Para excluir seu perfil do Conselho e todos os dados do servidor, envie e-mail para:", es: "Para eliminar tu perfil del Consejo y todos los datos del servidor, envía un correo a:", zh: "如需删除你的议会档案及服务器上的所有数据，请发送邮件至：" },
+
+  // preferences panel
+  pref_heading:        { en: "Preferences", pt: "Preferências",  es: "Preferencias",  zh: "偏好设置" },
+  pref_appearance:     { en: "Appearance",  pt: "Aparência",     es: "Apariencia",    zh: "外观" },
+  pref_dark:           { en: "Dark",        pt: "Escuro",        es: "Oscuro",        zh: "深色" },
+  pref_light:          { en: "Light",       pt: "Claro",         es: "Claro",         zh: "浅色" },
+  pref_language_label: { en: "Language",    pt: "Idioma",        es: "Idioma",        zh: "语言" },
+
+  // subscription panel
+  sub_heading:        { en: "Your plan",     pt: "Seu plano",     es: "Tu plan",        zh: "你的计划" },
+  sub_current_plan:   { en: "Free",          pt: "Gratuito",      es: "Gratuito",       zh: "免费版" },
+  sub_included:       { en: "What's included", pt: "O que está incluído", es: "Qué incluye", zh: "包含内容" },
+  sub_free_1:         { en: "Unlimited Council debates",    pt: "Debates ilimitados no Conselho", es: "Debates ilimitados en el Consejo", zh: "无限次议会辩论" },
+  sub_free_2:         { en: "9 distinct AI personas",       pt: "9 personas de IA distintas",     es: "9 personas de IA distintas",      zh: "9个独特的AI角色" },
+  sub_free_3:         { en: "Shareable verdict cards",      pt: "Cartões de veredito compartilháveis", es: "Tarjetas de veredicto compartibles", zh: "可分享的裁决卡片" },
+  sub_free_4:         { en: "Debate history (last 10)",     pt: "Histórico de debates (últimos 10)", es: "Historial de debates (últimos 10)", zh: "辩论记录（最近10条）" },
+  sub_premium_label:  { en: "Premium — coming soon",        pt: "Premium — em breve",              es: "Premium — próximamente",           zh: "高级版——即将推出" },
+  sub_premium_1:      { en: "Unlimited debate history",     pt: "Histórico ilimitado de debates",  es: "Historial de debates ilimitado",   zh: "无限辩论记录" },
+  sub_premium_2:      { en: "Life Mode — proactive Council check-ins", pt: "Life Mode — check-ins proativos do Conselho", es: "Modo Vida — check-ins proactivos del Consejo", zh: "生活模式——主动议会签到" },
+  sub_premium_3:      { en: "Custom personas",              pt: "Personas personalizadas",         es: "Personas personalizadas",          zh: "自定义角色" },
+  sub_premium_4:      { en: "Email verdicts to yourself",   pt: "Enviar vereditos por e-mail",     es: "Enviarte veredictos por correo",   zh: "将裁决发送到邮箱" },
+  sub_notify_me:      { en: "Notify me when Premium launches", pt: "Avise-me quando o Premium for lançado", es: "Avísame cuando se lance Premium", zh: "Premium上线时通知我" },
+  sub_on_waitlist:    { en: "You're on the list",           pt: "Você está na lista",              es: "Estás en la lista",                zh: "你已加入等候名单" },
+
+  // history panel
+  hist_heading:       { en: "Debate history",  pt: "Histórico de debates", es: "Historial de debates", zh: "辩论记录" },
+  hist_empty:         { en: "No debates yet. Bring your first question before the Council.", pt: "Nenhum debate ainda. Traga sua primeira pergunta ao Conselho.", es: "Aún no hay debates. Lleva tu primera pregunta al Consejo.", zh: "暂无辩论记录。将你的第一个问题带到议会吧。" },
+  hist_clear:         { en: "Clear history",   pt: "Limpar histórico",     es: "Borrar historial",     zh: "清除历史记录" },
+  hist_cleared:       { en: "History cleared", pt: "Histórico apagado",    es: "Historial borrado",    zh: "历史记录已清除" },
+  hist_revisit:       { en: "Revisit",         pt: "Revisitar",            es: "Revisitar",            zh: "重新辩论" },
 };
 
 export function t(lang, key, ...args) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { updateProfile, resizeImageToDataUrl } from "./lib/auth.js";
-import { t } from "./lib/i18n.js";
+import { t, LANGUAGES } from "./lib/i18n.js";
+import { loadHistory, clearHistory } from "./lib/history.js";
 
 export function GoogleSignIn({ onCredential }) {
   const ref = useRef(null);
@@ -36,12 +37,12 @@ const PROFILE_VALUE_KEYS = [
 
 const NAV_ITEMS = [
   { key: "profile",       icon: <IconUser /> },
-  { key: "notifications", icon: <IconBell />,   soon: true },
-  { key: "privacy",       icon: <IconLock />,   soon: true },
-  { key: "security",      icon: <IconShield />, soon: true },
-  { key: "preferences",   icon: <IconSliders />,soon: true },
-  { key: "subscription",  icon: <IconStar />,   soon: true },
-  { key: "history",       icon: <IconClock />,  soon: true },
+  { key: "notifications", icon: <IconBell /> },
+  { key: "privacy",       icon: <IconLock /> },
+  { key: "security",      icon: <IconShield /> },
+  { key: "preferences",   icon: <IconSliders /> },
+  { key: "subscription",  icon: <IconStar /> },
+  { key: "history",       icon: <IconClock /> },
 ];
 
 function IconUser() {
@@ -133,14 +134,44 @@ function ProgressRing({ pct }) {
   );
 }
 
-export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) {
+const NAV_HEADING_KEY = {
+  profile: "your_presence",
+  notifications: "notif_heading",
+  privacy: "privacy_heading",
+  security: "security_heading",
+  preferences: "pref_heading",
+  subscription: "sub_heading",
+  history: "hist_heading",
+};
+
+export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggle, onLanguageChange, onRevisit, theme = "dark", language }) {
   const [activeNav, setActiveNav] = useState("profile");
+
+  // profile tab
   const [situation, setSituation] = useState(user.situation || "");
   const [values, setValues] = useState(user.values || []);
   const [picture, setPicture] = useState(user.customPicture);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [savedMsg, setSavedMsg] = useState(false);
+
+  // notifications tab
+  const [notifPrefs, setNotifPrefs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("council:notif") || "{}"); } catch { return {}; }
+  });
+  const [notifSaved, setNotifSaved] = useState(false);
+
+  // privacy tab
+  const [privacyCleared, setPrivacyCleared] = useState(false);
+
+  // history tab
+  const [historyItems, setHistoryItems] = useState(() => loadHistory());
+  const [histCleared, setHistCleared] = useState(false);
+
+  // subscription tab
+  const [onWaitlist, setOnWaitlist] = useState(() => {
+    try { return !!localStorage.getItem("council:premium_waitlist"); } catch { return false; }
+  });
 
   const MAX_SITUATION = 140;
   const avatarSrc = picture || user.googlePicture;
@@ -193,6 +224,42 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) 
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
 
+  const saveNotifPref = (key, val) => {
+    const next = { ...notifPrefs, [key]: val };
+    setNotifPrefs(next);
+    try { localStorage.setItem("council:notif", JSON.stringify(next)); } catch {}
+    setNotifSaved(true);
+    setTimeout(() => setNotifSaved(false), 2000);
+  };
+
+  const handleClearLocal = () => {
+    const lang = localStorage.getItem("council:lang");
+    const th = localStorage.getItem("council:theme");
+    Object.keys(localStorage).filter(k => k.startsWith("council:")).forEach(k => localStorage.removeItem(k));
+    if (lang) try { localStorage.setItem("council:lang", lang); } catch {}
+    if (th) try { localStorage.setItem("council:theme", th); } catch {}
+    setHistoryItems([]);
+    setPrivacyCleared(true);
+  };
+
+  const handleClearHistory = () => {
+    clearHistory();
+    setHistoryItems([]);
+    setHistCleared(true);
+    setTimeout(() => setHistCleared(false), 2500);
+  };
+
+  const handleWaitlist = () => {
+    const next = !onWaitlist;
+    setOnWaitlist(next);
+    try {
+      if (next) localStorage.setItem("council:premium_waitlist", "1");
+      else localStorage.removeItem("council:premium_waitlist");
+    } catch {}
+  };
+
+  const heading = t(language, NAV_HEADING_KEY[activeNav] || "your_presence");
+
   return (
     <div className="profile-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={t(language, "your_presence")}>
       <div className="profile-dashboard" onClick={e => e.stopPropagation()}>
@@ -212,17 +279,12 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) 
             {NAV_ITEMS.map(item => (
               <li key={item.key} role="listitem">
                 <button
-                  className={"profile-nav-item" + (activeNav === item.key ? " on" : "") + (item.soon ? " soon" : "")}
-                  onClick={() => !item.soon && setActiveNav(item.key)}
+                  className={"profile-nav-item" + (activeNav === item.key ? " on" : "")}
+                  onClick={() => setActiveNav(item.key)}
                   aria-current={activeNav === item.key ? "page" : undefined}
-                  aria-disabled={item.soon ? "true" : undefined}
-                  tabIndex={item.soon ? -1 : 0}
                 >
                   <span className="profile-nav-icon" aria-hidden="true">{item.icon}</span>
                   <span className="profile-nav-label">{t(language, "profile_nav_" + item.key)}</span>
-                  {item.soon && (
-                    <span className="profile-nav-soon">{t(language, "coming_soon")}</span>
-                  )}
                 </button>
               </li>
             ))}
@@ -233,10 +295,10 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) 
           </button>
         </nav>
 
-        {/* ── MAIN FORM ── */}
+        {/* ── MAIN CONTENT ── */}
         <main className="profile-main">
           <div className="profile-main-header">
-            <div className="eyebrow">{t(language, "your_presence")}</div>
+            <div className="eyebrow">{heading}</div>
             <button className="profile-close-btn" onClick={onClose} aria-label={t(language, "close")}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -244,106 +306,335 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, language }) 
             </button>
           </div>
 
-          {/* Avatar */}
-          <div className="profile-avatar-section">
-            <div className="profile-avatar-wrap">
-              {avatarSrc
-                ? <img src={avatarSrc} alt="" className="profile-avatar-lg" />
-                : <div className="profile-avatar-initials-lg">{initials}</div>}
-              <label className="profile-avatar-edit" aria-label={t(language, "change_picture")}>
-                <IconCamera />
-                <input type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
-              </label>
-            </div>
-            <div className="profile-name-block">
-              <div className="hint" style={{ fontSize: 11 }}>{t(language, "name_label")}</div>
-              <div className="profile-name-display">{user.name || "—"}</div>
-            </div>
-          </div>
-
-          {/* Situation */}
-          <div className="field">
-            <div className="hint">{t(language, "where_you_stand")}</div>
-            <div className="profile-textarea-wrap">
-              <textarea
-                rows={3}
-                value={situation}
-                onChange={e => setSituation(e.target.value.slice(0, MAX_SITUATION))}
-                placeholder={t(language, "onb_situation_placeholder")}
-                aria-label={t(language, "where_you_stand")}
-                maxLength={MAX_SITUATION}
-              />
-              <div
-                className={"profile-char-count" + (situation.length >= MAX_SITUATION ? " at-limit" : "")}
-                aria-live="polite" aria-atomic="true"
-              >
-                {situation.length}/{MAX_SITUATION}
+          {/* ── Profile tab ── */}
+          {activeNav === "profile" && (<>
+            <div className="profile-avatar-section">
+              <div className="profile-avatar-wrap">
+                {avatarSrc
+                  ? <img src={avatarSrc} alt="" className="profile-avatar-lg" />
+                  : <div className="profile-avatar-initials-lg">{initials}</div>}
+                <label className="profile-avatar-edit" aria-label={t(language, "change_picture")}>
+                  <IconCamera />
+                  <input type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
+                </label>
+              </div>
+              <div className="profile-name-block">
+                <div className="hint" style={{ fontSize: 11 }}>{t(language, "name_label")}</div>
+                <div className="profile-name-display">{user.name || "—"}</div>
               </div>
             </div>
-          </div>
 
-          {/* Values */}
-          <div className="field">
-            <div className="profile-values-header hint">
-              <span>{t(language, "protect_up_to_three")}</span>
-              <span className="profile-values-count" aria-live="polite">{values.length}/3</span>
+            <div className="field">
+              <div className="hint">{t(language, "where_you_stand")}</div>
+              <div className="profile-textarea-wrap">
+                <textarea
+                  rows={3}
+                  value={situation}
+                  onChange={e => setSituation(e.target.value.slice(0, MAX_SITUATION))}
+                  placeholder={t(language, "onb_situation_placeholder")}
+                  aria-label={t(language, "where_you_stand")}
+                  maxLength={MAX_SITUATION}
+                />
+                <div
+                  className={"profile-char-count" + (situation.length >= MAX_SITUATION ? " at-limit" : "")}
+                  aria-live="polite" aria-atomic="true"
+                >
+                  {situation.length}/{MAX_SITUATION}
+                </div>
+              </div>
             </div>
-            <div className="chips profile-chips">
-              {PROFILE_VALUE_KEYS.map(key => {
-                const canonical = t("en", key);
-                const on = values.includes(canonical);
-                const disabled = !on && values.length >= 3;
-                return (
-                  <button
-                    key={key}
-                    className={"chip" + (on ? " on" : "") + (disabled ? " chip-disabled" : "")}
-                    onClick={() => toggle(key)}
-                    aria-pressed={on}
-                    aria-disabled={disabled}
-                  >
-                    {t(language, key)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Debate history (mobile only — also shown in aside on desktop) */}
-          {user.debateHistory?.length > 0 && (
-            <div className="field profile-history-mobile">
-              <div className="hint">{t(language, "your_journey")}</div>
-              <div className="echo-timeline">
-                {user.debateHistory.slice(0, 4).map((h, i) => {
-                  const isEclipse = !!h.unanimousVote;
+            <div className="field">
+              <div className="profile-values-header hint">
+                <span>{t(language, "protect_up_to_three")}</span>
+                <span className="profile-values-count" aria-live="polite">{values.length}/3</span>
+              </div>
+              <div className="chips profile-chips">
+                {PROFILE_VALUE_KEYS.map(key => {
+                  const canonical = t("en", key);
+                  const on = values.includes(canonical);
+                  const disabled = !on && values.length >= 3;
                   return (
-                    <div key={h.id || i} className={"echo-entry" + (isEclipse ? " eclipse" : "")}>
-                      <div className="echo-dot">{isEclipse ? "☉" : "·"}</div>
-                      <div>
-                        <div className="echo-q">{h.question}</div>
-                        <div className="echo-date">
-                          {new Date(h.at).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      key={key}
+                      className={"chip" + (on ? " on" : "") + (disabled ? " chip-disabled" : "")}
+                      onClick={() => toggle(key)}
+                      aria-pressed={on}
+                      aria-disabled={disabled}
+                    >
+                      {t(language, key)}
+                    </button>
                   );
                 })}
               </div>
             </div>
-          )}
 
-          {error && (
-            <div className="err" role="alert" style={{ marginTop: 14, fontSize: 13 }}>{error}</div>
-          )}
-          {savedMsg && (
-            <div className="profile-saved-toast" role="status">{t(language, "changes_saved")}</div>
-          )}
+            {user.debateHistory?.length > 0 && (
+              <div className="field profile-history-mobile">
+                <div className="hint">{t(language, "your_journey")}</div>
+                <div className="echo-timeline">
+                  {user.debateHistory.slice(0, 4).map((h, i) => {
+                    const isEclipse = !!h.unanimousVote;
+                    return (
+                      <div key={h.id || i} className={"echo-entry" + (isEclipse ? " eclipse" : "")}>
+                        <div className="echo-dot">{isEclipse ? "☉" : "·"}</div>
+                        <div>
+                          <div className="echo-q">{h.question}</div>
+                          <div className="echo-date">
+                            {new Date(h.at).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          <div className="profile-actions">
-            <button className="btn primary profile-btn-primary" onClick={save} disabled={saving}>
-              {saving ? t(language, "saving") : t(language, "save_changes")}
-            </button>
-            <button className="btn small" onClick={onClose}>{t(language, "close")}</button>
-          </div>
+            {error && (
+              <div className="err" role="alert" style={{ marginTop: 14, fontSize: 13 }}>{error}</div>
+            )}
+            {savedMsg && (
+              <div className="profile-saved-toast" role="status">{t(language, "changes_saved")}</div>
+            )}
+
+            <div className="profile-actions">
+              <button className="btn primary profile-btn-primary" onClick={save} disabled={saving}>
+                {saving ? t(language, "saving") : t(language, "save_changes")}
+              </button>
+              <button className="btn small" onClick={onClose}>{t(language, "close")}</button>
+            </div>
+          </>)}
+
+          {/* ── Notifications tab ── */}
+          {activeNav === "notifications" && (<>
+            <div className="prof-section">
+              <div className="consent-row">
+                <div>
+                  <div className="consent-label">{t(language, "notif_digest")}</div>
+                  <div className="consent-desc">{t(language, "notif_digest_desc")}</div>
+                </div>
+                <button
+                  className={"consent-toggle" + (notifPrefs.digest ? " on" : "")}
+                  onClick={() => saveNotifPref("digest", !notifPrefs.digest)}
+                  aria-pressed={!!notifPrefs.digest}
+                >
+                  {notifPrefs.digest ? "✓" : "○"}
+                </button>
+              </div>
+              <div className="consent-row">
+                <div>
+                  <div className="consent-label">{t(language, "notif_lifemode")}</div>
+                  <div className="consent-desc">{t(language, "notif_lifemode_desc")}</div>
+                </div>
+                <button
+                  className={"consent-toggle" + (notifPrefs.lifeMode ? " on" : "")}
+                  onClick={() => saveNotifPref("lifeMode", !notifPrefs.lifeMode)}
+                  aria-pressed={!!notifPrefs.lifeMode}
+                >
+                  {notifPrefs.lifeMode ? "✓" : "○"}
+                </button>
+              </div>
+              <div className="consent-row">
+                <div>
+                  <div className="consent-label">{t(language, "notif_features")}</div>
+                  <div className="consent-desc">{t(language, "notif_features_desc")}</div>
+                </div>
+                <button
+                  className={"consent-toggle" + (notifPrefs.features ? " on" : "")}
+                  onClick={() => saveNotifPref("features", !notifPrefs.features)}
+                  aria-pressed={!!notifPrefs.features}
+                >
+                  {notifPrefs.features ? "✓" : "○"}
+                </button>
+              </div>
+            </div>
+            {notifSaved && (
+              <div className="profile-saved-toast" role="status">{t(language, "notif_saved")}</div>
+            )}
+          </>)}
+
+          {/* ── Privacy tab ── */}
+          {activeNav === "privacy" && (<>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 8 }}>{t(language, "privacy_on_device")}</div>
+              <div style={{ fontSize: 13, color: "var(--ivory-dim)", lineHeight: 1.6, marginBottom: 16 }}>
+                {t(language, "privacy_on_device_items")}
+              </div>
+              {user && (
+                <>
+                  <div className="hint" style={{ marginBottom: 8 }}>{t(language, "privacy_in_cloud")}</div>
+                  <div style={{ fontSize: 13, color: "var(--ivory-dim)", lineHeight: 1.6 }}>
+                    {t(language, "privacy_in_cloud_items")}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="prof-section">
+              {privacyCleared
+                ? <div className="profile-saved-toast" role="status">{t(language, "privacy_cleared")}</div>
+                : (
+                  <button className="btn small" onClick={handleClearLocal}>
+                    {t(language, "privacy_clear_local")}
+                  </button>
+                )
+              }
+            </div>
+            <div className="prof-section">
+              <button
+                className="btn small"
+                style={{ marginBottom: 16 }}
+                onClick={() => window.open("/privacy", "_blank")}
+              >
+                {t(language, "privacy_read_policy")}
+              </button>
+              <div style={{ fontSize: 12, color: "var(--ivory-faint)", lineHeight: 1.6 }}>
+                {t(language, "privacy_deletion_contact")}<br />
+                <a href="mailto:cesarnogueira1210@gmail.com" style={{ color: "var(--gold)", textDecoration: "none" }}>
+                  cesarnogueira1210@gmail.com
+                </a>
+              </div>
+            </div>
+          </>)}
+
+          {/* ── Security tab ── */}
+          {activeNav === "security" && (<>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "security_active_session")}</div>
+              <div className="prof-session-card">
+                <div className="prof-session-name">{t(language, "security_signed_in_as", user.name || "—")}</div>
+                <div className="prof-session-sub">{t(language, "security_this_device")}</div>
+              </div>
+              <button className="btn small" onClick={onSignOut} style={{ marginTop: 8 }}>
+                {t(language, "sign_out")}
+              </button>
+            </div>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 8 }}>{t(language, "security_deletion_heading")}</div>
+              <div style={{ fontSize: 12, color: "var(--ivory-faint)", lineHeight: 1.7 }}>
+                {t(language, "security_deletion_desc")}<br />
+                <a href="mailto:cesarnogueira1210@gmail.com" style={{ color: "var(--gold)", textDecoration: "none" }}>
+                  cesarnogueira1210@gmail.com
+                </a>
+              </div>
+            </div>
+          </>)}
+
+          {/* ── Preferences tab ── */}
+          {activeNav === "preferences" && (<>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "pref_appearance")}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className={"btn small" + (theme === "dark" ? " primary" : "")}
+                  onClick={() => theme !== "dark" && onThemeToggle?.()}
+                  aria-pressed={theme === "dark"}
+                >
+                  {t(language, "pref_dark")}
+                </button>
+                <button
+                  className={"btn small" + (theme === "light" ? " primary" : "")}
+                  onClick={() => theme !== "light" && onThemeToggle?.()}
+                  aria-pressed={theme === "light"}
+                >
+                  {t(language, "pref_light")}
+                </button>
+              </div>
+            </div>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "pref_language_label")}</div>
+              <div className="lang-selector">
+                {LANGUAGES.map(l => (
+                  <button
+                    key={l.code}
+                    className={"lang-chip" + (l.code === language ? " on" : "")}
+                    onClick={() => onLanguageChange?.(l.code)}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>)}
+
+          {/* ── Subscription tab ── */}
+          {activeNav === "subscription" && (<>
+            <div className="prof-section" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontFamily: "var(--serif)", fontSize: 18 }}>{t(language, "sub_heading")}</div>
+              <span className="prof-plan-badge">{t(language, "sub_current_plan")}</span>
+            </div>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "sub_included")}</div>
+              {["sub_free_1","sub_free_2","sub_free_3","sub_free_4"].map(k => (
+                <div key={k} className="prof-feat-row">
+                  <span className="prof-feat-check">✓</span>
+                  <span>{t(language, k)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="prof-section">
+              <div className="hint" style={{ marginBottom: 12 }}>{t(language, "sub_premium_label")}</div>
+              {["sub_premium_1","sub_premium_2","sub_premium_3","sub_premium_4"].map(k => (
+                <div key={k} className="prof-feat-row locked">
+                  <span className="prof-feat-lock">◌</span>
+                  <span>{t(language, k)}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 20 }}>
+                <button
+                  className={"btn small" + (onWaitlist ? " primary" : "")}
+                  onClick={handleWaitlist}
+                  aria-pressed={onWaitlist}
+                >
+                  {onWaitlist ? t(language, "sub_on_waitlist") : t(language, "sub_notify_me")}
+                </button>
+              </div>
+            </div>
+          </>)}
+
+          {/* ── History tab ── */}
+          {activeNav === "history" && (<>
+            {historyItems.length === 0
+              ? (
+                <div className="prof-hist-empty">
+                  {histCleared
+                    ? t(language, "hist_cleared")
+                    : t(language, "hist_empty")}
+                </div>
+              )
+              : (<>
+                <div className="prof-section">
+                  {historyItems.map((h, i) => (
+                    <div key={h.id || i} className="prof-hist-entry">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="prof-hist-q">{h.question}</div>
+                        <div className="prof-hist-meta">
+                          {new Date(h.timestamp || h.at || 0).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
+                        </div>
+                      </div>
+                      {onRevisit && (
+                        <button
+                          className="btn small"
+                          style={{ flexShrink: 0, fontSize: 10, padding: "8px 14px" }}
+                          onClick={() => onRevisit(h.question)}
+                        >
+                          {t(language, "hist_revisit")}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button className="btn small" onClick={handleClearHistory}>
+                  {t(language, "hist_clear")}
+                </button>
+                {histCleared && (
+                  <div className="profile-saved-toast" role="status" style={{ marginTop: 12 }}>
+                    {t(language, "hist_cleared")}
+                  </div>
+                )}
+              </>)
+            }
+          </>)}
         </main>
 
         {/* ── RIGHT SIDEBAR ── */}
