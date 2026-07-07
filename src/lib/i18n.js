@@ -249,6 +249,18 @@ const S = {
     es: "Harás una pregunta. Ellos discutirán, debatirán y votarán.",
     zh: "你会提出一个问题。他们会争论、辩论并投票。",
   },
+  auth_or: {
+    en: "or continue with",
+    pt: "ou entre com",
+    es: "o entra con",
+    zh: "或通过",
+  },
+  before_council_speaks: {
+    en: "Before the Council speaks…",
+    pt: "Antes do Conselho falar…",
+    es: "Antes de que hable el Consejo…",
+    zh: "议会开口之前……",
+  },
 
   // extended onboarding
   onb_progress_4: { en: "Rite of entry · IV", pt: "Ritual de entrada · IV", es: "Rito de entrada · IV", zh: "入场仪式 · 四" },

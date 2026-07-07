@@ -101,7 +101,7 @@
   width:min(560px,90vw); background:transparent; border:none; border-bottom:1px solid var(--line);
   color:var(--ivory); font-family:var(--serif); font-size:clamp(20px,2.6vw,28px); font-weight:300;
   text-align:center; padding:14px 8px; outline:none; transition:border-color .3s;}
-.onb input:focus, .onb textarea:focus{border-color:var(--gold);}
+.onb input:focus, .onb textarea:focus{border-color:var(--gold); box-shadow:0 2px 12px -4px rgba(201,169,110,.2);}
 .chips{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:640px; margin-bottom:12px;}
 .chip{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
   padding:12px 22px; border:1px solid var(--line); background:transparent; color:var(--ivory-dim);
@@ -181,6 +181,13 @@
 .err{margin-top:40px; text-align:center; color:var(--ivory-dim); font-size:14px; line-height:1.7;}
 .rate-limit-countdown{margin-top:12px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--gold-dim); opacity:.8;}
 
+@media (max-width:480px){
+  /* Landing: tighten above-the-fold on small phones */
+  .landing{padding-top:24px; padding-bottom:32px;}
+  .landing .ring-wrap{width:200px;}
+  .landing h1{margin:14px 0 14px;}
+  .landing .sub{margin-bottom:24px;}
+}
 @media (max-width:640px){
   .votes{grid-template-columns:repeat(2,1fr);}
   .chamber{padding-bottom:80px;}
@@ -631,6 +638,12 @@
   color:var(--gold); margin-bottom:8px; letter-spacing:.01em; animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) both; animation-delay:.25s;}
 .cta-sub{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ivory-faint);
   margin-top:14px; opacity:.75;}
+.cta-group{display:flex; flex-direction:column; align-items:center;}
+.auth-slot-wrap{margin-top:22px; display:flex; flex-direction:column; align-items:center;}
+.auth-divider{display:flex; align-items:center; gap:14px; margin-bottom:14px;
+  font-family:var(--mono); font-size:9px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ivory-faint); width:min(220px,80vw);}
+.auth-divider::before,.auth-divider::after{content:""; flex:1; height:1px; background:var(--line);}
 
 /* Onboarding option grids */
 .name-chip-row{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:24px;}
@@ -655,6 +668,9 @@
   background:none; border:none; color:var(--ivory-faint); cursor:pointer; padding:6px 0; margin-bottom:28px;
   transition:color .2s;}
 .onb-back:hover{color:var(--ivory-dim);}
+.onb-ceremony{margin-bottom:28px; text-align:center;}
+.onb-ceremony-sub{font-family:var(--serif); font-style:italic; font-weight:300; font-size:clamp(14px,1.8vw,16px);
+  color:var(--ivory-faint); margin-top:8px; line-height:1.65; max-width:36ch;}
 
 /* Chamber context chips */
 .context-chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; margin-bottom:4px;}

@@ -99,11 +99,16 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
       )}
       <h1 className="fade-up d2">{t(language, "landing_title_1")}<br /><em>{t(language, "landing_title_em")}</em></h1>
       <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
-      <div className="fade-up d4" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div className="fade-up d4 cta-group">
         <button className="btn primary" onClick={() => onEnter()}>{t(language, "enter_chamber_cta")}</button>
         <div className="cta-sub">{t(language, "enter_chamber_sub")}</div>
+        {authSlot && (
+          <div className="auth-slot-wrap">
+            <div className="auth-divider"><span>{t(language, "auth_or")}</span></div>
+            {authSlot}
+          </div>
+        )}
       </div>
-      {authSlot && <div className="fade-up d4" style={{ marginTop: 18 }}>{authSlot}</div>}
       {recentQs.length > 0 && (
         <div className="fade-up d4 landing-quick-section">
           <div className="landing-quick-label">{t(language, "past_questions")}</div>
@@ -137,11 +142,11 @@ const CAT_VALS = ["career", "love", "money", "family", "life_change", "creativit
 const FEAR_KEYS = ["onb_fear_security", "onb_fear_regret", "onb_fear_hurt", "onb_fear_fail", "onb_fear_judged", "onb_fear_start", "onb_fear_unknown"];
 const FEAR_VALS = ["security", "regret", "hurt", "fail", "judged", "start", "unknown"];
 
-export function Onboarding({ onDone, initial, language, googleNames }) {
+export function Onboarding({ onDone, initial, language, googleNames, initialDisplayName }) {
   const [step, setStep] = useState(0);
   // step 0: name
   const [displayName, setDisplayName] = useState(initial?.name || "");
-  const [customName, setCustomName] = useState("");
+  const [customName, setCustomName] = useState(initialDisplayName || "");
   const [nameMode, setNameMode] = useState(googleNames?.length ? "pick" : "type"); // pick | type | none
   // step 1: decision question
   const [question, setQuestion] = useState("");
@@ -172,6 +177,10 @@ export function Onboarding({ onDone, initial, language, googleNames }) {
 
   return (
     <div className="onb">
+      <div className="onb-ceremony fade-up d1">
+        <div className="eyebrow">{t(language, "before_council_speaks")}</div>
+        <p className="onb-ceremony-sub">{t(language, "onb_decision_hint")}</p>
+      </div>
       <div className="progress">{Array.from({ length: totalSteps }, (_, i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>
 
       {/* Step 0: Name */}
@@ -195,7 +204,7 @@ export function Onboarding({ onDone, initial, language, googleNames }) {
           )}
           {!googleNames?.length && (
             <>
-              <input type="text" autoFocus value={customName} onChange={e => setCustomName(e.target.value)}
+              <input type="text" autoFocus inputMode="text" enterKeyHint="next" value={customName} onChange={e => setCustomName(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") setStep(1); }}
                 placeholder={t(language, "onb_name_placeholder")} />
               <div style={{ marginTop: 12 }}>
@@ -225,7 +234,7 @@ export function Onboarding({ onDone, initial, language, googleNames }) {
           <div className="eyebrow">{t(language, "onb_progress_2")}</div>
           <h2>{t(language, "onb_decision_q")}</h2>
           <p className="hint">{t(language, "onb_decision_hint")}</p>
-          <textarea rows={2} autoFocus value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
+          <textarea rows={2} autoFocus inputMode="text" enterKeyHint="done" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
             placeholder={t(language, "onb_decision_placeholder")} />
           <div style={{ marginTop: 44 }}>
             <button className="btn" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "continue")}</button>
