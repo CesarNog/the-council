@@ -511,6 +511,13 @@ const S = {
   sub_premium_4:      { en: "Email verdicts to yourself",   pt: "Enviar vereditos por e-mail",     es: "Enviarte veredictos por correo",   zh: "将裁决发送到邮箱" },
   sub_notify_me:      { en: "Notify me when Premium launches", pt: "Avise-me quando o Premium for lançado", es: "Avísame cuando se lance Premium", zh: "Premium上线时通知我" },
   sub_on_waitlist:    { en: "You're on the list",           pt: "Você está na lista",              es: "Estás en la lista",                zh: "你已加入等候名单" },
+  sub_email_placeholder: { en: "your@email.com", pt: "seu@email.com", es: "tu@email.com", zh: "你的@邮箱.com" },
+  sub_email_join:     { en: "Join waitlist",     pt: "Entrar na lista",  es: "Unirme a la lista",  zh: "加入等候名单" },
+  sub_email_sending:  { en: "Joining…",          pt: "Entrando…",        es: "Uniéndome…",         zh: "加入中…" },
+  sub_email_error:    { en: "Something went wrong. Try again.", pt: "Algo deu errado. Tente novamente.", es: "Algo falló. Inténtalo de nuevo.", zh: "出现了问题，请重试。" },
+  sub_email_invalid:  { en: "Enter a valid email.", pt: "Insira um e-mail válido.", es: "Ingresa un correo válido.", zh: "请输入有效邮箱。" },
+  sub_teaser_label:   { en: "Premium — coming soon", pt: "Premium — em breve", es: "Premium — próximamente", zh: "高级版——即将推出" },
+  sub_teaser_sub:     { en: "Be first to know when these features arrive.", pt: "Seja o primeiro a saber quando essas funcionalidades chegarem.", es: "Sé el primero en saber cuándo llegan estas funciones.", zh: "第一时间了解这些功能上线。" },
 
   // history panel
   hist_heading:       { en: "Debate history",  pt: "Histórico de debates", es: "Historial de debates", zh: "辩论记录" },
