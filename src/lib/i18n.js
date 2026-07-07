@@ -224,6 +224,35 @@ const S = {
   footer_terms: { en: "Terms", pt: "Termos", es: "Términos", zh: "条款" },
   footer_cookie_settings: { en: "Cookie Settings", pt: "Configurações de Cookies", es: "Ajustes de Cookies", zh: "Cookie设置" },
 
+  // consent banner & cookie settings
+  consent_text: {
+    en: "The Council uses cookies to remember your preferences and understand how people use the product. We don't sell your data.",
+    pt: "O Conselho usa cookies para lembrar suas preferências e entender como as pessoas usam o produto. Não vendemos seus dados.",
+    es: "El Consejo usa cookies para recordar tus preferencias y entender cómo usan el producto. No vendemos tus datos.",
+    zh: "议会使用Cookie来记住您的偏好并了解人们如何使用该产品。我们不出售您的数据。",
+  },
+  consent_manage: { en: "Manage", pt: "Gerenciar", es: "Gestionar", zh: "管理" },
+  consent_necessary_only: { en: "Necessary only", pt: "Somente necessários", es: "Solo necesarios", zh: "仅必要" },
+  consent_accept_all: { en: "Accept all", pt: "Aceitar todos", es: "Aceptar todos", zh: "全部接受" },
+  cookie_settings_heading: { en: "Manage your preferences", pt: "Gerenciar suas preferências", es: "Gestionar tus preferencias", zh: "管理您的偏好" },
+  consent_necessary_label: { en: "Necessary", pt: "Necessários", es: "Necesarios", zh: "必要" },
+  consent_necessary_desc: { en: "Session memory, language preference. Always on.", pt: "Memória de sessão, preferência de idioma. Sempre ativo.", es: "Memoria de sesión, preferencia de idioma. Siempre activo.", zh: "会话记忆、语言偏好，始终启用。" },
+  consent_always_enabled: { en: "Always enabled", pt: "Sempre ativo", es: "Siempre activo", zh: "始终启用" },
+  consent_analytics_label: { en: "Analytics", pt: "Análises", es: "Análisis", zh: "数据分析" },
+  consent_analytics_desc: { en: "Helps us understand how the product is used. Never tied to your identity.", pt: "Nos ajuda a entender como o produto é usado. Nunca vinculado à sua identidade.", es: "Nos ayuda a entender cómo se usa el producto. Nunca vinculado a tu identidad.", zh: "帮助我们了解产品的使用情况，从不与您的身份关联。" },
+  consent_toggle_analytics: { en: "Toggle analytics", pt: "Alternar análises", es: "Alternar análisis", zh: "切换数据分析" },
+  consent_advertising_label: { en: "Advertising", pt: "Publicidade", es: "Publicidad", zh: "广告" },
+  consent_advertising_desc: { en: "Allows discreet ads that help keep The Council free.", pt: "Permite anúncios discretos que ajudam a manter o Conselho gratuito.", es: "Permite anuncios discretos que ayudan a mantener The Council gratis.", zh: "允许显示有助于保持议会免费的低调广告。" },
+  consent_toggle_advertising: { en: "Toggle advertising", pt: "Alternar publicidade", es: "Alternar publicidad", zh: "切换广告" },
+  cancel: { en: "Cancel", pt: "Cancelar", es: "Cancelar", zh: "取消" },
+  save_preferences: { en: "Save preferences", pt: "Salvar preferências", es: "Guardar preferencias", zh: "保存偏好" },
+
+  // accessibility / theme
+  theme_switch_to_light: { en: "Switch to light mode", pt: "Mudar para modo claro", es: "Cambiar a modo claro", zh: "切换到浅色模式" },
+  theme_switch_to_dark: { en: "Switch to dark mode", pt: "Mudar para modo escuro", es: "Cambiar a modo oscuro", zh: "切换到深色模式" },
+  profile_settings: { en: "Profile settings", pt: "Configurações do perfil", es: "Configuración del perfil", zh: "个人资料设置" },
+  loading: { en: "Loading", pt: "Carregando", es: "Cargando", zh: "加载中" },
+
   // 404
   not_found_eyebrow: { en: "Lost", pt: "Perdido", es: "Perdido", zh: "迷失" },
   not_found_title: { en: "This chamber is empty.", pt: "Esta câmara está vazia.", es: "Esta cámara está vacía.", zh: "此议室为空。" },

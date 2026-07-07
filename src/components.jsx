@@ -895,11 +895,13 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(err, info) { console.error("council: render crash", err, info); }
   render() {
     if (!this.state.broke) return this.props.children;
+    let lang = "en";
+    try { lang = localStorage.getItem("council:lang") || "en"; } catch {}
     return (
       <div className="council-root" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", flexDirection: "column", gap: 20, textAlign: "center", padding: 24 }}>
-        <div className="eyebrow">Something interrupted the session</div>
-        <div className="serif" style={{ fontSize: 22, maxWidth: "30ch" }}>The Council needs a moment to reconvene.</div>
-        <button className="btn primary" onClick={() => window.location.reload()}>Reload</button>
+        <div className="eyebrow">{t(lang, "something_interrupted")}</div>
+        <div className="serif" style={{ fontSize: 22, maxWidth: "30ch" }}>{t(lang, "council_needs_moment")}</div>
+        <button className="btn primary" onClick={() => window.location.reload()}>{t(lang, "reload")}</button>
       </div>
     );
   }

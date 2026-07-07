@@ -353,7 +353,7 @@ function TheCouncilApp() {
   };
 
   const userBadge = user ? (
-    <button className="user-badge" onClick={() => setShowProfileSettings(true)} aria-label="Profile settings">
+    <button className="user-badge" onClick={() => setShowProfileSettings(true)} aria-label={t(language, "profile_settings")}>
       {(user.customPicture || user.googlePicture)
         ? <img src={user.customPicture || user.googlePicture} alt="" />
         : <span className="user-initial">{(user.name || "?")[0].toUpperCase()}</span>
@@ -382,7 +382,7 @@ function TheCouncilApp() {
   if (checkingSession) return (
     <div className="council-root">
       <div className="grain" />
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} aria-label="Loading" role="status">
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }} aria-label={t(language, "loading")} role="status">
         <span className="dots"><i /><i /><i /></span>
       </div>
     </div>
@@ -398,13 +398,13 @@ function TheCouncilApp() {
         </button>
         <div className="header-right">
           <LanguageSelector language={language} onChange={changeLanguage} />
-          <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? t(language, "theme_switch_to_light") : t(language, "theme_switch_to_dark")}>
             {theme === "dark" ? "☀" : "☾"}
           </button>
           {loginError && (
             <div className="login-error-tooltip" role="alert">
               {t(language, loginError)}
-              <button className="login-error-dismiss" onClick={() => setLoginError(null)} aria-label="Dismiss">✕</button>
+              <button className="login-error-dismiss" onClick={() => setLoginError(null)} aria-label={t(language, "dismiss")}>✕</button>
             </div>
           )}
           {userBadge}
@@ -494,6 +494,7 @@ function TheCouncilApp() {
 
       {consentBannerVisible && !showCookieSettings && (
         <ConsentBanner
+          language={language}
           onAccept={() => { acceptAll(); initAnalytics(); initAds(); dismissConsentBanner(); }}
           onReject={() => { rejectOptional(); dismissConsentBanner(); }}
           onSettings={() => setShowCookieSettings(true)}
@@ -502,6 +503,7 @@ function TheCouncilApp() {
 
       {showCookieSettings && (
         <CookieSettings
+          language={language}
           onSave={() => { initAnalytics(); initAds(); setShowCookieSettings(false); dismissConsentBanner(); }}
           onClose={() => setShowCookieSettings(false)}
         />
