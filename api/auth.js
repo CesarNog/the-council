@@ -4,6 +4,23 @@ import { makeSessionCookie, clearSessionCookie, getSessionFromRequest } from "./
 
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
+const AUTH_RATE_LIMIT = 10;
+const AUTH_RATE_WINDOW = 60000;
+
+async function checkAuthRateLimit(ip) {
+  const key = `rl:auth:${ip}`;
+  const raw = await kvGet(key).catch(() => null);
+  const now = Date.now();
+  let state = raw ? JSON.parse(raw) : { c: 0, t: now };
+  if (now - state.t > AUTH_RATE_WINDOW) state = { c: 0, t: now };
+  if (state.c >= AUTH_RATE_LIMIT) {
+    return { allowed: false, retryAfter: Math.ceil((state.t + AUTH_RATE_WINDOW - now) / 1000) };
+  }
+  state.c += 1;
+  await kvPut(key, JSON.stringify(state), 120).catch(() => {});
+  return { allowed: true };
+}
+
 export default async function handler(req, res) {
   if (req.method === "DELETE") {
     res.setHeader("Set-Cookie", clearSessionCookie());
@@ -11,6 +28,10 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
+
+  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
+  const { allowed, retryAfter } = await checkAuthRateLimit(ip).catch(() => ({ allowed: true }));
+  if (!allowed) return res.status(429).json({ error: "rate_limited", retryAfter });
 
   const { credential } = req.body ?? {};
   if (!credential || typeof credential !== "string") return res.status(400).json({ error: "missing credential" });
