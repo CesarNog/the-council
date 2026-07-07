@@ -3,6 +3,7 @@ import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie } from "./_session.js";
 import { enforceRateLimit } from "./_rateLimit.js";
 import { methodNotAllowed } from "./_http.js";
+import { upsertProfileFromUser } from "./_supabase.js";
 
 const AUTH_RATE = { limit: 10, windowMs: 60_000 };
 
@@ -62,6 +63,7 @@ export default async function handler(req, res) {
   };
 
   await kvPut(key, JSON.stringify(user));
+  upsertProfileFromUser(user).catch(e => console.error("clerk-auth: supabase sync failed", e.message));
   res.setHeader("Set-Cookie", makeSessionCookie(sub));
   return res.status(200).json(user);
 }
