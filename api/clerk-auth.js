@@ -1,11 +1,9 @@
 import { verifyToken } from "@clerk/backend";
 import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie } from "./_session.js";
-import { enforceRateLimit } from "./_rateLimit.js";
+import { enforceEndpointLimit } from "./_rateLimit.js";
 import { methodNotAllowed } from "./_http.js";
 import { upsertProfileFromUser } from "./_supabase.js";
-
-const AUTH_RATE = { limit: 10, windowMs: 60_000 };
 
 function displayNameFromClerk(payload) {
   if (payload.given_name) return payload.given_name;
@@ -26,7 +24,7 @@ export default async function handler(req, res) {
   const secret = process.env.CLERK_SECRET_KEY;
   if (!secret) return res.status(503).json({ error: "clerk_not_configured" });
 
-  if (!(await enforceRateLimit(req, res, "rl:clerk", AUTH_RATE))) return;
+  if (!(await enforceEndpointLimit(req, res, "auth"))) return;
 
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;

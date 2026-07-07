@@ -1,12 +1,11 @@
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie, getSessionFromRequest } from "./_session.js";
-import { enforceRateLimit } from "./_rateLimit.js";
+import { enforceRateLimit, enforceEndpointLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed } from "./_http.js";
 import { authBodySchema, parseBody } from "./_validate.js";
 
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
-const AUTH_RATE = { limit: 10, windowMs: 60_000 };
 
 export default async function handler(req, res) {
   if (req.method === "DELETE") {
@@ -16,7 +15,7 @@ export default async function handler(req, res) {
 
   if (req.method !== "POST") return methodNotAllowed(res, "POST, DELETE");
   if (bodyTooLarge(req, res)) return;
-  if (!(await enforceRateLimit(req, res, "rl:auth", AUTH_RATE))) return;
+  if (!(await enforceEndpointLimit(req, res, "auth"))) return;
 
   const parsed = parseBody(authBodySchema, req.body);
   if (!parsed.ok) return badRequest(res, parsed.detail);

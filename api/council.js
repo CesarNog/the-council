@@ -2,7 +2,7 @@ import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { PERSONAS } from "../src/lib/personas.js";
 import { getSessionFromRequest } from "./_session.js";
-import { enforceRateLimit } from "./_rateLimit.js";
+import { enforceCouncilLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
 import { councilBodySchema, parseBody } from "./_validate.js";
 import { isSupabaseConfigured, persistDecisionBundle, upsertProfileFromUser } from "./_supabase.js";
@@ -57,7 +57,6 @@ Rules:
 - memoryEcho: null unless a past matter above is genuinely relevant to today's question — if the topics clearly overlap (same decision, same fear, same person involved), you should surface it: {"persona":"monk","line":"one short in-voice sentence naturally referencing that past matter and asking how the person feels about it now"}. If there is no past matter listed above, or none overlaps, leave it null.
 - Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.`;
 
-const COUNCIL_RATE = { limit: 3, windowMs: 60_000 }; // per IP; org Groq TPM is the real ceiling
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, "POST");
@@ -73,8 +72,6 @@ export default async function handler(req, res) {
     mainFear: rawCtx.mainFear || "",
   };
 
-  if (!(await enforceRateLimit(req, res, "rl:council", COUNCIL_RATE))) return;
-
   let history = [];
   let sessionUser = null;
   const session = getSessionFromRequest(req);
@@ -83,6 +80,8 @@ export default async function handler(req, res) {
     sessionUser = raw ? JSON.parse(raw) : null;
     history = (sessionUser?.debateHistory || []).slice(0, 3);
   }
+
+  if (!(await enforceCouncilLimit(req, res, session, sessionUser))) return;
 
   const targetLang = LANGUAGE_NAMES[language];
   const systemMessage = targetLang

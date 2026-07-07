@@ -1,8 +1,6 @@
-import { enforceRateLimit } from "./_rateLimit.js";
+import { enforceEndpointLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
 import { parseBody, ttsBodySchema } from "./_validate.js";
-
-const TTS_RATE = { limit: 5, windowMs: 60_000 };
 
 // Persona → OpenAI voice mapping (gpt-4o-mini-tts voices)
 const OPENAI_VOICES = {
@@ -124,7 +122,7 @@ async function geminiTts(text, persona, apiKey) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, "POST");
   if (bodyTooLarge(req, res)) return;
-  if (!(await enforceRateLimit(req, res, "rl:tts", TTS_RATE))) return;
+  if (!(await enforceEndpointLimit(req, res, "tts"))) return;
 
   const openaiKey = process.env.OPENAI_API_KEY;
   const geminiKey = process.env.GEMINI_TTS_API_KEY;
