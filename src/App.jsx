@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { Landing, Onboarding, Chamber, ErrorBoundary, CouncilLogo } from "./components.jsx";
-import { GoogleSignIn, ProfileSettings } from "./auth-ui.jsx";
+import { ProfileSettings } from "./auth-ui.jsx";
+import { CouncilSignIn } from "./clerk-auth-ui.jsx";
+import { AppProviders } from "./clerk-provider.jsx";
+import { isClerkEnabled, signOutClerkSession } from "./lib/clerk.js";
 import { LifeModeBanner } from "./life-mode.jsx";
 import { LanguageSelector } from "./language-selector.jsx";
 import { ConsentBanner, CookieSettings, useConsentBannerVisible } from "./consent-ui.jsx";
@@ -227,7 +231,7 @@ function decisionQuestionFromWindow() {
   return q || null;
 }
 
-function TheCouncilApp() {
+function TheCouncilApp({ clerkSignOut }) {
   const [sharedId, setSharedId] = useState(sharedIdFromPath);
   const [staticPage, setStaticPage] = useState(staticPageFromPath);
   const [is404] = useState(isUnknownPath);
@@ -295,22 +299,26 @@ function TheCouncilApp() {
       .finally(() => setCheckingSession(false));
   }, [sharedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleAuthUser = (u) => {
+    setUser(u);
+    if (userHasCompletedProfile(u)) {
+      setProfile({ name: u.name, situation: u.situation, values: u.values });
+      if (!displayName && u.name) {
+        const given = u.name.split(" ")[0];
+        setDisplayName(given);
+        try { localStorage.setItem("council:displayName", given); } catch {}
+      }
+      setScreen("chamber");
+    } else {
+      setScreen("onboarding");
+    }
+  };
+
   const handleCredential = async (credential) => {
     setLoginError(null);
     try {
       const u = await signInWithGoogle(credential);
-      setUser(u);
-      if (userHasCompletedProfile(u)) {
-        setProfile({ name: u.name, situation: u.situation, values: u.values });
-        if (!displayName && u.name) {
-          const given = u.name.split(" ")[0];
-          setDisplayName(given);
-          try { localStorage.setItem("council:displayName", given); } catch {}
-        }
-        setScreen("chamber");
-      } else {
-        setScreen("onboarding");
-      }
+      handleAuthUser(u);
     } catch (err) {
       if (err.kind === "network_error") setLoginError("login_error_network");
       else if (err.kind === "unconfigured") setLoginError("login_error_unconfigured");
@@ -339,6 +347,8 @@ function TheCouncilApp() {
 
   const handleSignOut = async () => {
     await signOut();
+    await signOutClerkSession();
+    if (clerkSignOut) await clerkSignOut();
     setUser(null);
     setShowProfileSettings(false);
     setProfile({ name: "", situation: "", values: [] });
@@ -457,7 +467,14 @@ function TheCouncilApp() {
                   else if (user && userHasCompletedProfile(user)) setScreen("chamber");
                   else setScreen("onboarding");
                 }}
-                authSlot={!user && <GoogleSignIn onCredential={handleCredential} />}
+                authSlot={!user && (
+                  <CouncilSignIn
+                    language={language}
+                    onCredential={handleCredential}
+                    onClerkUser={handleAuthUser}
+                    onClerkError={() => setLoginError("login_error_generic")}
+                  />
+                )}
                 language={language}
                 history={loadHistory()}
                 onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
@@ -522,10 +539,17 @@ function TheCouncilApp() {
   );
 }
 
+function TheCouncilAppWithClerk() {
+  const { signOut: clerkSignOut } = useAuth();
+  return <TheCouncilApp clerkSignOut={clerkSignOut} />;
+}
+
 export default function TheCouncil() {
   return (
     <ErrorBoundary>
-      <TheCouncilApp />
+      <AppProviders>
+        {isClerkEnabled() ? <TheCouncilAppWithClerk /> : <TheCouncilApp />}
+      </AppProviders>
     </ErrorBoundary>
   );
 }
