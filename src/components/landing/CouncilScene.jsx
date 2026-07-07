@@ -41,10 +41,10 @@ function CouncilDust({ reducedMotion, mobile }) {
 function CouncilFloor() {
   return (
     <group>
-      {/* Main dark floor disc */}
+      {/* Main floor disc — matches page bg so flat area reads as continuous space (no box) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]} receiveShadow>
-        <circleGeometry args={[5, 96]} />
-        <meshStandardMaterial color="#060508" metalness={0.6} roughness={0.55} />
+        <circleGeometry args={[4.2, 96]} />
+        <meshStandardMaterial color="#0B0A12" metalness={0.55} roughness={0.5} />
       </mesh>
 
       {/* Outer engraving ring — faint gold */}
@@ -220,19 +220,26 @@ function CouncilRing({ activePersona, reducedMotion, onPersonaHover, ctaHover })
 }
 
 // ---------------------------------------------------------------------------
-// Camera rig — gentle parallax from mouse
+// Camera rig — gentle parallax from mouse, cinematic downward gaze
 // ---------------------------------------------------------------------------
 function CameraRig({ mouse, reducedMotion, activePersona }) {
   const { camera } = useThree();
+  const baseY = 2.35;
 
+  // Static reduced-motion framing — still frame the full ring, look slightly down
   useFrame(() => {
-    if (reducedMotion) return;
+    if (reducedMotion) {
+      camera.position.x += (0 - camera.position.x) * 0.05;
+      camera.position.y += (baseY - camera.position.y) * 0.05;
+      camera.lookAt(0, -0.35, 0);
+      return;
+    }
     const idx = PERSONAS.findIndex((p) => p.id === activePersona);
-    const focusX = idx >= 0 ? Math.cos((idx / 9) * Math.PI * 2 - Math.PI / 2) * 0.18 : 0;
+    const focusX = idx >= 0 ? Math.cos((idx / 9) * Math.PI * 2 - Math.PI / 2) * 0.16 : 0;
 
-    camera.position.x += (mouse.current.x * 0.28 + focusX - camera.position.x) * 0.032;
-    camera.position.y += (1.5 + mouse.current.y * -0.1 - camera.position.y) * 0.032;
-    camera.lookAt(focusX * 0.4, 0.06, 0);
+    camera.position.x += (mouse.current.x * 0.26 + focusX - camera.position.x) * 0.032;
+    camera.position.y += (baseY + mouse.current.y * -0.1 - camera.position.y) * 0.032;
+    camera.lookAt(focusX * 0.35, -0.35, 0);
   });
   return null;
 }
@@ -243,8 +250,8 @@ function CameraRig({ mouse, reducedMotion, activePersona }) {
 export function CouncilScene({ activePersona, onPersonaHover, ctaHover, mouse, reducedMotion, mobile }) {
   return (
     <>
-      <color attach="background" args={["#040307"]} />
-      <fog attach="fog" args={["#040307", 6, 14]} />
+      {/* No background color — canvas stays transparent and blends into the page */}
+      <fog attach="fog" args={["#0B0A12", 7, 15]} />
 
       {/* Lighting rig */}
       <ambientLight intensity={0.12} color="#200a30" />
