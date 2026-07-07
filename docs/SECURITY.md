@@ -90,7 +90,7 @@ Configured in `vercel.json`:
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables sensitive browser APIs |
 | `Cache-Control: no-store` | API routes only | Prevents caching of sensitive responses |
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self' https://accounts.google.com https://static.hotjar.com https://pagead2.googlesyndication.com; connect-src 'self' https://www.googleapis.com https://pagead2.googlesyndication.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self';` | XSS mitigation |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' https://accounts.google.com https://static.hotjar.com https://pagead2.googlesyndication.com; connect-src 'self' https://accounts.google.com https://www.googleapis.com https://pagead2.googlesyndication.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self';` | XSS mitigation |
 
 Note: `'unsafe-inline'` in `style-src` is required due to inline styles in React components. Migrate to CSS Modules or CSS custom properties to remove it.
 
