@@ -6,6 +6,8 @@ import { saveToHistory } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName, personaLine } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
+import { captureError } from "./lib/sentry.js";
+import { Events } from "./lib/analytics.js";
 
 export function CouncilLogo({ size = 22, style, className }) {
   return (
@@ -523,13 +525,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       setDebate(result); setPhase("debate");
     } catch (e) {
       if (e.kind === "rate_limited") {
-        // 429: mostrar debate fake identico confundia ("por que ele fala sempre a mesma coisa?") — erro honesto com retry
+        Events.rateLimitSeen({ retryAfter: e.retryAfter || 60 });
         setRateLimited(true);
         setRetryIn(e.retryAfter || 60);
         setPhase("error");
         return;
       }
-      // falha real de rede: demo offline claramente rotulada
+      Events.fallbackUsed({ kind: e.kind || "network" });
+      captureError(e, { kind: e.kind, phase: "council" });
       setDebate({ ...FALLBACK, offline: true });
       setPhase("debate");
     }
@@ -895,7 +898,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 export class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { broke: false }; }
   static getDerivedStateFromError() { return { broke: true }; }
-  componentDidCatch(err, info) { console.error("council: render crash", err, info); }
+  componentDidCatch(err, info) {
+    captureError(err, { componentStack: info?.componentStack });
+  }
   render() {
     if (!this.state.broke) return this.props.children;
     let lang = "en";

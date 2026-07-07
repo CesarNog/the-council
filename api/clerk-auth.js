@@ -4,6 +4,7 @@ import { makeSessionCookie, clearSessionCookie } from "./_session.js";
 import { enforceEndpointLimit } from "./_rateLimit.js";
 import { methodNotAllowed } from "./_http.js";
 import { upsertProfileFromUser } from "./_supabase.js";
+import { sendWelcomeEmail } from "./_email.js";
 
 function displayNameFromClerk(payload) {
   if (payload.given_name) return payload.given_name;
@@ -61,6 +62,9 @@ export default async function handler(req, res) {
   };
 
   await kvPut(key, JSON.stringify(user));
+  if (!existing && user.email) {
+    sendWelcomeEmail({ to: user.email, name: user.name }).catch(e => console.error("clerk-auth: welcome email failed", e.message));
+  }
   upsertProfileFromUser(user).catch(e => console.error("clerk-auth: supabase sync failed", e.message));
   res.setHeader("Set-Cookie", makeSessionCookie(sub));
   return res.status(200).json(user);
