@@ -872,12 +872,6 @@ button,a{min-width:0;}
   aspect-ratio:16/10; max-height:min(66vh,620px); min-height:320px;
   align-self:center; overflow:visible;
 }
-/* Feathered vignette that dissolves the scene edges into the page — no hard box */
-.landing-hero-visual-vignette{
-  position:absolute; inset:-8% -6%; z-index:2; pointer-events:none;
-  background:
-    radial-gradient(72% 78% at 50% 52%, transparent 46%, rgba(11,10,18,.5) 74%, var(--bg) 100%);
-}
 .landing-hero-canvas{
   position:absolute; inset:0; z-index:1;
   -webkit-mask-image:radial-gradient(84% 90% at 50% 54%, #000 42%, transparent 96%);
@@ -1135,10 +1129,6 @@ button,a{min-width:0;}
   .landing-hero-visual{
     order:-1; aspect-ratio:1/1; width:min(100%,400px);
     max-height:min(36vh,340px); min-height:220px; margin:0 auto;
-  }
-  .landing-hero-visual-vignette{
-    inset:-4%;
-    background:radial-gradient(82% 84% at 50% 52%, transparent 56%, rgba(11,10,18,.4) 84%, var(--bg) 100%);
   }
   .landing-hero-copy{text-align:center; display:flex; flex-direction:column; align-items:center;}
   .landing-hero-copy h1,.landing-hero-copy .sub,.landing-trust,.landing-greeting{max-width:100%;}

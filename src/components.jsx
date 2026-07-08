@@ -294,7 +294,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const votingSpeaker = phase === "voting" && debate && votesShown > 0 && votesShown <= debate.votes.length
     ? debate.votes[votesShown - 1].p : null;
 
-  const ringActive = viewportSpeaker || activeSpeaker || votingSpeaker;
+  // during the auto-reveal the speaking turn drives the ring, so highlights follow the
+  // debate order; viewportSpeaker (scroll sync) only takes over once revealing is done
+  const ringActive = activeSpeaker || votingSpeaker || viewportSpeaker;
 
   useEffect(() => {
     if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente

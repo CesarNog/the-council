@@ -55,7 +55,6 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
       <section className="landing-hero">
         <div className="landing-hero-atmosphere" aria-hidden="true" />
         <div className="landing-hero-visual">
-          <div className="landing-hero-visual-vignette" aria-hidden="true" />
           {heroVisual}
         </div>
         <div className="landing-hero-copy">
