@@ -3,7 +3,7 @@ import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js"
 import { Sigil } from "./lib/sigil.jsx";
 import { CouncilLogo } from "./components/CouncilLogo.jsx";
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
-import { summonCouncil, FALLBACK } from "./lib/api.js";
+import { summonCouncil, getFallback } from "./lib/api.js";
 import { saveToHistory, isPremiumUser } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName, personaLine } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
@@ -294,7 +294,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const votingSpeaker = phase === "voting" && debate && votesShown > 0 && votesShown <= debate.votes.length
     ? debate.votes[votesShown - 1].p : null;
 
-  const ringActive = viewportSpeaker || activeSpeaker || votingSpeaker;
+  // during the auto-reveal the speaking turn drives the ring, so highlights follow the
+  // debate order; viewportSpeaker (scroll sync) only takes over once revealing is done
+  const ringActive = activeSpeaker || votingSpeaker || viewportSpeaker;
 
   useEffect(() => {
     if (phase === "idle") stopSpeaking(); // "New question" corta fala pendente
@@ -317,10 +319,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     const set = new Set();
     PERSONAS.forEach(p => {
       if (p.id === activeSpeaker) return;
-      if (turnText.includes(p.name.replace("The ", "").toLowerCase())) set.add(p.id);
+      // localized short name — turns are generated in the debate's own language, not English
+      if (turnText.includes(personaShortName(language, p.id).toLowerCase())) set.add(p.id);
     });
     return set;
-  }, [activeSpeaker, shown, debate]);
+  }, [activeSpeaker, shown, debate, language]);
 
   // sequential turn reveal
   useEffect(() => {
@@ -446,7 +449,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       }
       Events.fallbackUsed({ kind: e.kind || "network" });
       captureError(e, { kind: e.kind, phase: "council" });
-      setDebate({ ...FALLBACK, offline: true });
+      setDebate({ ...getFallback(language), offline: true });
       setPhase("debate");
     }
   };
@@ -538,6 +541,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     ? byId[ringActive].color
     : (debate?.mood && MOOD_COLORS[debate.mood]) || "#C9A96E";
 
+  // header title reflects the actual phase — was previously stuck on "verdict reached"
+  // even while idle or mid-debate whenever the visitor had no profile name
+  const chamberTitle = phase === "idle"
+    ? t(language, "chamber_title_idle")
+    : phase === "verdict"
+      ? (profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached"))
+      : (profile?.name ? t(language, "in_session_for", profile.name) : t(language, "chamber_title_active"));
+
   return (
     <>
       <div className="ambient" style={{
@@ -548,7 +559,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           <div className="chamber-head">
             <div>
               <div className="eyebrow">{t(language, "chamber_label")}</div>
-              <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+              <div className="title serif">{chamberTitle}</div>
             </div>
             {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
           </div>
@@ -641,8 +652,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 >
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div style={{ flex: 1 }}>
-                    <div className="who" style={{ color: p.color }}>
-                      {personaName(language, p.id)} <span style={{ color: "var(--ivory-faint)", letterSpacing: ".12em" }}>· {personaTag(language, p.id)}</span>
+                    <div className="who">
+                      <span className="who-name" style={{ color: p.color }}>{personaName(language, p.id)}</span>
+                      <span className="who-tag">{personaTag(language, p.id)}</span>
                     </div>
                     <div className="txt">{isLong && !isExpanded ? turn.t.slice(0, 280) + "…" : turn.t}</div>
                     {isLong && (

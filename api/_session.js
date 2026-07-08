@@ -22,7 +22,8 @@ export function verifySessionToken(token) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
     const payload = JSON.parse(Buffer.from(body, "base64url").toString());
-    if (payload.exp < Date.now()) return null;
+    if (typeof payload.exp !== "number" || payload.exp < Date.now()) return null;
+    if (!payload.sub || typeof payload.sub !== "string") return null;
     return payload;
   } catch {
     return null;

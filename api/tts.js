@@ -90,7 +90,7 @@ async function geminiTts(text, persona, apiKey) {
   const voice = GEMINI_VOICES[persona] || "Aoede";
   const { signal, clear } = withTimeout(TTS_TIMEOUT_MS);
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
