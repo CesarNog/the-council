@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+> Codex will review your output once you are done.
+
 Context for AI assistants working in this repo.
 
 ## What this is
