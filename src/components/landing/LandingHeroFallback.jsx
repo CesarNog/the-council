@@ -17,7 +17,8 @@ export function LandingHeroFallback({
   return (
     <div
       className={"landing-orbit-fallback" + (ctaHover ? " cta-glow" : "") + (reducedMotion ? " static" : "")}
-      aria-hidden="true"
+      role="group"
+      aria-label={t(language, "landing_personas_title")}
     >
       <div className="landing-orbit-glow" />
       <div className="landing-orbit-table" />
