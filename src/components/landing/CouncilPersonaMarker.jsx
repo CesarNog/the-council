@@ -77,6 +77,7 @@ export function CouncilPersonaMarker({ persona, index, active, onHover, reducedM
   const haloRef = useRef();
   const glowRef = useRef();
   const matRef = useRef();
+  const hitBoxRef = useRef();
 
   const angle = useMemo(() => (index / 9) * Math.PI * 2 - Math.PI / 2, [index]);
   const radius = 2.3;
@@ -107,10 +108,9 @@ export function CouncilPersonaMarker({ persona, index, active, onHover, reducedM
 
     // Scale lerp
     targetScale.current = isActive ? 1.45 : 1;
-    markerRef.current.scale.lerp(
-      new THREE.Vector3(targetScale.current, targetScale.current, targetScale.current),
-      0.1
-    );
+    const targetVec = new THREE.Vector3(targetScale.current, targetScale.current, targetScale.current);
+    markerRef.current.scale.lerp(targetVec, 0.1);
+    if (hitBoxRef.current) hitBoxRef.current.scale.lerp(targetVec, 0.1);
 
     // Halo opacity lerp
     if (haloRef.current) {
@@ -154,12 +154,21 @@ export function CouncilPersonaMarker({ persona, index, active, onHover, reducedM
         </mesh>
       )}
 
+      {/* Invisible hit box for stable pointer interactions, preventing flicker */}
+      <mesh
+        ref={hitBoxRef}
+        position={[0, baseY, 0]}
+        onPointerOver={(e) => { e.stopPropagation(); onHover?.(persona.id); }}
+        onPointerOut={() => onHover?.(null)}
+      >
+        <cylinderGeometry args={[0.35, 0.35, 0.8, 16]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       {/* Main persona marker — glass-like */}
       <mesh
         ref={markerRef}
         position={[0, 0, 0]}
-        onPointerOver={(e) => { e.stopPropagation(); onHover?.(persona.id); }}
-        onPointerOut={() => onHover?.(null)}
         rotation={persona.id === "shadow" ? [Math.PI, 0, 0] : [0, 0, 0]}
       >
         <PersonaGeometry id={persona.id} />
