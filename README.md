@@ -12,7 +12,14 @@ Nine alternate versions of yourself — Founder, Billionaire, Artist, Athlete, M
 
 ## Stack
 
-Vite + React frontend, Vercel serverless functions, [Groq](https://groq.com) (`openai/gpt-oss-120b`) for inference, Cloudflare KV for persisted results and rate limiting.
+* **Frontend**: Vite + React, React Three Fiber for 3D elements.
+* **Backend**: Vercel serverless functions (`api/*.js`).
+* **Inference**: [Groq](https://groq.com) (`openai/gpt-oss-120b`).
+* **Text-to-Speech (TTS)**: OpenAI TTS (primary) / Gemini TTS (fallback).
+* **Storage & Persistence**: Cloudflare KV (for shared results) and [Supabase](https://supabase.com) (for authenticated user history).
+* **Rate Limiting**: Upstash Redis (or Cloudflare KV).
+* **Authentication**: Clerk (with Google OAuth fallback logic).
+* **Analytics & Monitoring**: PostHog, Hotjar, Resend, and Sentry.
 
 ## Quickstart
 
@@ -20,11 +27,11 @@ Vite + React frontend, Vercel serverless functions, [Groq](https://groq.com) (`o
 git clone https://github.com/CesarNog/the-council.git
 cd the-council
 npm install
-cp .env.example .env.local   # fill in the 4 vars, see below
-npm run dev
+cp .env.example .env.local   # fill in the necessary vars, see below
+npm run dev                  # starts frontend only
 ```
 
-Serverless functions (`api/*.js`) only run under `vercel dev`, not plain `vite`:
+Serverless functions (`api/*.js`) only run under `vercel dev`, not plain `vite`. To exercise the full stack locally:
 
 ```bash
 npx vercel dev
@@ -32,17 +39,17 @@ npx vercel dev
 
 ## Environment variables
 
-| var | source | used for |
-|---|---|---|
-| `GROQ_API_KEY` | console.groq.com/keys | debate generation (`api/council.js`) |
-| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com → API Tokens → "Edit Cloudflare Workers" | KV read/write |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard | KV scope |
-| `CLOUDFLARE_KV_NAMESPACE_ID` | `wrangler kv namespace create` or API | where results / rate-limit counters live |
-| `SESSION_SECRET` | `openssl rand -base64 32` | signs the session cookie (`api/_session.js`) |
-| `GOOGLE_CLIENT_ID` | Google Cloud Console → Credentials → OAuth Client ID | verifies ID token audience server-side (`api/auth.js`) |
-| `VITE_GOOGLE_CLIENT_ID` | same value as above | embedded in the client bundle at build time — not secret |
+See `.env.example` for the complete list. Essential ones include:
 
-See `.env.example`.
+| var | used for |
+|---|---|
+| `GROQ_API_KEY` | debate generation (`api/council.js`) |
+| `CLOUDFLARE_API_TOKEN` & `CLOUDFLARE_ACCOUNT_ID` | KV read/write for rate limits & sharing |
+| `SESSION_SECRET` | signs the session cookie (`api/_session.js`) |
+| `OPENAI_API_KEY` | Synthesizes voices for the personas via OpenAI TTS |
+| `GEMINI_TTS_API_KEY` | Fallback TTS synthesizer |
+
+Optional features (Clerk Auth, Supabase, Upstash Redis, Sentry, PostHog, etc.) require their respective variables set.
 
 ## Testing
 
@@ -50,7 +57,7 @@ See `.env.example`.
 npm test
 ```
 
-Covers `src/lib/share.js` (tally, headline generation, share text) and `src/lib/personas.js` (data integrity — every persona has a color, a pacing entry, an intensity entry). No component/UI tests yet.
+Covers `src/lib/*.test.js` and `api/*.test.js`. No component/UI tests yet.
 
 ## Deploy
 
@@ -58,36 +65,29 @@ Push to `main` — the repo is linked to Vercel, deploys are automatic. Manual d
 
 ## Architecture
 
-```
-src/
-  lib/personas.js   9 personas: colors, mood palette, reveal pacing/intensity — single source of truth
-  lib/api.js        backend call + offline fallback (DEMO_Q, FALLBACK)
-  lib/share.js      tally / headline / share text / canvas PNG card — pure functions, no React
-  components.jsx     all UI: Ring, Landing, Onboarding, Chamber, ShareBar, ErrorBoundary
-  App.jsx            routing only (landing / onboarding / chamber / shared /r/:id)
-  styles.css
+* **Frontend (`src/`)**: 
+  * `components.jsx`: All UI including Chamber, ShareBar, Landing.
+  * `auth-ui.jsx` / `clerk-auth-ui.jsx`: Auth buttons + profile UI.
+  * `lib/`: Pure functions, persona definitions (`personas.js`), AI prompt builders, and TTS wrappers.
+  * `App.jsx`: Routing.
+* **Backend (`api/`)**: 
+  * `council.js`: POST — generates a debate via Groq, persists it, rate-limits.
+  * `result.js`: GET  — fetches a persisted debate by id.
+  * `profile.js`: GET/PATCH — manages user profiles.
+  * `tts.js`: Integrates OpenAI/Gemini TTS APIs.
+  * `_*.js`: Internal helpers for KV, Supabase, Upstash, Groq, etc.
 
-api/
-  _kv.js       Cloudflare KV REST helper (not a route — Vercel ignores `_`-prefixed files)
-  council.js   POST — generates a debate via Groq, persists it, rate-limits by IP
-  result.js    GET  — fetches a persisted debate by id, powers /r/:id share links
-```
-
-More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+More detail in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## Known limitations
 
-- **Groq free tier TPM (8000/min) is shared across the entire org, not per user.** Each debate costs ~2000–2300 tokens → roughly **3 debates/min aggregate, across all simultaneous visitors**. Past that, the API returns 429 and the frontend silently falls back to a static offline debate — the UI never breaks, but the experience degrades.
-- **`gpt-oss-120b` with `response_format: json_object` occasionally emits malformed JSON** (bad quote escaping mid-string), independent of `max_tokens` headroom — observed ~2 failures in ~10 requests during testing on 2026-07-06, not resolved. `api/council.js` catches this (`GroqError("unparseable_response")` → `502`) and the frontend falls back to the static offline debate, so it degrades gracefully, but the failure rate is higher than expected and root cause is unconfirmed.
-- **The per-IP rate limiter (Cloudflare KV) is best-effort, not atomic.** Under high concurrency it can slightly overshoot `RATE_LIMIT` in `api/council.js`. It does not protect against the aggregate Groq ceiling above.
-- **Google auth is implemented but not wired up in production** — requires `GOOGLE_CLIENT_ID`/`VITE_GOOGLE_CLIENT_ID`, not yet set. Without them `/api/auth` returns `503`. The end-to-end sign-in flow (button render → callback → cookie) has not been validated in a real browser.
-- **The offline fallback debate is fixed regardless of the question asked.** If Groq is unreachable (rate limit, timeout) the frontend shows a static debate written for "should I quit my job" — even if the user asked something else entirely, e.g. a relationship question. Cosmetic, not a crash, but misleading.
-- **No UI/component tests**, only pure-logic tests (`src/lib/*.test.js`, `api/_session.test.js`).
-- **The canvas share card (`downloadShareCard`) has not been visually validated in production** — layout logic only.
+- **Groq free tier TPM (8000/min) is shared across the org.** Each debate costs ~2000–2300 tokens. Rate limiting (Upstash Redis or Cloudflare KV) is used to prevent exhaustion. If Groq fails or rate limits are hit, the frontend gracefully degrades to a static offline debate.
+- **The offline fallback debate is fixed regardless of the question asked.** Used when the API is unreachable.
+- **Text-to-Speech (TTS) falls back to the browser's Web Speech API** if both `OPENAI_API_KEY` and `GEMINI_TTS_API_KEY` are missing or fail.
 
 ## Contributing
 
-See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
+See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 
