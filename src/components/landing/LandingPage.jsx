@@ -20,12 +20,22 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
   const [activePersona, setActivePersona] = useState(null);
   const [ctaHover, setCtaHover] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const ok = supportsWebGL() && !reducedMotion && !preferLandingFallback();
     setUse3D(ok);
     setWebglReady(true);
   }, [reducedMotion]);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.("(max-width: 768px)");
+    if (!mq) return;
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     const onVis = () => setTabHidden(document.hidden);
@@ -48,6 +58,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
         onPersonaHover={setActivePersona}
         ctaHover={ctaHover}
         reducedMotion={reducedMotion}
+        mobile={isMobile}
       />
     </Suspense>
   ) : (
@@ -127,7 +138,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
             </div>
           )}
           <div className="fade-up d4 landing-hero-examples">
-            {LANDING_EXAMPLE_KEYS.slice(0, 6).map((key) => {
+            {LANDING_EXAMPLE_KEYS.slice(0, isMobile ? 3 : 6).map((key) => {
               const q = t(language, key);
               return (
                 <button
