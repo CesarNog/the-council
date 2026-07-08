@@ -43,8 +43,8 @@ function CouncilFloor() {
     <group>
       {/* Main floor disc — matches page bg so flat area reads as continuous space (no box) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 0]} receiveShadow>
-        <circleGeometry args={[4.2, 96]} />
-        <meshStandardMaterial color="#0B0A12" metalness={0.55} roughness={0.5} />
+        <circleGeometry args={[4.5, 96]} />
+        <meshStandardMaterial color="#0B0A12" metalness={0.85} roughness={0.25} />
       </mesh>
 
       {/* Outer engraving ring — faint gold */}
@@ -155,13 +155,15 @@ function DecisionOrb({ ctaHover, reducedMotion }) {
         <sphereGeometry args={[0.32, 32, 32]} />
         <meshPhysicalMaterial
           color="#EDE0C8"
-          metalness={0}
-          roughness={0.0}
-          transmission={0.65}
-          thickness={0.8}
-          ior={1.6}
+          metalness={0.1}
+          roughness={0.05}
+          transmission={0.95}
+          thickness={1.5}
+          ior={1.8}
+          clearcoat={1}
+          clearcoatRoughness={0.1}
           transparent
-          opacity={0.45}
+          opacity={1}
         />
       </mesh>
 
@@ -254,21 +256,21 @@ export function CouncilScene({ activePersona, onPersonaHover, ctaHover, mouse, r
       <fog attach="fog" args={["#0B0A12", 7, 15]} />
 
       {/* Lighting rig */}
-      <ambientLight intensity={0.12} color="#200a30" />
+      <ambientLight intensity={0.08} color="#200a30" />
       <spotLight
-        position={[0, 5.5, 1.5]}
-        angle={0.5}
-        penumbra={0.9}
-        intensity={0.6}
+        position={[0, 6.0, 1.5]}
+        angle={0.65}
+        penumbra={0.8}
+        intensity={0.95}
         color="#C9A96E"
         castShadow={false}
       />
       {/* Cool rim from behind-left */}
-      <pointLight position={[-4, 2.5, -2.5]} intensity={0.18} color="#5060a8" />
+      <pointLight position={[-4, 2.5, -2.5]} intensity={0.45} color="#6070c8" />
       {/* Warm rim from right */}
-      <pointLight position={[3.5, 1.5, 2]} intensity={0.14} color="#8b5030" />
+      <pointLight position={[3.5, 1.5, 2]} intensity={0.35} color="#8b5030" />
       {/* Under-table ambient glow */}
-      <pointLight position={[0, -0.5, 0]} intensity={0.3} color="#C9A96E" distance={3} decay={2} />
+      <pointLight position={[0, -0.5, 0]} intensity={0.45} color="#C9A96E" distance={4} decay={1.8} />
 
       <CameraRig mouse={mouse} reducedMotion={reducedMotion} activePersona={activePersona} />
 

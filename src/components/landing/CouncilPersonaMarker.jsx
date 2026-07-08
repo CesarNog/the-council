@@ -8,12 +8,15 @@ import * as THREE from "three";
  */
 
 const GLASS_BASE = {
-  metalness: 0.0,
+  metalness: 0.1,
   roughness: 0.05,
-  transmission: 0.55,
-  thickness: 0.6,
-  ior: 1.5,
+  transmission: 0.95,
+  thickness: 0.8,
+  ior: 1.6,
+  clearcoat: 1.0,
+  clearcoatRoughness: 0.1,
   transparent: true,
+  opacity: 1,
 };
 
 const METAL_BASE = {
