@@ -1,5 +1,5 @@
 import { kvGet, kvPut } from "./_kv.js";
-import { checkUpstashLimit, councilTier, isUpstashConfigured, TIER_LIMITS } from "./_upstash.js";
+import { checkUpstashLimit, councilTier, isUpstashConfigured } from "./_upstash.js";
 
 /**
  * Best-effort IP rate limit via Cloudflare KV (eventually consistent).
@@ -63,7 +63,6 @@ export async function enforceCouncilLimit(req, res, session, user) {
 export async function enforceEndpointLimit(req, res, tierKey) {
   const ip = clientIp(req);
   if (isUpstashConfigured()) {
-    const tier = TIER_LIMITS[tierKey];
     const { allowed, retryAfter } = await checkUpstashLimit(`ip:${ip}`, tierKey).catch(() => ({ allowed: true }));
     if (!allowed) {
       res.setHeader("Retry-After", String(retryAfter || 60));

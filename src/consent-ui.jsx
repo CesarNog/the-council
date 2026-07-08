@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { acceptAll, rejectOptional, getConsent, setConsent, hasConsentDecision } from "./lib/consent.js";
+import { getConsent, setConsent, hasConsentDecision } from "./lib/consent.js";
 import { t } from "./lib/i18n.js";
 
 export function useConsentBannerVisible() {

@@ -32,19 +32,7 @@ Anonymous users' debate history lives only in `localStorage`. Clearing browser d
 
 ---
 
-## UX
-
-### Language Switch Doesn't Persist Across Hard Nav
-After a hard page reload, the app briefly uses the browser's detected language before reading `localStorage`.
-
-**Plan:** Read localStorage synchronously before first render, or use a service worker.
-
----
-
 ## Code Quality
-
-### No ESLint
-No linting is configured. Typos, bad patterns, and unused variables go undetected until runtime.
 
 ### No TypeScript
 Type errors are silent until runtime. Props and API shapes are undocumented at the type level.
@@ -64,3 +52,5 @@ These were tracked here previously; fixed and verified against current code.
 - **No `aria-live` on debate loading** — the summoning phase now has `role="status" aria-live="polite"`.
 - **No focus management after debate loads** — focus moves to the debate transcript (a labeled, `tabIndex={-1}` region) once the first turn appears.
 - **Google GSI script injected twice (StrictMode)** — `GoogleSignIn` now checks for an existing `<script>` tag and attaches a `load` listener instead of appending a duplicate.
+- **Language switch doesn't persist across hard nav** — verified with Playwright: `language` state uses a lazy `useState` initializer that reads `localStorage` synchronously before first render, so the correct language renders from the very first paint. No flash observed at any point after a hard reload with a saved non-English language.
+- **No ESLint** — added (`eslint.config.js`, `npm run lint`, wired into CI). Scoped to `rules-of-hooks` + `exhaustive-deps` from `eslint-plugin-react-hooks`; the newer React Compiler-oriented rules in that plugin's "recommended" preset (`set-state-in-effect`, `purity`, `immutability`, ...) are intentionally not enabled — they flag idiomatic patterns throughout this codebase with no behavioral bug behind them, and fixing them would mean large speculative refactors unrelated to this codebase's actual (non-Compiler) target.

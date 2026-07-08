@@ -1,6 +1,6 @@
 import { kvGet, kvPut } from "./_kv.js";
 import { badRequest, methodNotAllowed, safeError } from "./_http.js";
-import { enforceRateLimit, clientIp } from "./_rateLimit.js";
+import { enforceRateLimit } from "./_rateLimit.js";
 import { getResend } from "./_email.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

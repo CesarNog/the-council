@@ -91,7 +91,11 @@ Output: `dist/` directory with the compiled Vite SPA.
 
 ## Linting
 
-ESLint is not currently configured. See AUDIT.md — adding ESLint is a tracked task.
+```bash
+npm run lint
+```
+
+Flat config in `eslint.config.js`. Gated in CI (`.github/workflows/ci.yml`).
 
 ---
 
@@ -175,6 +179,6 @@ See `docs/TROUBLESHOOTING.md` for common issues and solutions.
 - Pure functions in `src/lib/` — no React, no DOM (except `share.js` canvas).
 - `src/lib/*.test.js` — keep tests next to the module they test.
 - No new files without a clear reason — single-file-per-concern is intentional.
-- No ESLint yet — check `docs/AUDIT.md` for the plan to add it.
+- `npm run lint` before committing — see the Linting section above.
 - Comment the *why*, not the *what*.
 - Before changing `api/council.js` prompt: measure token usage first (see CLAUDE.md hard constraints).

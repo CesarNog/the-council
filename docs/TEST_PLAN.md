@@ -135,11 +135,11 @@ npx playwright test --ui  # interactive mode
 
 Current CI (GitHub Actions on push/PR to `main`):
 1. `npm install`
-2. `npm test` (Vitest)
-3. `npm run build` (Vite build)
+2. `npm run lint` (ESLint)
+3. `npm test` (Vitest)
+4. `npm run build` (Vite build)
 
 Planned additions:
-- `npm run lint` (once ESLint is configured)
 - `npx playwright test` (once E2E suite is written)
 
 All steps must pass before merging to `main`.

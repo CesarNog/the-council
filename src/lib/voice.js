@@ -17,7 +17,6 @@ const webSpeechAvailable = typeof window !== "undefined" && "speechSynthesis" in
 
 let currentController = null;
 let currentAudio = null;
-let currentUtterance = null;
 
 export async function speak(text, personaId, { onStart, onEnd, lang } = {}) {
   stopSpeaking();
@@ -59,7 +58,6 @@ export async function speak(text, personaId, { onStart, onEnd, lang } = {}) {
     if (lang) u.lang = lang;
     u.onend = () => onEnd?.();
     u.onerror = () => onEnd?.();
-    currentUtterance = u;
     window.speechSynthesis.speak(u);
   }
 }
@@ -69,5 +67,4 @@ export function stopSpeaking() {
   currentController = null;
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ""; currentAudio = null; }
   if (webSpeechAvailable) window.speechSynthesis.cancel();
-  currentUtterance = null;
 }
