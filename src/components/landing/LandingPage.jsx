@@ -127,7 +127,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
             </div>
           )}
           <div className="fade-up d4 landing-hero-examples">
-            {LANDING_EXAMPLE_KEYS.slice(0, 3).map((key) => {
+            {LANDING_EXAMPLE_KEYS.slice(0, 6).map((key) => {
               const q = t(language, key);
               return (
                 <button

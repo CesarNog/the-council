@@ -25,7 +25,7 @@ export default function LandingHero3D({
       aria-label="An abstract 3D council chamber with nine symbolic seats surrounding a glowing decision orb."
     >
       <Canvas
-        camera={{ position: [0, 2.35, 7.8], fov: mobile ? 40 : 33 }}
+        camera={{ position: [0, 2.35, 7.8], fov: mobile ? 45 : 33 }}
         dpr={mobile ? [1, 1.5] : [1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         frameloop={reducedMotion ? "demand" : "always"}
