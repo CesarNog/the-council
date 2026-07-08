@@ -9,10 +9,6 @@ vi.mock("../../lib/analytics.js", () => ({
   Events: { landingCta: vi.fn() },
 }));
 
-vi.mock("./LandingHero3D.jsx", () => ({
-  default: () => <div data-testid="hero-3d">3d</div>,
-}));
-
 import { Landing } from "./LandingPage.jsx";
 
 describe("Landing page", () => {
@@ -24,7 +20,7 @@ describe("Landing page", () => {
     expect(screen.getAllByRole("button", { name: /Consult my Council/i }).length).toBeGreaterThan(0);
   });
 
-  it("uses CSS fallback when WebGL unavailable", () => {
+  it("renders the 2D council ring", () => {
     render(<Landing language="en" onEnter={vi.fn()} history={[]} onRevisit={vi.fn()} />);
     expect(document.querySelector(".landing-orbit-fallback")).toBeTruthy();
   });

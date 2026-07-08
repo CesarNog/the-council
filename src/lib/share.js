@@ -107,12 +107,12 @@ export function downloadShareCard(question, debate, language = "en", format = "s
 
   const headline = councilHeadline(debate, language);
   x.fillStyle = "#EDE8DE";
-  const hFont = "500 40px 'Fraunces', Georgia, serif";
+  const hFont = "500 40px 'Cormorant Garamond', Georgia, serif";
   let y = 500;
   wrap(headline, hFont, 820).forEach(l => { x.font = hFont; x.fillText(l, W / 2, y); y += 50; });
 
   y += 40;
-  const qFont = "italic 300 46px 'Fraunces', Georgia, serif";
+  const qFont = "italic 300 46px 'Cormorant Garamond', Georgia, serif";
   wrap(`"${question}"`, qFont, 860).forEach(l => { x.font = qFont; x.fillText(l, W / 2, y); y += 60; });
 
   const { yes, no, dep } = tally(debate);
@@ -127,12 +127,12 @@ export function downloadShareCard(question, debate, language = "en", format = "s
   if (debate.quote) {
     y += 70;
     x.fillStyle = "rgba(201,169,110,.9)";
-    const qqFont = "italic 400 36px 'Fraunces', Georgia, serif";
+    const qqFont = "italic 400 36px 'Cormorant Garamond', Georgia, serif";
     wrap(`"${debate.quote}"`, qqFont, 820).forEach(l => { x.font = qqFont; x.fillText(l, W / 2, y); y += 54; });
   } else {
     y += 70;
     x.fillStyle = "rgba(237,232,222,.85)";
-    const vFont = "300 34px 'Fraunces', Georgia, serif";
+    const vFont = "300 34px 'Cormorant Garamond', Georgia, serif";
     wrap(debate.verdict, vFont, 820).forEach(l => { x.font = vFont; x.fillText(l, W / 2, y); y += 50; });
   }
 
