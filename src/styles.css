@@ -635,6 +635,12 @@
 .prof-hist-q{font-size:13px; color:var(--ivory-dim); line-height:1.4;}
 .prof-hist-meta{font-family:var(--mono); font-size:10px; color:var(--ivory-faint); margin-top:3px;}
 .prof-hist-empty{font-size:14px; color:var(--ivory-dim); text-align:center; padding:48px 0; line-height:1.7;}
+.sub-persona-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.sub-persona-chip{display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 6px; border:1px solid var(--line); border-radius:6px; cursor:pointer; transition:border-color .18s, background .18s; font-size:10px; font-family:var(--mono); letter-spacing:.06em; color:var(--ivory-faint); background:transparent; line-height:1;}
+.sub-persona-chip.on{border-color:var(--persona-color, var(--gold)); color:var(--persona-color, var(--gold)); background:rgba(255,255,255,.02);}
+.sub-persona-chip:disabled{opacity:.4; cursor:not-allowed;}
+.sub-persona-chip:not(:disabled):hover{background:rgba(255,255,255,.03);}
+.sub-persona-dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; transition:background .18s;}
 
 /* Landing quick-question chips */
 .landing-quick-section{margin-top:48px; display:flex; flex-direction:column; align-items:center; gap:16px; max-width:600px;}

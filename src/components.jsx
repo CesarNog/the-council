@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, FALLBACK } from "./lib/api.js";
-import { saveToHistory } from "./lib/history.js";
+import { saveToHistory, isPremiumUser } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName, personaLine } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
@@ -369,6 +369,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
   useEffect(() => {
@@ -518,8 +519,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setAsked(qq); setQuestion(""); setRateLimited(false); setRetryIn(0);
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
+    let personaIds;
     try {
-      const result = await summonCouncil(qq, profile, language, decisionContext);
+      const stored = localStorage.getItem("council:custom_personas");
+      if (stored) personaIds = JSON.parse(stored);
+    } catch {}
+    try {
+      const result = await summonCouncil(qq, profile, language, decisionContext, personaIds);
       setDebate(result); setPhase("debate");
     } catch (e) {
       if (e.kind === "rate_limited") {
@@ -575,6 +581,22 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     downloadShareCard(asked, debate, language);
     setCardSaved(true);
     setTimeout(() => setCardSaved(false), 2000);
+  };
+  const handleEmailVerdict = () => {
+    const subj = t(language, "email_verdict_subject", asked);
+    const body = [
+      asked,
+      "",
+      debate.verdict,
+      debate.quote ? `"${debate.quote}"` : "",
+      "",
+      debate.question || "",
+      "",
+      appUrl,
+    ].filter(l => l !== undefined).join("\n");
+    window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+    setEmailSent(true);
+    setTimeout(() => setEmailSent(false), 3000);
   };
   const shareLinks = debate ? [
     { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
@@ -858,6 +880,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                     <button className={"btn small" + (copiedText ? " feedback" : "")} onClick={handleCopyText}>
                       {copiedText ? t(language, "copy_text_done") : t(language, "copy_as_text")}
                     </button>
+                    {isPremiumUser() && (
+                      <button className={"btn small" + (emailSent ? " feedback" : "")} onClick={handleEmailVerdict}>
+                        {emailSent ? t(language, "email_verdict_sent") : t(language, "email_verdict_btn")}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="actions-group">

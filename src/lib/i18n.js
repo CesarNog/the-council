@@ -444,6 +444,34 @@ const S = {
   hist_clear:         { en: "Clear history",   pt: "Limpar histórico",     es: "Borrar historial",     zh: "清除历史记录" },
   hist_cleared:       { en: "History cleared", pt: "Histórico apagado",    es: "Historial borrado",    zh: "历史记录已清除" },
   hist_revisit:       { en: "Revisit",         pt: "Revisitar",            es: "Revisitar",            zh: "重新辩论" },
+
+  // premium active state
+  sub_premium_active:   { en: "Beta Access",          pt: "Acesso Beta",            es: "Acceso Beta",            zh: "Beta访问" },
+  sub_leave_waitlist:   { en: "Leave waitlist",        pt: "Sair da lista",          es: "Salir de la lista",      zh: "退出等候名单" },
+
+  // life mode (local check-in)
+  sub_lifemode_heading: { en: "Life Mode",             pt: "Life Mode",              es: "Modo Vida",              zh: "生活模式" },
+  sub_lifemode_desc:    { en: "The Council checks in proactively — a daily reflection based on your last debate.", pt: "O Conselho faz check-ins proativos — uma reflexão diária baseada no seu último debate.", es: "El Consejo hace check-ins proactivos — una reflexión diaria basada en tu último debate.", zh: "议会主动签到——基于你上次辩论的每日反思。" },
+  sub_lifemode_enable:  { en: "Enable daily check-ins", pt: "Ativar check-ins diários", es: "Activar check-ins diarios", zh: "启用每日签到" },
+  sub_lifemode_active:  { en: "Daily check-ins are active", pt: "Check-ins diários ativos", es: "Check-ins diarios activos", zh: "每日签到已激活" },
+  lifemode_teaser:      { en: "The Council remembers something.", pt: "O Conselho se lembra de algo.", es: "El Consejo recuerda algo.", zh: "议会想起了一些事。" },
+  lifemode_monk:        { en: q => `You asked: "${q}". Has something quietly shifted since then?`, pt: q => `Você perguntou: "${q}". Algo mudou silenciosamente desde então?`, es: q => `Preguntaste: "${q}". ¿Ha cambiado algo suavemente desde entonces?`, zh: q => `你曾问："${q}"。此后有什么悄然改变吗？` },
+  lifemode_shadow:      { en: q => `"${q}" — you already know what changed. Are you ready to admit it?`, pt: q => `"${q}" — você já sabe o que mudou. Está pronto para admitir?`, es: q => `"${q}" — ya sabes lo que cambió. ¿Estás listo para admitirlo?`, zh: q => `"${q}"——你已经知道什么变了。你准备好承认了吗？` },
+  lifemode_romantic:    { en: q => `The Council remembers: "${q}". Who else was carrying that weight with you?`, pt: q => `O Conselho se lembra: "${q}". Quem mais carregava esse peso com você?`, es: q => `El Consejo recuerda: "${q}". ¿Quién más llevaba ese peso contigo?`, zh: q => `议会记得："${q}"。还有谁在和你一起承担那份重量？` },
+  lifemode_explorer:    { en: q => `"${q}" — where did that path actually lead?`, pt: q => `"${q}" — para onde esse caminho realmente foi?`, es: q => `"${q}" — ¿adónde llevó realmente ese camino?`, zh: q => `"${q}"——那条路实际上通向了哪里？` },
+
+  // custom personas
+  sub_persona_heading:  { en: "Your Council",          pt: "Seu Conselho",           es: "Tu Consejo",             zh: "你的议会" },
+  sub_persona_desc:     { en: "Choose which voices sit at your table. Minimum 3.", pt: "Escolha quais vozes se sentam à sua mesa. Mínimo 3.", es: "Elige qué voces se sientan en tu mesa. Mínimo 3.", zh: "选择哪些声音坐在你的桌旁。至少3个。" },
+  sub_persona_all:      { en: "Restore all 9",         pt: "Restaurar todos os 9",   es: "Restaurar los 9",        zh: "恢复全部9个" },
+  sub_persona_saved:    { en: "Council saved",         pt: "Conselho salvo",         es: "Consejo guardado",       zh: "议会已保存" },
+
+  // email verdicts
+  sub_email_heading:    { en: "Email Verdicts",        pt: "Vereditos por E-mail",   es: "Veredictos por Correo",  zh: "邮件裁决" },
+  sub_email_desc:       { en: "After a debate, send the full verdict to any email address.", pt: "Após um debate, envie o veredito completo para qualquer e-mail.", es: "Después de un debate, envía el veredicto completo a cualquier correo.", zh: "辩论结束后，将完整裁决发送到任意邮箱。" },
+  email_verdict_btn:    { en: "Email this verdict",   pt: "Enviar por e-mail",      es: "Enviar por correo",      zh: "邮件发送裁决" },
+  email_verdict_sent:   { en: "Opening email…",       pt: "Abrindo e-mail…",        es: "Abriendo correo…",       zh: "正在打开邮件…" },
+  email_verdict_subject: { en: q => `The Council on: ${q}`, pt: q => `O Conselho sobre: ${q}`, es: q => `El Consejo sobre: ${q}`, zh: q => `议会关于：${q}` },
 };
 
 export function t(lang, key, ...args) {

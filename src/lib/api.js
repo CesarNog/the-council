@@ -1,10 +1,10 @@
 import { byId } from "./personas.js";
 
-export async function summonCouncil(question, profile, language, decisionContext) {
+export async function summonCouncil(question, profile, language, decisionContext, personaIds) {
   const res = await fetch("/api/council", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, profile, language, decisionContext }),
+    body: JSON.stringify({ question, profile, language, decisionContext, ...(personaIds?.length >= 3 ? { personaIds } : {}) }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
