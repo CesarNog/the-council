@@ -23,21 +23,7 @@ Groq responses are awaited fully before being returned to the client. On slow co
 
 ---
 
-## Security
-
-### `/api/tts` Not Rate-Limited
-The text-to-speech endpoint has no IP-based rate limit, leaving Gemini API quota unprotected.
-
-**Plan:** Add 5 req/min/IP guard (same pattern as `/api/council`).
-
----
-
 ## Data / Privacy
-
-### Debate Results Don't Auto-Expire
-Results are stored in Cloudflare KV without a TTL. The privacy policy states 30-day retention, but KV does not enforce it.
-
-**Plan:** Add `kvPut(key, value, 30 * 24 * 3600)` TTL to debate results in `api/council.js`.
 
 ### Anonymous User History Lost on Browser Clear
 Anonymous users' debate history lives only in `localStorage`. Clearing browser data permanently removes it.
@@ -53,27 +39,6 @@ After a hard page reload, the app briefly uses the browser's detected language b
 
 **Plan:** Read localStorage synchronously before first render, or use a service worker.
 
-### Google GSI Script Injected Twice (StrictMode)
-`GoogleSignIn` component's `useEffect` runs twice in React StrictMode (dev). The GSI script tag is appended twice to `<head>`.
-
-**Impact:** Low — browsers deduplicate scripts. But it produces a console warning.
-
-**Plan:** Add deduplication guard: `if (document.querySelector('script[src*="accounts.google.com"]')) return`.
-
----
-
-## Accessibility
-
-### No `aria-live` on Debate Loading
-Screen readers do not announce when the debate is ready. Users relying on screen readers have no feedback during the 5–15s loading period.
-
-**Plan:** Add `aria-live="polite"` region that announces "O Conselho está debatendo..." and then "O debate está pronto".
-
-### No Focus Management After Debate Loads
-After the debate loads, focus remains on the submit button. Screen reader users must tab through to reach the content.
-
-**Plan:** Move focus to the debate heading after result arrives.
-
 ---
 
 ## Code Quality
@@ -87,5 +52,15 @@ Type errors are silent until runtime. Props and API shapes are undocumented at t
 ### No Playwright / E2E Tests
 The happy path (onboarding → council → result → share → auth) is not automatically tested.
 
-### `console.log` in Production
-Several API functions and components have `console.log` calls that leak debug information in production Vercel logs.
+---
+
+## Resolved
+
+These were tracked here previously; fixed and verified against current code.
+
+- **`/api/tts` not rate-limited** — `enforceEndpointLimit(req, res, "tts")` guards the endpoint (`api/tts.js`).
+- **Debate results don't auto-expire** — `api/council.js` writes `result:{id}` with a 30-day KV TTL, matching the privacy policy.
+- **`console.log` in production** — audited; none remain in `api/` or `src/` outside tests.
+- **No `aria-live` on debate loading** — the summoning phase now has `role="status" aria-live="polite"`.
+- **No focus management after debate loads** — focus moves to the debate transcript (a labeled, `tabIndex={-1}` region) once the first turn appears.
+- **Google GSI script injected twice (StrictMode)** — `GoogleSignIn` now checks for an existing `<script>` tag and attaches a `load` listener instead of appending a duplicate.

@@ -272,6 +272,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const endRef = useRef(null);
   const sentinelRef = useRef(null);
   const turnRefs = useRef([]);
+  const feedRef = useRef(null);
+  const feedFocusedRef = useRef(false);
   const [stageCompact, setStageCompact] = useState(false);
   const [viewportSpeaker, setViewportSpeaker] = useState(null);
   const [expandedTurns, setExpandedTurns] = useState(new Set());
@@ -338,6 +340,16 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     const t = setTimeout(() => setShown(s => s + 1), delay);
     return () => clearTimeout(t);
   }, [phase, shown, debate]);
+
+  // move focus to the debate once the first turn arrives — screen reader users
+  // otherwise stay parked on the submit button through the whole reveal
+  useEffect(() => {
+    if (phase === "debate" && shown === 1 && !feedFocusedRef.current) {
+      feedFocusedRef.current = true;
+      feedRef.current?.focus();
+    }
+    if (phase === "idle") feedFocusedRef.current = false;
+  }, [phase, shown]);
 
   // reflection beat — silêncio com peso antes do voto
   useEffect(() => {
@@ -625,7 +637,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         )}
 
         {phase === "summoning" && (
-          <div className="speaking" style={{ justifyContent: "center" }}>
+          <div className="speaking" role="status" aria-live="polite" style={{ justifyContent: "center" }}>
             <span className="dots"><i /><i /><i /></span>
             {t(language, "the_nine_take_seats")}
           </div>
@@ -634,7 +646,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {debate && (phase === "debate" || phase === "reflecting" || phase === "voting" || phase === "verdict") && (
           <>
           {shown > 0 && <div className="chapter-eyebrow">{t(language, "chapter_debate")}</div>}
-          <div className="feed" aria-live="polite" aria-atomic="false">
+          <div className="feed" ref={feedRef} tabIndex={-1} aria-label={t(language, "chapter_debate")} aria-live="polite" aria-atomic="false">
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
               const isPlaying = speaking === i;

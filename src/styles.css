@@ -160,6 +160,8 @@ button,a{min-width:0;}
 
 /* ---------- debate transcript: cinematic, not a card list ---------- */
 .feed{display:flex; flex-direction:column; gap:6px; margin-top:40px;}
+/* only reachable via the programmatic focus-on-ready call (tabIndex=-1 keeps it out of tab order) */
+.feed:focus{outline:2px solid var(--gold); outline-offset:2px; border-radius:4px;}
 .turn{display:flex; gap:18px; align-items:flex-start; animation:turnIn .7s cubic-bezier(.2,.7,.2,1) both;
   padding:20px 4px 20px 22px; background:transparent; border:none; border-left:2px solid color-mix(in srgb, currentColor 45%, transparent);
   position:relative; transition:opacity .6s ease, filter .6s ease, border-color .6s ease, background .6s ease;}

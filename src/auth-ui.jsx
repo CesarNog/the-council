@@ -21,10 +21,21 @@ export function GoogleSignIn({ onCredential }) {
       });
     };
     if (window.google?.accounts?.id) { init(); return; }
+    // StrictMode double-invokes effects in dev, and multiple GoogleSignIn instances
+    // can mount at once — guard against appending the GSI script twice. The
+    // data-gsi-ready flag also prevents a double init() when the script is still
+    // loading: without it, the first mount's script.onload and a second mount's
+    // addEventListener("load", ...) would both fire once the script resolves.
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      if (existing.dataset.gsiReady) init();
+      else existing.addEventListener("load", init, { once: true });
+      return;
+    }
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
-    script.onload = init;
+    script.onload = () => { script.dataset.gsiReady = "1"; init(); };
     document.head.appendChild(script);
   }, [onCredential]);
 
