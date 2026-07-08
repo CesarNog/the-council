@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { LandingHeroFallback } from "./LandingHeroFallback.jsx";
 import { HowItWorks } from "./HowItWorks.jsx";
 import { PersonaPreview } from "./PersonaPreview.jsx";
@@ -6,27 +6,15 @@ import { ExampleDecisionGrid } from "./ExampleDecisionGrid.jsx";
 import { SampleVerdictPreview } from "./SampleVerdictPreview.jsx";
 import { PremiumTeaser } from "./PremiumTeaser.jsx";
 import { useReducedMotion } from "../../hooks/useReducedMotion.js";
-import { supportsWebGL, preferLandingFallback } from "../../lib/webgl.js";
 import { firstName } from "../../lib/name.js";
 import { t, personaShortName, LANDING_EXAMPLE_KEYS } from "../../lib/i18n.js";
 import { Events } from "../../lib/analytics.js";
 
-const LandingHero3D = lazy(() => import("./LandingHero3D.jsx"));
-
 export function Landing({ onEnter, authSlot, language, history = [], onRevisit, displayName, authenticated }) {
   const reducedMotion = useReducedMotion();
-  const [use3D, setUse3D] = useState(false);
-  const [webglReady, setWebglReady] = useState(false);
   const [activePersona, setActivePersona] = useState(null);
   const [ctaHover, setCtaHover] = useState(false);
-  const [tabHidden, setTabHidden] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const ok = supportsWebGL() && !reducedMotion && !preferLandingFallback();
-    setUse3D(ok);
-    setWebglReady(true);
-  }, [reducedMotion]);
 
   useEffect(() => {
     const mq = window.matchMedia?.("(max-width: 768px)");
@@ -37,12 +25,6 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  useEffect(() => {
-    const onVis = () => setTabHidden(document.hidden);
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, []);
-
   const recentQs = history.slice(0, 2);
   const greetingName = firstName(displayName);
   const greeting = greetingName
@@ -51,17 +33,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
       ? t(language, "landing_greeting_anon")
       : null;
 
-  const heroVisual = use3D && !tabHidden ? (
-    <Suspense fallback={<LandingHeroFallback language={language} reducedMotion={reducedMotion} ctaHover={ctaHover} />}>
-      <LandingHero3D
-        activePersona={activePersona}
-        onPersonaHover={setActivePersona}
-        ctaHover={ctaHover}
-        reducedMotion={reducedMotion}
-        mobile={isMobile}
-      />
-    </Suspense>
-  ) : (
+  const heroVisual = (
     <LandingHeroFallback
       language={language}
       activePersona={activePersona}
@@ -82,7 +54,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
     <div className="landing-page">
       <section className="landing-hero">
         <div className="landing-hero-atmosphere" aria-hidden="true" />
-        <div className="landing-hero-visual" data-webgl={webglReady && use3D ? "true" : "false"}>
+        <div className="landing-hero-visual">
           <div className="landing-hero-visual-vignette" aria-hidden="true" />
           {heroVisual}
         </div>

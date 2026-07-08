@@ -12,7 +12,7 @@ Nine alternate versions of yourself — Founder, Billionaire, Artist, Athlete, M
 
 ## Stack
 
-* **Frontend**: Vite + React, React Three Fiber for 3D elements.
+* **Frontend**: Vite + React.
 * **Backend**: Vercel serverless functions (`api/*.js`).
 * **Inference**: [Groq](https://groq.com) (`openai/gpt-oss-120b`).
 * **Text-to-Speech (TTS)**: OpenAI TTS (primary) / Gemini TTS (fallback).

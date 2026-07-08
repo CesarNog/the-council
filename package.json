@@ -15,8 +15,6 @@
   "dependencies": {
     "@clerk/backend": "^3.11.0",
     "@clerk/clerk-react": "^5.61.8",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
     "@sentry/react": "^10.64.0",
     "@supabase/supabase-js": "^2.110.1",
     "@upstash/ratelimit": "^2.0.8",
@@ -27,7 +25,6 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "resend": "^6.17.1",
-    "three": "^0.185.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
