@@ -2,6 +2,10 @@ import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { PERSONAS } from "../src/lib/personas.js";
 import { getSessionFromRequest } from "./_session.js";
+import { enforceCouncilLimit } from "./_rateLimit.js";
+import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
+import { councilBodySchema, parseBody } from "./_validate.js";
+import { isSupabaseConfigured, persistDecisionBundle, upsertProfileFromUser } from "./_supabase.js";
 
 const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
@@ -54,54 +58,38 @@ Rules:
 - Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.${activePersonas ? `
 - COUNCIL COMPOSITION: Only these ${activePersonas.length} personas are present at this session: ${activePersonas.join(", ")}. No other persona may appear in turns or votes. The votes array must have exactly ${activePersonas.length} entries (one per active persona). Adjust clashes and callbacks to only reference active personas.` : ""}`;
 
-const RATE_LIMIT = 3;      // requests — teto real e o TPM=8000/min compartilhado pela org inteira na Groq, nao por IP; isto so mitiga abuso de um unico IP, nao concorrencia entre usuarios diferentes
-const RATE_WINDOW = 60000; // ms — best-effort: KV eventually consistent, nao atomico, sob concorrencia alta pode passar um pouco do limite
-
-async function checkRateLimit(ip) {
-  const key = `rl:${ip}`;
-  const raw = await kvGet(key).catch(() => null);
-  const now = Date.now();
-  let state = raw ? JSON.parse(raw) : { c: 0, t: now };
-  if (now - state.t > RATE_WINDOW) state = { c: 0, t: now };
-  if (state.c >= RATE_LIMIT) {
-    return { allowed: false, retryAfter: Math.ceil((state.t + RATE_WINDOW - now) / 1000) };
-  }
-  state.c += 1;
-  await kvPut(key, JSON.stringify(state), 120).catch(() => {}); // falha de escrita nao bloqueia a requisicao
-  return { allowed: true };
-}
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const { question, profile, language, decisionContext: rawCtx, personaIds: rawPersonaIds } = req.body ?? {};
-  const decisionContext = rawCtx && typeof rawCtx === "object"
-    ? {
-        decisionCategory: String(rawCtx.decisionCategory || "").slice(0, 60),
-        emotionalWeight: String(rawCtx.emotionalWeight || "").slice(0, 60),
-        mainFear: String(rawCtx.mainFear || "").slice(0, 200),
-      }
-    : {};
-  if (!question || typeof question !== "string") return res.status(400).json({ error: "invalid question" });
-  const q = question.trim();
-  if (!q || q.length > 500) return res.status(400).json({ error: "invalid question" });
+  if (req.method !== "POST") return methodNotAllowed(res, "POST");
+  if (bodyTooLarge(req, res)) return;
 
-  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
-  const { allowed, retryAfter } = await checkRateLimit(ip).catch(() => ({ allowed: true })); // KV fora do ar nao deve derrubar o produto
-  if (!allowed) return res.status(429).json({ error: "rate_limited", detail: "too many questions, slow down", retryAfter });
+  const parsed = parseBody(councilBodySchema, req.body);
+  if (!parsed.ok) return badRequest(res, parsed.detail);
 
-  // validate optional persona selection (premium feature — reduces token usage)
+  const { question: q, profile = {}, language, decisionContext: rawCtx = {} } = parsed.data;
+  const decisionContext = {
+    decisionCategory: rawCtx.decisionCategory || "",
+    emotionalWeight: rawCtx.emotionalWeight || "",
+    mainFear: rawCtx.mainFear || "",
+  };
+
+  // validate optional persona selection (premium feature — reduces token usage; not in schema, extracted manually)
+  const rawPersonaIds = req.body?.personaIds;
   const selectedIds = Array.isArray(rawPersonaIds)
     ? rawPersonaIds.filter(id => VALID_IDS.has(id))
     : null;
   const activePersonas = selectedIds?.length >= 3 ? selectedIds : null;
 
   let history = [];
+  let sessionUser = null;
   const session = getSessionFromRequest(req);
   if (session) {
     const raw = await kvGet(`user:${session.sub}`).catch(() => null);
-    const user = raw ? JSON.parse(raw) : null;
-    history = (user?.debateHistory || []).slice(0, 3);
+    sessionUser = raw ? JSON.parse(raw) : null;
+    history = (sessionUser?.debateHistory || []).slice(0, 3);
   }
+
+  if (!(await enforceCouncilLimit(req, res, session, sessionUser))) return;
 
   const targetLang = LANGUAGE_NAMES[language];
   const systemMessage = targetLang
@@ -115,7 +103,7 @@ export default async function handler(req, res) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
       const statusByKind = { timeout: 504, network_error: 504, rate_limited: 429, gateway_error: 502, unparseable_response: 502, truncated_response: 502 };
-      return res.status(statusByKind[e.kind] || 502).json({ error: e.kind, detail: e.detail });
+      return safeError(res, statusByKind[e.kind] || 502, e.kind, e.detail);
     }
     throw e;
   }
@@ -135,6 +123,20 @@ export default async function handler(req, res) {
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
     .catch(e => console.error("council: persist failed", e.message));
+
+  if (isSupabaseConfigured()) {
+    const profileRow = sessionUser
+      ? await upsertProfileFromUser({ sub: session.sub, ...sessionUser }).catch(() => null)
+      : null;
+    persistDecisionBundle({
+      userId: profileRow?.id || null,
+      question: q,
+      language,
+      decisionContext,
+      debate: json,
+      publicSlug: id,
+    }).catch(e => console.error("council: supabase persist failed", e.message));
+  }
 
   return res.status(200).json({ id, ...json });
 }

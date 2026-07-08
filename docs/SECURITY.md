@@ -21,39 +21,41 @@ Google Sign-In (OAuth 2.0 / OIDC). The browser receives a Google ID token (JWT),
 If `GOOGLE_CLIENT_ID` is not set in Vercel env, `/api/auth` returns 503. The browser falls back to decoding the Google JWT client-side (no signature verification — trust is implicit from the Google-controlled delivery). User data is stored in `localStorage` under `council:localSession`. This mode is intentional for local/preview environments but **must not be used in production** with real user data.
 
 ### Known gaps
-- **`/api/tts` has no rate limiting.** Recommended: add 5 req/min/IP guard to protect Gemini quota.
+- KV rate limiting is best-effort (see Upstash migration in roadmap for atomic limits).
 
 ---
 
 ## Input Validation
 
-| Endpoint | Validated fields |
-|---|---|
-| `POST /api/council` | `question` (string, max 500 chars), `profile` fields, `language` whitelist, `decisionContext` (each field sliced to max length) |
-| `PATCH /api/profile` | `situation` (string, max 200), `values` (array max 3, each a string), `picture` (string max 300,000 bytes), `dismissLifeMode` (boolean), `recordDebate` (object with required fields) |
-| `POST /api/auth` | `credential` (string, presence check) |
-| `GET /api/result` | `id` (URL param, no further validation — KV key prefixed with `result:` prevents injection) |
+All POST/PATCH bodies validated with **Zod** schemas in `api/_validate.js`. Oversized bodies rejected via `Content-Length` check (500 KB max) in `api/_http.js`.
 
-**MIME validation:** `picture` must start with `data:image/` — validated server-side before storing. Only byte size and MIME prefix are checked; no image decoding is performed.
+| Endpoint | Schema | Notes |
+|---|---|---|
+| `POST /api/council` | `councilBodySchema` | question 1–500 chars, language enum, decisionContext |
+| `PATCH /api/profile` | `profilePatchSchema` | strict — unknown fields rejected |
+| `POST /api/auth` | `authBodySchema` | credential min 20 chars |
+| `POST /api/tts` | `ttsBodySchema` | text 1–2000 chars, persona enum |
+| `GET /api/result` | `parseResultId()` | alphanumeric 6–16 chars |
+
+Production error responses omit internal `detail` (see `safeError()` in `api/_http.js`).
+
+**MIME validation:** `picture` must start with `data:image/` — validated via Zod before storing.
 
 ---
 
 ## Rate Limiting
 
-### `/api/council`
-- 3 requests per 60 seconds per IP
-- Implemented via Cloudflare KV counter (`rl:<ip>`)
-- **Best-effort only** — KV is eventually consistent; under high concurrency, the limit may be exceeded
-- Returns `429` with `Retry-After` header when exceeded
+Shared helper: `api/_rateLimit.js` (Cloudflare KV counters, best-effort).
 
-### `/api/tts`
-- No rate limiting currently
-- **Recommendation:** Add same IP-based limiter (5 req/min) to protect Gemini API quota
+| Endpoint | Limit | Key prefix |
+|---|---|---|
+| `/api/council` | 3 / 60s / IP | `rl:council:` |
+| `/api/auth` | 10 / 60s / IP | `rl:auth:` |
+| `/api/tts` | 5 / 60s / IP | `rl:tts:` |
 
-### `/api/auth`
-- 10 requests per 60 seconds per IP
-- Implemented via Cloudflare KV counter (`rl:auth:<ip>`)
-- **Best-effort only** — same eventual-consistency caveat as `/api/council`
+Returns `429` with `{ error: "rate_limited", retryAfter }` and `Retry-After` header.
+
+**Frontend:** rate limit shows honest error UI with countdown — no silent offline fallback on 429.
 
 ---
 

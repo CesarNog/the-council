@@ -21,8 +21,13 @@ export function councilHeadline(debate, language = "en") {
   return yes > no ? t(language, "leans_yes", yes, no) : no > yes ? t(language, "leans_no", no, yes) : t(language, "split_middle");
 }
 
+export function siteUrl(origin) {
+  const env = typeof import.meta !== "undefined" ? import.meta.env?.VITE_SITE_URL : undefined;
+  return origin || env || (typeof window !== "undefined" ? window.location.origin : "https://the-council-murex.vercel.app");
+}
+
 export function shareUrl(id, origin) {
-  const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://the-council-murex.vercel.app");
+  const base = siteUrl(origin);
   return id ? `${base}/r/${id}` : base;
 }
 
@@ -54,8 +59,15 @@ export function shareText(question, debate, { max, language = "en" } = {}) {
 
 const VOTE_COLORS = { yes: "#C9A96E", no: "#8B3A3A", depends: "rgba(237,232,222,.35)" };
 
-export function downloadShareCard(question, debate, language = "en") {
-  const W = 1080, H = 1350;
+export const CARD_FORMATS = {
+  square: { width: 1080, height: 1080, label: "Square" },
+  story: { width: 1080, height: 1920, label: "Story" },
+  landscape: { width: 1200, height: 630, label: "Landscape" },
+};
+
+export function downloadShareCard(question, debate, language = "en", format = "square") {
+  const dims = CARD_FORMATS[format] || CARD_FORMATS.square;
+  const W = dims.width, H = dims.height;
   const c = document.createElement("canvas");
   c.width = W; c.height = H;
   const x = c.getContext("2d");

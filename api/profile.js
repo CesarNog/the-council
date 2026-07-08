@@ -1,8 +1,9 @@
 import { kvGet, kvPut } from "./_kv.js";
 import { requireUser } from "./auth.js";
 import { callGroq, GroqError } from "./_groq.js";
+import { badRequest, bodyTooLarge, methodNotAllowed } from "./_http.js";
+import { parseBody, profilePatchSchema } from "./_validate.js";
 
-const MAX_PICTURE_BYTES = 300_000; // client-side resize deveria manter bem abaixo disso; isto e o teto duro
 const LIFE_MODE_GAP_MS = 12 * 60 * 60 * 1000; // 12h — Council "percebe" que voce sumiu
 
 const buildLifeModePrompt = (user) => `One member of The Council (nine alternate selves: founder, billionaire, artist, athlete, monk, scientist, explorer, romantic, shadow) spontaneously starts a short exchange with ${user.name}, who they haven't spoken to in a while. Context: ${user.situation || "unknown"}. Values: ${(user.values || []).join(", ") || "unknown"}.
@@ -47,34 +48,22 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "PATCH") {
-    const { situation, values, picture, dismissLifeMode, recordDebate } = req.body ?? {};
+    if (bodyTooLarge(req, res)) return;
+    const parsed = parseBody(profilePatchSchema, req.body);
+    if (!parsed.ok) return badRequest(res, parsed.detail);
+    const { situation, values, picture, dismissLifeMode, recordDebate } = parsed.data;
     const next = { ...auth.user };
 
-    if (situation !== undefined) {
-      if (typeof situation !== "string" || situation.length > 200) return res.status(400).json({ error: "invalid situation" });
-      next.situation = situation.trim();
-    }
-    if (values !== undefined) {
-      if (!Array.isArray(values) || values.length > 3 || values.some(v => typeof v !== "string")) {
-        return res.status(400).json({ error: "invalid values" });
-      }
-      next.values = values;
-    }
-    if (picture !== undefined) {
-      if (picture !== null) {
-        if (typeof picture !== "string" || !picture.startsWith("data:image/") || picture.length > MAX_PICTURE_BYTES) {
-          return res.status(400).json({ error: "invalid picture" });
-        }
-      }
-      next.customPicture = picture;
-    }
+    if (situation !== undefined) next.situation = situation.trim();
+    if (values !== undefined) next.values = values;
+    if (picture !== undefined) next.customPicture = picture;
     if (dismissLifeMode) next.lifeMode = null;
 
     if (recordDebate?.id && recordDebate?.question) {
       const entry = {
         id: recordDebate.id,
-        question: String(recordDebate.question).slice(0, 300),
-        verdict: String(recordDebate.verdict || "").slice(0, 500),
+        question: recordDebate.question,
+        verdict: recordDebate.verdict || "",
         mood: recordDebate.mood || null,
         unanimousVote: recordDebate.unanimousVote === "yes" || recordDebate.unanimousVote === "no" ? recordDebate.unanimousVote : null,
         at: Date.now(),
@@ -89,5 +78,5 @@ export default async function handler(req, res) {
     return res.status(200).json(next);
   }
 
-  return res.status(405).json({ error: "method not allowed" });
+  return methodNotAllowed(res, "GET, PATCH");
 }

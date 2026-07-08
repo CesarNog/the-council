@@ -1,3 +1,7 @@
+import { enforceEndpointLimit } from "./_rateLimit.js";
+import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
+import { parseBody, ttsBodySchema } from "./_validate.js";
+
 // Persona → OpenAI voice mapping (gpt-4o-mini-tts voices)
 const OPENAI_VOICES = {
   founder:     "onyx",    // authoritative, deep
@@ -116,14 +120,17 @@ async function geminiTts(text, persona, apiKey) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") return methodNotAllowed(res, "POST");
+  if (bodyTooLarge(req, res)) return;
+  if (!(await enforceEndpointLimit(req, res, "tts"))) return;
 
   const openaiKey = process.env.OPENAI_API_KEY;
   const geminiKey = process.env.GEMINI_TTS_API_KEY;
-  if (!openaiKey && !geminiKey) return res.status(503).json({ error: "TTS not configured" });
+  if (!openaiKey && !geminiKey) return res.status(503).json({ error: "tts_not_configured" });
 
-  const { text, persona } = req.body || {};
-  if (!text) return res.status(400).json({ error: "text required" });
+  const parsed = parseBody(ttsBodySchema, req.body);
+  if (!parsed.ok) return badRequest(res, parsed.detail);
+  const { text, persona } = parsed.data;
 
   try {
     const result = openaiKey
@@ -144,9 +151,9 @@ export default async function handler(req, res) {
         return;
       } catch (fallbackErr) {
         console.error("Gemini fallback also failed:", fallbackErr.message);
-        return res.status(502).json({ error: "TTS failed", detail: fallbackErr.message });
+        return safeError(res, 502, "tts_failed", fallbackErr.message);
       }
     }
-    res.status(502).json({ error: "TTS failed", detail: e.message });
+    safeError(res, 502, "tts_failed", e.message);
   }
 }

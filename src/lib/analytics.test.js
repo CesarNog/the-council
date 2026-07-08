@@ -74,7 +74,7 @@ describe("trackPageView", () => {
     const hj = vi.fn();
     stubWindow({ hj });
     mod.trackPageView("landing");
-    expect(hj).toHaveBeenCalledWith("event", "page_landing");
+    expect(hj).toHaveBeenCalledWith("event", "landing_viewed");
   });
 });
 

@@ -1,25 +1,11 @@
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie, getSessionFromRequest } from "./_session.js";
+import { enforceRateLimit, enforceEndpointLimit } from "./_rateLimit.js";
+import { badRequest, bodyTooLarge, methodNotAllowed } from "./_http.js";
+import { authBodySchema, parseBody } from "./_validate.js";
 
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
-
-const AUTH_RATE_LIMIT = 10;
-const AUTH_RATE_WINDOW = 60000;
-
-async function checkAuthRateLimit(ip) {
-  const key = `rl:auth:${ip}`;
-  const raw = await kvGet(key).catch(() => null);
-  const now = Date.now();
-  let state = raw ? JSON.parse(raw) : { c: 0, t: now };
-  if (now - state.t > AUTH_RATE_WINDOW) state = { c: 0, t: now };
-  if (state.c >= AUTH_RATE_LIMIT) {
-    return { allowed: false, retryAfter: Math.ceil((state.t + AUTH_RATE_WINDOW - now) / 1000) };
-  }
-  state.c += 1;
-  await kvPut(key, JSON.stringify(state), 120).catch(() => {});
-  return { allowed: true };
-}
 
 export default async function handler(req, res) {
   if (req.method === "DELETE") {
@@ -27,14 +13,13 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
+  if (req.method !== "POST") return methodNotAllowed(res, "POST, DELETE");
+  if (bodyTooLarge(req, res)) return;
+  if (!(await enforceEndpointLimit(req, res, "auth"))) return;
 
-  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "unknown";
-  const { allowed, retryAfter } = await checkAuthRateLimit(ip).catch(() => ({ allowed: true }));
-  if (!allowed) return res.status(429).json({ error: "rate_limited", retryAfter });
-
-  const { credential } = req.body ?? {};
-  if (!credential || typeof credential !== "string") return res.status(400).json({ error: "missing credential" });
+  const parsed = parseBody(authBodySchema, req.body);
+  if (!parsed.ok) return badRequest(res, parsed.detail);
+  const { credential } = parsed.data;
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
