@@ -1,7 +1,7 @@
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie, getSessionFromRequest } from "./_session.js";
-import { enforceRateLimit, enforceEndpointLimit } from "./_rateLimit.js";
+import { enforceEndpointLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed } from "./_http.js";
 import { authBodySchema, parseBody } from "./_validate.js";
 

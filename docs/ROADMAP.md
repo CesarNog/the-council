@@ -20,7 +20,7 @@ The Council is a premium AI deliberation product. The long-term goal is a platfo
 - [x] Add KV TTL (30 days) to debate results
 
 ### Quality
-- [ ] Add ESLint with minimal ruleset
+- [x] Add ESLint with minimal ruleset
 - [ ] Add Playwright E2E tests (happy path + auth)
 - [x] Fix loading state flash during session check
 - [x] Fix StaticPage `<pre>` → semantic HTML

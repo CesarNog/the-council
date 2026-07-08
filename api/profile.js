@@ -1,4 +1,4 @@
-import { kvGet, kvPut } from "./_kv.js";
+import { kvPut } from "./_kv.js";
 import { requireUser } from "./auth.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { badRequest, bodyTooLarge, methodNotAllowed } from "./_http.js";

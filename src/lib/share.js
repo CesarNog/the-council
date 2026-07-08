@@ -1,4 +1,4 @@
-import { PERSONAS, byId } from "./personas.js";
+import { PERSONAS } from "./personas.js";
 import { t, personaName } from "./i18n.js";
 
 export function tally(debate) {

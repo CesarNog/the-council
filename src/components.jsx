@@ -5,7 +5,7 @@ import { CouncilLogo } from "./components/CouncilLogo.jsx";
 import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, getFallback } from "./lib/api.js";
 import { saveToHistory, isPremiumUser } from "./lib/history.js";
-import { t, TTS_LANG, QUICK_QUESTIONS_I18N, RICH_QUESTIONS_I18N, personaName, personaTag, personaShortName, personaLine } from "./lib/i18n.js";
+import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 import { captureError } from "./lib/sentry.js";
@@ -382,7 +382,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     if (phase !== "verdict") { setVerdictStage(0); return; }
     const delays = isEclipse ? [2600, 1800, 1400, 1200] : [50, 900, 1000, 900];
     let stage = 0;
-    const timers = delays.map(d => {
+    const timers = delays.map(() => {
       stage += 1;
       const s = stage;
       return setTimeout(() => {
@@ -408,7 +408,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     );
     obs.observe(sentinelRef.current);
     return () => obs.disconnect();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => { if (phase === "idle") setStageCompact(false); }, [phase]);
 
   // active speaker scroll sync
@@ -547,7 +547,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
     }).catch(() => {}); // anonimo (401) ou falha de rede — nao afeta a experiencia, so nao persiste
     if (!debate.offline) saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, language) });
-  }, [phase, debate?.id]);
+  }, [phase, debate, asked, eclipseVote, language]);
 
   const ambientColor = ringActive
     ? byId[ringActive].color

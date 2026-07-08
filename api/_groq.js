@@ -52,7 +52,7 @@ export async function callGroq(prompt, { maxTokens = 1700, timeoutMs = 9000, sys
   try {
     const raw = text.replace(/```json|```/g, "").trim();
     return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
-  } catch (e) {
+  } catch {
     throw new GroqError("unparseable_response", text.slice(0, 300));
   }
 }
