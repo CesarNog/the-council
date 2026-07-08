@@ -15,6 +15,26 @@ import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth
 import { detectBrowserLanguage, t } from "./lib/i18n.js";
 import { loadHistory } from "./lib/history.js";
 
+function buildLocalLifeMode(language) {
+  try {
+    if (!localStorage.getItem("council:lifemode_enabled")) return null;
+    if (!localStorage.getItem("council:premium_waitlist")) return null;
+    const lastCheckIn = parseInt(localStorage.getItem("council:lifemode_checkin") || "0");
+    if (Date.now() - lastCheckIn < 24 * 60 * 60 * 1000) return null;
+    const history = JSON.parse(localStorage.getItem("council:history") || "[]");
+    if (!history.length) return null;
+    const last = history[0];
+    localStorage.setItem("council:lifemode_checkin", String(Date.now()));
+    const personas = ["monk", "shadow", "romantic", "explorer"];
+    const persona = personas[Math.floor(Date.now() / 86400000) % personas.length];
+    return {
+      persona,
+      teaser: t(language, "lifemode_teaser"),
+      turns: [{ p: persona, t: t(language, `lifemode_${persona}`, last.question) }],
+    };
+  } catch { return null; }
+}
+
 function sharedIdFromPath() {
   const m = typeof window !== "undefined" ? window.location.pathname.match(/^\/r\/([a-z0-9]{4,20})$/i) : null;
   return m ? m[1] : null;
@@ -250,6 +270,7 @@ function TheCouncilApp({ clerkSignOut }) {
     try { return localStorage.getItem("council:displayName") || ""; } catch { return ""; }
   });
   const [decisionContext, setDecisionContext] = useState(null);
+  const [localLifeMode, setLocalLifeMode] = useState(null);
   const [language, setLanguage] = useState(() => {
     try {
       const saved = localStorage.getItem("council:lang");
@@ -273,6 +294,10 @@ function TheCouncilApp({ clerkSignOut }) {
   };
 
   const toggleTheme = () => setTheme(th => th === "dark" ? "light" : "dark");
+
+  useEffect(() => {
+    setLocalLifeMode(buildLocalLifeMode(language));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { initAnalytics(); initAds(); }, []);
 
@@ -498,8 +523,12 @@ function TheCouncilApp({ clerkSignOut }) {
                 preloaded={eclipsePreview}
                 initialQuestion={decisionQuestion || quickQuestion}
                 decisionContext={decisionContext}
-                lifeModeSlot={user?.lifeMode && (
-                  <LifeModeBanner lifeMode={user.lifeMode} language={language} onDismiss={() => setUser(u => ({ ...u, lifeMode: null }))} />
+                lifeModeSlot={(user?.lifeMode || localLifeMode) && (
+                  <LifeModeBanner
+                    lifeMode={user?.lifeMode || localLifeMode}
+                    language={language}
+                    onDismiss={() => { setUser(u => u ? { ...u, lifeMode: null } : u); setLocalLifeMode(null); }}
+                  />
                 )}
               />
             )}

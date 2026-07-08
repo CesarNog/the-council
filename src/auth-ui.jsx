@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { updateProfile, resizeImageToDataUrl } from "./lib/auth.js";
-import { t, LANGUAGES } from "./lib/i18n.js";
+import { t, LANGUAGES, personaShortName } from "./lib/i18n.js";
 import { loadHistory, clearHistory } from "./lib/history.js";
+import { PERSONAS } from "./lib/personas.js";
 import { joinWaitlist } from "./lib/waitlist.js";
 
 export function GoogleSignIn({ onCredential }) {
@@ -173,6 +174,16 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
   const [onWaitlist, setOnWaitlist] = useState(() => {
     try { return !!localStorage.getItem("council:premium_waitlist"); } catch { return false; }
   });
+  const [lifeModeEnabled, setLifeModeEnabled] = useState(() => {
+    try { return !!localStorage.getItem("council:lifemode_enabled"); } catch { return false; }
+  });
+  const [customPersonas, setCustomPersonas] = useState(() => {
+    try {
+      const stored = localStorage.getItem("council:custom_personas");
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  });
+  const [personaSaved, setPersonaSaved] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistState, setWaitlistState] = useState("idle"); // idle | sending | done | error
   const [waitlistError, setWaitlistError] = useState("");
@@ -271,6 +282,43 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
       setWaitlistState("error");
       setWaitlistError(t(language, "sub_email_error"));
     }
+  };
+
+  const handleLeaveWaitlist = () => {
+    setOnWaitlist(false);
+    setWaitlistState("idle");
+    setWaitlistEmail("");
+    try { localStorage.removeItem("council:premium_waitlist"); } catch {}
+  };
+
+  const toggleLifeMode = () => {
+    const next = !lifeModeEnabled;
+    setLifeModeEnabled(next);
+    try {
+      if (next) localStorage.setItem("council:lifemode_enabled", "1");
+      else { localStorage.removeItem("council:lifemode_enabled"); localStorage.removeItem("council:lifemode_checkin"); }
+    } catch {}
+  };
+
+  const togglePersona = (id) => {
+    const current = customPersonas || PERSONAS.map(p => p.id);
+    const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id];
+    if (next.length < 3) return;
+    const normalized = next.length === PERSONAS.length ? null : next;
+    setCustomPersonas(normalized);
+    try {
+      if (normalized) localStorage.setItem("council:custom_personas", JSON.stringify(normalized));
+      else localStorage.removeItem("council:custom_personas");
+    } catch {}
+    setPersonaSaved(true);
+    setTimeout(() => setPersonaSaved(false), 2000);
+  };
+
+  const resetPersonas = () => {
+    setCustomPersonas(null);
+    try { localStorage.removeItem("council:custom_personas"); } catch {}
+    setPersonaSaved(true);
+    setTimeout(() => setPersonaSaved(false), 2000);
   };
 
   const heading = t(language, NAV_HEADING_KEY[activeNav] || "your_presence");
@@ -576,7 +624,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
           {activeNav === "subscription" && (<>
             <div className="prof-section" style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ fontFamily: "var(--serif)", fontSize: 18 }}>{t(language, "sub_heading")}</div>
-              <span className="prof-plan-badge">{t(language, "sub_current_plan")}</span>
+              <span className="prof-plan-badge">{onWaitlist ? t(language, "sub_premium_active") : t(language, "sub_current_plan")}</span>
             </div>
 
             <div className="prof-section">
@@ -589,31 +637,26 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
               ))}
             </div>
 
-            <div className="prof-section prof-premium-card">
-              <div className="prof-premium-header">
-                <span className="prof-premium-label">{t(language, "sub_teaser_label")}</span>
-              </div>
-              <div className="prof-premium-sub">{t(language, "sub_teaser_sub")}</div>
-              <div className="prof-premium-features">
-                {[
-                  { key: "sub_premium_1", icon: "∞" },
-                  { key: "sub_premium_2", icon: "◈" },
-                  { key: "sub_premium_3", icon: "✦" },
-                  { key: "sub_premium_4", icon: "⊠" },
-                ].map(({ key, icon }) => (
-                  <div key={key} className="prof-feat-row prof-feat-row--premium">
-                    <span className="prof-feat-premium-icon">{icon}</span>
-                    <span>{t(language, key)}</span>
-                  </div>
-                ))}
-              </div>
-
-              {onWaitlist || waitlistState === "done" ? (
-                <div className="prof-waitlist-done">
-                  <span className="prof-feat-check">✓</span>
-                  {t(language, "sub_on_waitlist")}
+            {/* Not on waitlist: premium card with email signup */}
+            {!onWaitlist && waitlistState !== "done" && (
+              <div className="prof-section prof-premium-card">
+                <div className="prof-premium-header">
+                  <span className="prof-premium-label">{t(language, "sub_teaser_label")}</span>
                 </div>
-              ) : (
+                <div className="prof-premium-sub">{t(language, "sub_teaser_sub")}</div>
+                <div className="prof-premium-features">
+                  {[
+                    { key: "sub_premium_1", icon: "∞" },
+                    { key: "sub_premium_2", icon: "◈" },
+                    { key: "sub_premium_3", icon: "✦" },
+                    { key: "sub_premium_4", icon: "⊠" },
+                  ].map(({ key, icon }) => (
+                    <div key={key} className="prof-feat-row prof-feat-row--premium">
+                      <span className="prof-feat-premium-icon">{icon}</span>
+                      <span>{t(language, key)}</span>
+                    </div>
+                  ))}
+                </div>
                 <div className="prof-waitlist-form">
                   <input
                     type="email"
@@ -638,8 +681,96 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                     <div className="prof-waitlist-error" role="alert">{waitlistError}</div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Waitlist confirmed (just joined) */}
+            {!onWaitlist && waitlistState === "done" && (
+              <div className="prof-section">
+                <div className="prof-waitlist-done">
+                  <span className="prof-feat-check">✓</span>
+                  {t(language, "sub_on_waitlist")}
+                </div>
+              </div>
+            )}
+
+            {/* Premium active: full feature panel */}
+            {onWaitlist && (<>
+              <div className="prof-section">
+                <div className="hint" style={{ marginBottom: 6 }}>{t(language, "sub_lifemode_heading")}</div>
+                <div style={{ fontSize: 12, color: "var(--ivory-faint)", lineHeight: 1.6, marginBottom: 12 }}>
+                  {t(language, "sub_lifemode_desc")}
+                </div>
+                <div className="consent-row" style={{ borderBottom: "none", paddingBottom: 0, marginBottom: 0 }}>
+                  <div style={{ fontSize: 13, color: "var(--ivory-dim)" }}>
+                    {lifeModeEnabled ? t(language, "sub_lifemode_active") : t(language, "sub_lifemode_enable")}
+                  </div>
+                  <button
+                    className={"consent-toggle" + (lifeModeEnabled ? " on" : "")}
+                    onClick={toggleLifeMode}
+                    aria-pressed={lifeModeEnabled}
+                  >
+                    {lifeModeEnabled ? "✓" : "○"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="prof-section">
+                <div className="hint" style={{ marginBottom: 6 }}>{t(language, "sub_persona_heading")}</div>
+                <div style={{ fontSize: 12, color: "var(--ivory-faint)", lineHeight: 1.6, marginBottom: 12 }}>
+                  {t(language, "sub_persona_desc")}
+                </div>
+                <div className="sub-persona-grid">
+                  {PERSONAS.map(p => {
+                    const active = !customPersonas || customPersonas.includes(p.id);
+                    const activeCount = customPersonas ? customPersonas.length : PERSONAS.length;
+                    const atMin = active && activeCount <= 3;
+                    return (
+                      <button
+                        key={p.id}
+                        className={"sub-persona-chip" + (active ? " on" : "")}
+                        style={{ "--persona-color": p.color }}
+                        onClick={() => !atMin && togglePersona(p.id)}
+                        aria-pressed={active}
+                        disabled={atMin}
+                      >
+                        <span className="sub-persona-dot" style={{ background: active ? p.color : "var(--line)" }} />
+                        <span>{personaShortName(language, p.id)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+                  {customPersonas && (
+                    <button className="btn small" onClick={resetPersonas}>
+                      {t(language, "sub_persona_all")}
+                    </button>
+                  )}
+                  {personaSaved && (
+                    <div style={{ fontSize: 12, color: "var(--gold)", fontFamily: "var(--mono)" }}>
+                      {t(language, "sub_persona_saved")}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="prof-section">
+                <div className="hint" style={{ marginBottom: 6 }}>{t(language, "sub_email_heading")}</div>
+                <div style={{ fontSize: 12, color: "var(--ivory-faint)", lineHeight: 1.6, marginBottom: 10 }}>
+                  {t(language, "sub_email_desc")}
+                </div>
+                <div className="prof-feat-row">
+                  <span className="prof-feat-check">✓</span>
+                  <span style={{ fontSize: 12, color: "var(--ivory-dim)" }}>{t(language, "email_verdict_btn")} — {t(language, "sub_premium_4").toLowerCase()}</span>
+                </div>
+              </div>
+
+              <div className="prof-section">
+                <button className="btn small" onClick={handleLeaveWaitlist} aria-pressed={true}>
+                  {t(language, "sub_leave_waitlist")}
+                </button>
+              </div>
+            </>)}
           </>)}
 
           {/* ── History tab ── */}

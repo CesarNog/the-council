@@ -11,7 +11,7 @@ const VALID_IDS = new Set(PERSONAS.map(p => p.id));
 
 const LANGUAGE_NAMES = { en: "English", pt: "Brazilian Portuguese", es: "Spanish", zh: "Simplified Chinese" };
 
-const buildPrompt = (question, profile = {}, language, history = [], ctx = {}) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
+const buildPrompt = (question, profile = {}, language, history = [], ctx = {}, activePersonas = null) => `You are the orchestrator of The Council: nine alternate versions of one person, debating their real decision around a dark round table. This must read like nine distinct, opinionated humans — not nine flavors of the same assistant.
 
 Voice fingerprints (violate these and the persona is unrecognizable — that is a failure):
 - founder: short imperative sentences (under 16 words). Startup jargon. Impatient, interrupts others mid-thought.
@@ -55,7 +55,8 @@ Rules:
 - question: one probing question back at the person.
 - realities: exactly 3 entries. Each imagines a plausible alternate path the person could take relative to this decision (not fantasy). label: 2-4 words, e.g. "The Safe Path". line: one vivid sentence, second person, what that path would probably look like one year from now. Grounded, not mystical.
 - memoryEcho: null unless a past matter above is genuinely relevant to today's question — if the topics clearly overlap (same decision, same fear, same person involved), you should surface it: {"persona":"monk","line":"one short in-voice sentence naturally referencing that past matter and asking how the person feels about it now"}. If there is no past matter listed above, or none overlaps, leave it null.
-- Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.`;
+- Write EVERY word — turns, votes (v and r), verdict, quote, question, realities — in ${language && LANGUAGE_NAMES[language] ? LANGUAGE_NAMES[language] : "the same language as the person's question"}. Do not slip into English.${activePersonas ? `
+- COUNCIL COMPOSITION: Only these ${activePersonas.length} personas are present at this session: ${activePersonas.join(", ")}. No other persona may appear in turns or votes. The votes array must have exactly ${activePersonas.length} entries (one per active persona). Adjust clashes and callbacks to only reference active personas.` : ""}`;
 
 
 export default async function handler(req, res) {
@@ -71,6 +72,13 @@ export default async function handler(req, res) {
     emotionalWeight: rawCtx.emotionalWeight || "",
     mainFear: rawCtx.mainFear || "",
   };
+
+  // validate optional persona selection (premium feature — reduces token usage; not in schema, extracted manually)
+  const rawPersonaIds = req.body?.personaIds;
+  const selectedIds = Array.isArray(rawPersonaIds)
+    ? rawPersonaIds.filter(id => VALID_IDS.has(id))
+    : null;
+  const activePersonas = selectedIds?.length >= 3 ? selectedIds : null;
 
   let history = [];
   let sessionUser = null;
@@ -90,7 +98,7 @@ export default async function handler(req, res) {
 
   let json;
   try {
-    json = await callGroq(buildPrompt(q, profile, language, history, decisionContext), { maxTokens: 2300, systemMessage });
+    json = await callGroq(buildPrompt(q, profile, language, history, decisionContext, activePersonas), { maxTokens: 2300, systemMessage });
   } catch (e) {
     if (e instanceof GroqError) {
       console.error("council:", e.kind, e.detail);
@@ -106,10 +114,11 @@ export default async function handler(req, res) {
   }
 
   // modelo ocasionalmente inventa/duplica persona (nao-determinismo com reasoning_effort:low) — observado em producao
-  json.turns = json.turns.filter(turn => VALID_IDS.has(turn.p));
+  const allowedIds = activePersonas ? new Set(activePersonas) : VALID_IDS;
+  json.turns = json.turns.filter(turn => allowedIds.has(turn.p));
   const seen = new Set();
-  json.votes = json.votes.filter(v => VALID_IDS.has(v.p) && !seen.has(v.p) && (seen.add(v.p), true));
-  if (json.memoryEcho && !VALID_IDS.has(json.memoryEcho.persona)) json.memoryEcho = null;
+  json.votes = json.votes.filter(v => allowedIds.has(v.p) && !seen.has(v.p) && (seen.add(v.p), true));
+  if (json.memoryEcho && !allowedIds.has(json.memoryEcho.persona)) json.memoryEcho = null;
 
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
