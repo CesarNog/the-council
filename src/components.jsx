@@ -541,6 +541,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     ? byId[ringActive].color
     : (debate?.mood && MOOD_COLORS[debate.mood]) || "#C9A96E";
 
+  // header title reflects the actual phase — was previously stuck on "verdict reached"
+  // even while idle or mid-debate whenever the visitor had no profile name
+  const chamberTitle = phase === "idle"
+    ? t(language, "chamber_title_idle")
+    : phase === "verdict"
+      ? (profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached"))
+      : (profile?.name ? t(language, "in_session_for", profile.name) : t(language, "chamber_title_active"));
+
   return (
     <>
       <div className="ambient" style={{
@@ -551,7 +559,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           <div className="chamber-head">
             <div>
               <div className="eyebrow">{t(language, "chamber_label")}</div>
-              <div className="title serif">{profile?.name ? t(language, "in_session_for", profile.name) : t(language, "verdict_reached")}</div>
+              <div className="title serif">{chamberTitle}</div>
             </div>
             {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
           </div>

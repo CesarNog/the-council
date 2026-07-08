@@ -118,6 +118,8 @@ const S = {
   chamber_label: { en: "The Chamber", pt: "A Câmara", es: "La Cámara", zh: "议事厅" },
   in_session_for: { en: name => `In session for ${name}`, pt: name => `Em sessão para ${name}`, es: name => `En sesión para ${name}`, zh: name => `正在为${name}议事` },
   verdict_reached: { en: "A verdict already reached", pt: "Um veredito já alcançado", es: "Un veredicto ya alcanzado", zh: "已有裁决" },
+  chamber_title_idle: { en: "The chamber awaits", pt: "A câmara aguarda", es: "La cámara espera", zh: "议事厅等候中" },
+  chamber_title_active: { en: "The Council is in session", pt: "O Conselho está em sessão", es: "El Consejo está en sesión", zh: "议会正在议事" },
   new_question: { en: "New question", pt: "Nova pergunta", es: "Nueva pregunta", zh: "新问题" },
   bring_question: { en: "Bring your question before the Council", pt: "Traga sua pergunta ao Conselho", es: "Trae tu pregunta al Consejo", zh: "向议会提出你的问题" },
   question_placeholder: { en: "Should I…", pt: "Devo…", es: "¿Debería…", zh: "我应该……" },

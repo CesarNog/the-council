@@ -526,21 +526,28 @@ button,a{min-width:0;}
   display:flex; align-items:center; justify-content:center; color:inherit;}
 .life-mode-turn .sig svg{width:13px; height:13px;}
 
-.realities{margin-top:52px; padding-top:40px; border-top:1px solid var(--line);}
+.realities{margin-top:52px; padding-top:48px; border-top:1px solid var(--line);}
 .realities-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; position:relative;}
 /* connecting timeline rail — three alternate paths branching from now */
 .realities-grid::before{
-  content:""; position:absolute; top:-20px; left:8%; right:8%; height:1px;
-  background:linear-gradient(90deg, transparent, var(--gold-dim) 15%, var(--gold-dim) 85%, transparent);
+  content:""; position:absolute; top:-28px; left:8%; right:8%; height:2px;
+  background:linear-gradient(90deg, transparent, var(--gold) 15%, var(--gold) 85%, transparent);
+  opacity:.55;
 }
 .reality{
   position:relative; border-radius:8px; border:1px solid var(--line); padding:22px 20px;
   background:linear-gradient(165deg, rgba(201,169,110,.035), rgba(255,255,255,.012) 60%);
   box-shadow:var(--shadow-card), var(--card-hi); text-align:left; transition:border-color .2s, transform .2s, box-shadow .2s;
 }
+/* branch node on the rail */
 .reality::before{
-  content:""; position:absolute; top:-21px; left:24px; width:7px; height:7px; border-radius:50%;
-  background:var(--gold); box-shadow:0 0 8px 1px rgba(201,169,110,.6);
+  content:""; position:absolute; top:-29px; left:24px; width:8px; height:8px; border-radius:50%;
+  background:var(--gold); box-shadow:0 0 10px 2px rgba(201,169,110,.65); z-index:1;
+}
+/* short vertical drop from the node down to the card edge */
+.reality::after{
+  content:""; position:absolute; top:-25px; left:27.5px; width:1px; height:25px;
+  background:linear-gradient(180deg, var(--gold-dim), transparent);
 }
 .reality:hover{border-color:var(--gold-dim); transform:translateY(-3px); box-shadow:var(--shadow-card-hover), var(--card-hi);}
 .reality-num{
@@ -556,8 +563,11 @@ button,a{min-width:0;}
     -webkit-overflow-scrolling:touch;
     scroll-snap-type:x mandatory;
   }
-  .realities-grid::before{left:6%; right:6%;}
-  .reality{min-width:78vw; scroll-snap-align:start; flex-shrink:0;}
+  /* rail/node/drop-line are positioned against the grid's own box, which reads
+     oddly once the grid itself becomes the horizontal scroll container — the
+     I/II/III numerals already carry the sequence on the mobile carousel */
+  .realities-grid::before,.reality::before,.reality::after{display:none;}
+  .reality{min-width:78vw; scroll-snap-align:start; flex-shrink:0; padding-top:20px;}
 }
 
 .lang-selector{display:flex; gap:6px; flex-wrap:wrap;}
