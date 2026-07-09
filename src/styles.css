@@ -3,8 +3,11 @@
 
 :root{
   --bg:#0B0A12; --bg2:#100E1A; --surface:#161322; --line:rgba(214,196,161,.14);
-  --ivory:#EDE8DE; --ivory-dim:rgba(237,232,222,.62); --ivory-faint:rgba(237,232,222,.38);
-  --gold:#C9A96E; --gold-dim:rgba(201,169,110,.35);
+  /* ivory-faint/gold-text alphas are tuned to clear WCAG AA's 4.5:1 for normal
+     text — gold-dim stays low-alpha for borders/backgrounds where that rule
+     doesn't apply; use gold-text wherever the color is applied to readable text */
+  --ivory:#EDE8DE; --ivory-dim:rgba(237,232,222,.62); --ivory-faint:rgba(237,232,222,.50);
+  --gold:#C9A96E; --gold-dim:rgba(201,169,110,.35); --gold-text:rgba(201,169,110,.75);
   --serif:'Cormorant Garamond', Georgia, serif; --sans:'Inter', system-ui, sans-serif; --mono:'JetBrains Mono', monospace;
   --safe-bottom:env(safe-area-inset-bottom, 0px);
   --header-h:53px;
@@ -22,8 +25,8 @@
 }
 :root.light{
   --bg:#F5F3EE; --bg2:#EDECEA; --surface:#E4E1DA; --line:rgba(0,0,0,.10);
-  --ivory:#1C1A28; --ivory-dim:rgba(28,26,40,.65); --ivory-faint:rgba(28,26,40,.38);
-  --gold:#7A5C28; --gold-dim:rgba(122,92,40,.35);
+  --ivory:#1C1A28; --ivory-dim:rgba(28,26,40,.65); --ivory-faint:rgba(28,26,40,.62);
+  --gold:#7A5C28; --gold-dim:rgba(122,92,40,.35); --gold-text:rgba(122,92,40,.92);
 }
 :root.light .site-header{background:rgba(245,243,238,.90);}
 :root.light .profile-overlay{background:rgba(245,243,238,.85);}
@@ -246,7 +249,7 @@ button,a{min-width:0;}
 .rule{width:54px; height:1px; background:var(--gold-dim); margin:26px auto 0;}
 
 .err{margin-top:40px; text-align:center; color:var(--ivory-dim); font-size:14px; line-height:1.7;}
-.rate-limit-countdown{margin-top:12px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--gold-dim); opacity:.8;}
+.rate-limit-countdown{margin-top:12px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--gold-text);}
 
 @media (max-width:480px){
   /* Landing: tighten above-the-fold on small phones */
@@ -419,7 +422,7 @@ button,a{min-width:0;}
   display:flex; align-items:center; justify-content:space-between; gap:8px;
 }
 .profile-values-count{
-  font-family:var(--mono); font-size:11px; color:var(--gold-dim);
+  font-family:var(--mono); font-size:11px; color:var(--gold-text);
   border:1px solid var(--gold-dim); padding:2px 8px; border-radius:2px;
   transition:color .2s, border-color .2s;
 }
@@ -783,13 +786,8 @@ button,a{min-width:0;}
 .landing-chip:hover{border-color:var(--gold-dim); color:var(--ivory); background:rgba(201,169,110,.05); transform:translateY(-2px); box-shadow:0 6px 24px -8px rgba(201,169,110,.2);}
 .landing-chip--history{display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:3px; padding:11px 18px;}
 .landing-chip-q{font-family:var(--serif); font-size:14px; font-style:italic; font-weight:300; color:var(--ivory-dim);}
-.landing-chip-hl{font-family:var(--mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--gold-dim); opacity:.75;}
+.landing-chip-hl{font-family:var(--mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--gold-text);}
 
-/* Landing personalization */
-.landing-greeting{font-family:var(--serif); font-style:italic; font-weight:300; font-size:clamp(17px,2.2vw,22px);
-  color:var(--gold); margin-bottom:8px; letter-spacing:.01em; animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) both; animation-delay:.25s;}
-.cta-sub{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ivory-faint);
-  margin-top:14px; opacity:.75;}
 .cta-group{display:flex; flex-direction:column; align-items:center;}
 .auth-slot-wrap{margin-top:22px; display:flex; flex-direction:column; align-items:center; width:100%; max-width:min(320px,calc(100vw - 48px));}
 .auth-slot-wrap > div{width:100%; max-width:100%; overflow:hidden; display:flex; justify-content:center;}
@@ -828,7 +826,7 @@ button,a{min-width:0;}
 /* Chamber context chips */
 .context-chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; margin-bottom:4px;}
 .context-chip{font-family:var(--mono); font-size:9px; letter-spacing:.18em; text-transform:uppercase;
-  padding:5px 12px; border:1px solid var(--gold-dim); color:var(--gold-dim); background:rgba(201,169,110,.04);
+  padding:5px 12px; border:1px solid var(--gold-dim); color:var(--gold-text); background:rgba(201,169,110,.04);
   cursor:default; border-radius:2px;}
 
 /* Shared page conversion banner */
@@ -960,7 +958,7 @@ button,a{min-width:0;}
 .landing-hero-copy h1{font-family:var(--serif); font-weight:300; font-size:clamp(32px,4.6vw,62px);
   line-height:1.07; letter-spacing:-.015em; margin:clamp(8px,1.2vh,14px) 0 clamp(12px,1.8vh,20px); max-width:15ch; text-wrap:balance;}
 .landing-greeting{font-family:var(--serif); font-style:italic; font-weight:300; font-size:clamp(16px,2vw,20px);
-  color:var(--gold-dim); margin:0 0 8px; line-height:1.45; max-width:36ch;}
+  color:var(--gold-text); margin:0 0 8px; line-height:1.45; max-width:36ch;}
 .landing-hero-examples{
   display:flex; flex-direction:column; gap:8px; margin-top:20px; width:100%; max-width:480px;
 }

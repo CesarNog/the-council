@@ -87,7 +87,6 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
             >
               {t(language, "landing_secondary_cta")}
             </button>
-            <div className="cta-sub">{t(language, "enter_chamber_sub")}</div>
             {authSlot && (
               <div className="auth-slot-wrap">
                 <div className="auth-divider"><span>{t(language, "auth_or")}</span></div>
