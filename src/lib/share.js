@@ -102,7 +102,7 @@ export function downloadShareCard(question, debate, language = "en", format = "s
 
   x.fillStyle = "#C9A96E"; x.font = "500 22px 'JetBrains Mono', monospace";
   x.textAlign = "center"; x.letterSpacing = "10px";
-  x.fillText("THE COUNCIL HAS RULED", W / 2, 440);
+  x.fillText(t(language, "share_ruled"), W / 2, 440);
   x.letterSpacing = "0px";
 
   const headline = councilHeadline(debate, language);
@@ -118,7 +118,7 @@ export function downloadShareCard(question, debate, language = "en", format = "s
   const { yes, no, dep } = tally(debate);
   y += 40;
   x.font = "500 30px 'JetBrains Mono', monospace"; x.fillStyle = "#D8C08A";
-  x.fillText(`YES ${yes}   ·   NO ${no}   ·   DEPENDS ${dep}`, W / 2, y);
+  x.fillText(`${t(language, "share_yes")} ${yes}   ·   ${t(language, "share_no")} ${no}   ·   ${t(language, "share_depends")} ${dep}`, W / 2, y);
 
   y += 70;
   x.strokeStyle = "rgba(201,169,110,.4)"; x.beginPath(); x.moveTo(W / 2 - 60, y); x.lineTo(W / 2 + 60, y); x.stroke();
@@ -139,7 +139,7 @@ export function downloadShareCard(question, debate, language = "en", format = "s
   // Footer: tagline + share URL
   const url = shareUrl(debate.id);
   x.fillStyle = "rgba(237,232,222,.4)"; x.font = "400 22px 'JetBrains Mono', monospace";
-  x.fillText("nine versions of me · one verdict", W / 2, H - 110);
+  x.fillText(t(language, "share_card_tagline"), W / 2, H - 110);
   if (debate.id) {
     x.fillStyle = "rgba(201,169,110,.55)"; x.font = "400 20px 'JetBrains Mono', monospace";
     x.fillText(url.replace(/^https?:\/\//, ""), W / 2, H - 72);

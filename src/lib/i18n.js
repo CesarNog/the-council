@@ -200,6 +200,12 @@ const S = {
     zh: "— 九个版本的我，一个裁决",
   },
   share_ruled: { en: "THE COUNCIL HAS RULED", pt: "O CONSELHO DECIDIU", es: "EL CONSEJO HA DECIDIDO", zh: "议会已裁决" },
+  share_card_tagline: {
+    en: "nine versions of me · one verdict",
+    pt: "nove versões de mim · um veredito",
+    es: "nueve versiones de mí · un veredicto",
+    zh: "九个版本的我 · 一个裁决",
+  },
   copy_link: { en: "Copy link", pt: "Copiar link", es: "Copiar enlace", zh: "复制链接" },
   link_copied: { en: "Copied!", pt: "Copiado!", es: "¡Copiado!", zh: "已复制！" },
   try_example: { en: "Or see the Council in action →", pt: "Experimente com uma decisão pronta →", es: "O ve al Consejo en acción →", zh: "或先看看议会如何运作 →" },
