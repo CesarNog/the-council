@@ -14,7 +14,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "line" : "html",
-  timeout: 60000,
+  timeout: 90000,
   use: {
     baseURL: "http://127.0.0.1:4173",
     locale: "en-US",
@@ -29,7 +29,11 @@ export default defineConfig({
   // the webServer readiness timeout on a cold CI runner even though the build
   // itself was fast; `vite preview` alone starts near-instantly.
   webServer: {
-    command: "npm run preview -- --port 4173 --strict-port",
+    // Explicit --host: vite preview's default "localhost" binding resolves to
+    // IPv6 (::1) first on some CI runners, while Playwright's readiness probe
+    // hits the IPv4 127.0.0.1 literal in `url` below — different interfaces,
+    // so the probe never connects even though the server is actually up.
+    command: "npm run preview -- --host 127.0.0.1 --port 4173 --strict-port",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,

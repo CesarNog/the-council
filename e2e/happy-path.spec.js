@@ -17,9 +17,12 @@ test("landing → example question → offline debate renders with a verdict", a
   // Chamber has taken over; the offline banner confirms the fallback path fired.
   await expect(page.locator(".chapter-eyebrow")).toContainText(/demo/i, { timeout: 15000 });
 
-  // Turn reveal + voting take a few seconds; give the verdict phase room to land.
+  // The offline fallback debate has 12 turns of real prose (each turn's reveal
+  // delay is capped at 3.4s), plus reflection/voting/verdict beats — full
+  // reveal can take ~45-50s nominally, more under CI/parallel-worker CPU
+  // contention. Give it real room rather than chasing a flake.
   const verdict = page.locator(".vx.serif.reveal");
-  await expect(verdict).toBeVisible({ timeout: 40000 });
+  await expect(verdict).toBeVisible({ timeout: 70000 });
   await expect(verdict).not.toBeEmpty();
 
   // Offline debates have no persisted id, so share links must be gated off —
