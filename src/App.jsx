@@ -748,7 +748,7 @@ function TheCouncilApp({ clerkSignOut }) {
           theme={theme}
           onThemeToggle={toggleTheme}
           onLanguageChange={changeLanguage}
-          onSave={(u) => { setUser(u); setProfile(p => ({ ...p, situation: u.situation, values: u.values })); setShowProfileSettings(false); }}
+          onSave={(u) => { setUser(u); setProfile(p => ({ ...p, situation: u.situation, values: u.values })); }}
           onClose={() => setShowProfileSettings(false)}
           onSignOut={handleSignOut}
           onRevisit={(q) => { setQuickQuestion(q); setShowProfileSettings(false); setScreen("chamber"); }}
