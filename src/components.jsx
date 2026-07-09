@@ -221,7 +221,10 @@ function ShareIcon() {
 export function ShareBar({ asked, debate, language = "en" }) {
   const [copied, setCopied] = useState(false);
   const appUrl = shareUrl(debate?.id);
-  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
+  // no server-persisted id (e.g. the offline/demo fallback debate) means /r/:id
+  // points nowhere — link-based sharing only makes sense for a real decision
+  const hasShareableLink = !!debate?.id;
+  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share && hasShareableLink;
 
   const nativeShare = () => {
     navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
@@ -233,12 +236,16 @@ export function ShareBar({ asked, debate, language = "en" }) {
     });
   };
 
-  const links = [
+  const links = hasShareableLink ? [
     { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
     { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language }))}&url=${encodeURIComponent(appUrl)}` },
     { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
     { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}` },
-  ];
+  ] : [];
+
+  if (!hasShareableLink) {
+    return <p className="share-link-note" style={{ textAlign: "center", fontSize: 13, color: "var(--ivory-faint)" }}>{t(language, "share_link_unavailable")}</p>;
+  }
 
   return (
     <div className="share-row">
@@ -490,7 +497,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   };
 
   const appUrl = shareUrl(debate?.id);
-  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
+  // the offline/demo fallback debate has no server-persisted id, so /r/:id would
+  // point nowhere — link-based sharing (WhatsApp, X, LinkedIn, Facebook, native
+  // share, copy link) only makes sense once there is a real decision to link to
+  const hasShareableLink = !!debate?.id;
+  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share && hasShareableLink;
   const nativeShare = () => {
     navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
   };
@@ -523,7 +534,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setEmailSent(true);
     setTimeout(() => setEmailSent(false), 3000);
   };
-  const shareLinks = debate ? [
+  const shareLinks = hasShareableLink ? [
     { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
     { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language }))}&url=${encodeURIComponent(appUrl)}` },
     { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
@@ -791,19 +802,23 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 <div className="chapter-eyebrow" style={{ margin: "36px 0 20px" }}>{t(language, "chapter_share")}</div>
                 <div className="actions-group">
                   <div className="actions-group-label">{t(language, "share_group_share")}</div>
-                  <div className="actions-group-row">
-                    {canNativeShare && (
-                      <button className="btn share-btn" onClick={nativeShare}><ShareIcon /> {t(language, "share_native")}</button>
-                    )}
-                    {shareLinks.map(l => (
-                      <a key={l.label} className="btn share-btn" href={l.href} target="_blank" rel="noopener noreferrer">
-                        <ShareIcon /> {l.label}
-                      </a>
-                    ))}
-                    <button className={"btn share-btn" + (copiedLink ? " feedback" : "")} onClick={handleCopyLink}>
-                      <ShareIcon /> {copiedLink ? t(language, "link_copied") : t(language, "copy_link")}
-                    </button>
-                  </div>
+                  {hasShareableLink ? (
+                    <div className="actions-group-row">
+                      {canNativeShare && (
+                        <button className="btn share-btn" onClick={nativeShare}><ShareIcon /> {t(language, "share_native")}</button>
+                      )}
+                      {shareLinks.map(l => (
+                        <a key={l.label} className="btn share-btn" href={l.href} target="_blank" rel="noopener noreferrer">
+                          <ShareIcon /> {l.label}
+                        </a>
+                      ))}
+                      <button className={"btn share-btn" + (copiedLink ? " feedback" : "")} onClick={handleCopyLink}>
+                        <ShareIcon /> {copiedLink ? t(language, "link_copied") : t(language, "copy_link")}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="share-link-note" style={{ textAlign: "center", fontSize: 13, color: "var(--ivory-faint)" }}>{t(language, "share_link_unavailable")}</p>
+                  )}
                 </div>
                 <div className="actions-group">
                   <div className="actions-group-label">{t(language, "share_group_save")}</div>
