@@ -528,7 +528,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       "",
       debate.question || "",
       "",
-      appUrl,
+      ...(hasShareableLink ? [appUrl] : []),
     ].filter(l => l !== undefined).join("\n");
     window.location.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
     setEmailSent(true);

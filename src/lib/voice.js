@@ -21,15 +21,19 @@ const webSpeechAvailable = typeof window !== "undefined" && "speechSynthesis" in
 // browser's default voice for that language if nothing matches.
 const FEMALE_VOICE_HINTS = ["female", "woman", "zira", "samantha", "victoria", "susan", "karen", "moira", "tessa", "fiona", "kathy"];
 const MALE_VOICE_HINTS = ["male", "man", "david", "daniel", "alex", "fred", "george", "james", "oliver", "aaron", "gordon"];
+// Word-boundary matching — "includes" would let "Samantha" match the male
+// hint "man" and "female" match the male hint "male".
+const FEMALE_VOICE_RE = new RegExp(`\\b(${FEMALE_VOICE_HINTS.join("|")})\\b`, "i");
+const MALE_VOICE_RE = new RegExp(`\\b(${MALE_VOICE_HINTS.join("|")})\\b`, "i");
 
 function pickVoiceForGender(gender, lang) {
   if (!webSpeechAvailable) return null;
   const voices = window.speechSynthesis.getVoices();
   if (!voices?.length) return null;
-  const hints = gender === "female" ? FEMALE_VOICE_HINTS : MALE_VOICE_HINTS;
+  const hintRe = gender === "female" ? FEMALE_VOICE_RE : MALE_VOICE_RE;
   const langPrefix = (lang || "").split("-")[0].toLowerCase();
   const matchesLang = (v) => !langPrefix || v.lang?.toLowerCase().startsWith(langPrefix);
-  const byHint = voices.find(v => matchesLang(v) && hints.some(h => v.name.toLowerCase().includes(h)));
+  const byHint = voices.find(v => matchesLang(v) && hintRe.test(v.name));
   if (byHint) return byHint;
   // no gendered match for this language — better to use any voice in the right
   // language than force a wrong-language voice just to satisfy gender
