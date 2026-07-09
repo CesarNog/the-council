@@ -277,6 +277,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [votesShown, setVotesShown] = useState(0);
   const [speaking, setSpeaking] = useState(null); // index do turno tocando agora, ou null
   const endRef = useRef(null);
+  const verdictRef = useRef(null);
   const sentinelRef = useRef(null);
   const turnRefs = useRef([]);
   const feedRef = useRef(null);
@@ -401,8 +402,17 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   }, [phase, isEclipse]);
 
   useEffect(() => {
+    // once the verdict lands, scroll to its top instead — endRef sits at the
+    // very bottom of the page (past share/continue buttons), so block:"end"
+    // was overshooting past the verdict into the footer
+    if (phase === "verdict") return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [shown, votesShown, phase]);
+
+  useEffect(() => {
+    if (phase !== "verdict") return;
+    verdictRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [phase]);
 
   useEffect(() => stopSpeaking, []); // cleanup ao desmontar
 
@@ -751,7 +761,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           <>
             <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "") + (isEclipse ? " eclipse-dim" : "")} />
 
-            <div className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24 }}>{t(language, "chapter_verdict")}</div>
+            <div ref={verdictRef} className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24 }}>{t(language, "chapter_verdict")}</div>
 
             {isEclipse ? (
               <div className={"eclipse-mark" + (verdictStage >= 1 ? " in" : "")}>
