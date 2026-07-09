@@ -2,30 +2,36 @@ import { enforceEndpointLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
 import { parseBody, ttsBodySchema } from "./_validate.js";
 
-// Persona → OpenAI voice mapping (gpt-4o-mini-tts voices)
+// Persona → OpenAI voice mapping (gpt-4o-mini-tts voices).
+// Deliberately mixed male/female across the nine seats — not just per-voice
+// character fit — so the debate reads as nine different people, not a wall
+// of one gender: founder/billionaire/athlete/explorer/shadow male,
+// artist/monk/scientist/romantic female.
 const OPENAI_VOICES = {
-  founder:     "onyx",    // authoritative, deep
-  billionaire: "ash",     // confident, measured
-  artist:      "nova",    // expressive, warm
-  athlete:     "echo",    // energetic, clear
-  monk:        "fable",   // calm, wise
-  scientist:   "alloy",   // neutral, precise
-  explorer:    "verse",   // curious, adventurous
-  romantic:    "coral",   // intimate, warm
-  shadow:      "ballad",  // low, mysterious
+  founder:     "onyx",    // male — authoritative, deep
+  billionaire: "ash",     // male — confident, measured
+  artist:      "nova",    // female — expressive, warm
+  athlete:     "echo",    // male — energetic, clear
+  monk:        "shimmer", // female — soft, calm
+  scientist:   "sage",    // female — measured, precise
+  explorer:    "verse",   // male — curious, adventurous
+  romantic:    "coral",   // female — intimate, warm
+  shadow:      "ballad",  // male — low, mysterious
 };
 
-// Persona → Gemini prebuilt voice mapping (fallback)
+// Persona → Gemini prebuilt voice mapping (fallback). Same male/female split
+// per persona as OPENAI_VOICES above, so switching providers doesn't change
+// which seats sound male vs. female.
 const GEMINI_VOICES = {
-  founder:     "Orus",
-  billionaire: "Charon",
-  artist:      "Aoede",
-  athlete:     "Fenrir",
-  monk:        "Kore",
-  scientist:   "Zephyr",
-  explorer:    "Puck",
-  romantic:    "Leda",
-  shadow:      "Schedar",
+  founder:     "Orus",     // male
+  billionaire: "Charon",   // male
+  artist:      "Aoede",    // female
+  athlete:     "Fenrir",   // male
+  monk:        "Kore",     // female
+  scientist:   "Zephyr",   // female
+  explorer:    "Puck",     // male
+  romantic:    "Leda",     // female
+  shadow:      "Schedar",  // male
 };
 
 const TTS_TIMEOUT_MS = 10000;
