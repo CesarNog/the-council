@@ -21,17 +21,17 @@ The Council is a premium AI deliberation product. The long-term goal is a platfo
 
 ### Quality
 - [x] Add ESLint with minimal ruleset
-- [ ] Add Playwright E2E tests (happy path + auth)
+- [x] Add Playwright E2E tests (happy path) — auth/onboarding/shared-result/language/mobile/a11y still open, see `docs/TEST_PLAN.md`
 - [x] Fix loading state flash during session check
 - [x] Fix StaticPage `<pre>` → semantic HTML
-- [ ] Deduplicate Google GSI script injection
+- [x] Deduplicate Google GSI script injection
 
 ### UX
-- [ ] `aria-live` region for debate loading
-- [ ] Feedback toasts for share actions
-- [ ] Sticky Council stage on mobile (scroll collapse)
-- [ ] Active speaker highlighting in ring
-- [ ] Expandable debate turns on mobile
+- [x] `aria-live` region for debate loading
+- [x] Feedback toasts for share actions (inline button-label feedback, not a toast component)
+- [x] Sticky Council stage on mobile (scroll collapse)
+- [x] Active speaker highlighting in ring
+- [x] Expandable debate turns on mobile
 
 ---
 
