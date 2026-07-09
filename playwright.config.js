@@ -24,10 +24,14 @@ export default defineConfig({
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
+  // Build is a separate, dedicated step (see package.json's `pretest:e2e` and
+  // ci.yml's `e2e` job) — bundling it into this command previously blew past
+  // the webServer readiness timeout on a cold CI runner even though the build
+  // itself was fast; `vite preview` alone starts near-instantly.
   webServer: {
-    command: "npm run build && npm run preview -- --port 4173 --strict-port",
+    command: "npm run preview -- --port 4173 --strict-port",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    timeout: 30000,
   },
 });

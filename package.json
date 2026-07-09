@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
+    "pretest:e2e": "vite build",
     "test:e2e": "playwright test"
   },
   "dependencies": {
