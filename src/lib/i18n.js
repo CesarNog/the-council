@@ -132,6 +132,7 @@ const S = {
   adjourned: { en: "adjourned", pt: "encerrado", es: "concluido", zh: "已结束" },
   the_nine_take_seats: { en: "The nine take their seats", pt: "Os nove tomam seus lugares", es: "Los nueve toman asiento", zh: "九人各就其位" },
   is_speaking: { en: name => `${name} is speaking`, pt: name => `${name} está falando`, es: name => `${name} está hablando`, zh: name => `${name}正在发言` },
+  replying_to: { en: name => `Replying to ${name}`, pt: name => `Respondendo a ${name}`, es: name => `Respondiendo a ${name}`, zh: name => `回复 ${name}` },
   chamber_falls_quiet: { en: "The chamber falls quiet. Nine minds, weighing.", pt: "A câmara fica em silêncio. Nove mentes, ponderando.", es: "La cámara queda en silencio. Nueve mentes, sopesando.", zh: "议事厅陷入沉默，九个心灵在权衡。" },
   deliberation_closed: { en: "Deliberation closed", pt: "Deliberação encerrada", es: "Deliberación concluida", zh: "商议已结束" },
   council_votes: { en: "The Council votes", pt: "O Conselho vota", es: "El Consejo vota", zh: "议会投票" },

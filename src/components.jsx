@@ -285,6 +285,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [stageCompact, setStageCompact] = useState(false);
   const [viewportSpeaker, setViewportSpeaker] = useState(null);
   const [expandedTurns, setExpandedTurns] = useState(new Set());
+  const [highlightedTurn, setHighlightedTurn] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
@@ -323,6 +324,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     });
   };
 
+  const jumpToTurn = (index) => {
+    const el = turnRefs.current[index];
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedTurn(index);
+    setTimeout(() => setHighlightedTurn(h => (h === index ? null : h)), 1600);
+  };
+
   const mentionedIds = useMemo(() => {
     if (!activeSpeaker || !debate) return new Set();
     const turnText = (debate.turns[shown - 1]?.t || "").toLowerCase();
@@ -334,6 +343,23 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     });
     return set;
   }, [activeSpeaker, shown, debate, language]);
+
+  // per-turn "replying to" — same name-mention heuristic as mentionedIds above,
+  // but scanned per historical turn (not just the live one) so the transcript
+  // can show a WhatsApp-style reply quote above whichever earlier turn a
+  // persona is visibly responding to by name
+  const replyTargets = useMemo(() => {
+    if (!debate?.turns?.length) return [];
+    return debate.turns.map((turn, i) => {
+      const text = turn.t.toLowerCase();
+      for (let j = i - 1; j >= 0; j--) {
+        const prior = debate.turns[j];
+        if (prior.p === turn.p) continue;
+        if (text.includes(personaShortName(language, prior.p).toLowerCase())) return j;
+      }
+      return null;
+    });
+  }, [debate, language]);
 
   // sequential turn reveal
   useEffect(() => {
@@ -675,20 +701,35 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               const isDimmed = phase === "debate" && i < shown - 1;
               const isLong = turn.t.length > 280;
               const isExpanded = expandedTurns.has(i);
+              const replyIndex = replyTargets[i];
+              const replyTurn = replyIndex != null ? debate.turns[replyIndex] : null;
+              const replyPersona = replyTurn ? byId[replyTurn.p] : null;
               return (
                 <div
-                  className={"turn" + (isPlaying ? " playing" : "") + (isFocused ? " focused" : "") + (isDimmed ? " dimmed" : "")}
+                  className={"turn" + (isPlaying ? " playing" : "") + (isFocused ? " focused" : "") + (isDimmed ? " dimmed" : "") + (highlightedTurn === i ? " highlighted" : "")}
                   key={i}
                   ref={el => { turnRefs.current[i] = el; }}
                   data-turn-index={i}
                   style={{ color: p.color }}
                 >
                   <div className="sig"><Sigil id={p.id} /></div>
-                  <div style={{ flex: 1 }}>
+                  <div className="turn-body">
                     <div className="who">
                       <span className="who-name" style={{ color: p.color }}>{personaName(language, p.id)}</span>
                       <span className="who-tag">{personaTag(language, p.id)}</span>
                     </div>
+                    {replyTurn && (
+                      <button
+                        type="button"
+                        className="reply-quote"
+                        style={{ "--reply-color": replyPersona.color }}
+                        onClick={() => jumpToTurn(replyIndex)}
+                        aria-label={t(language, "replying_to", personaName(language, replyTurn.p))}
+                      >
+                        <span className="reply-quote-name">{personaName(language, replyTurn.p)}</span>
+                        <span className="reply-quote-text">{replyTurn.t.slice(0, 90)}{replyTurn.t.length > 90 ? "…" : ""}</span>
+                      </button>
+                    )}
                     <div className="txt">{isLong && !isExpanded ? turn.t.slice(0, 280) + "…" : turn.t}</div>
                     {isLong && (
                       <button className="turn-expand"
