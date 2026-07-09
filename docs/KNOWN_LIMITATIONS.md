@@ -37,8 +37,8 @@ Anonymous users' debate history lives only in `localStorage`. Clearing browser d
 ### No TypeScript
 Type errors are silent until runtime. Props and API shapes are undocumented at the type level.
 
-### No Playwright / E2E Tests
-The happy path (onboarding → council → result → share → auth) is not automatically tested.
+### Playwright E2E coverage is partial
+`e2e/happy-path.spec.js` covers landing → question → Chamber → verdict (including the offline-fallback path and share-link gating) and the deterministic `?preview=eclipse` render. Auth, onboarding, `/r/:id` shared results, language switching, mobile viewport, and accessibility scans are still untested end-to-end (see `docs/TEST_PLAN.md`).
 
 ---
 

@@ -42,17 +42,18 @@ _Last updated: July 2026_
 - `profile.test.js` — GET requires session, PATCH validates fields, picture MIME prefix + size check, history cap at 10 entries
 - `share-page.test.js` — returns HTML with OG tags
 
-### 4. End-to-End Tests (planned — Playwright)
+### 4. End-to-End Tests (Playwright)
 
 **Location:** `e2e/`
 
-**Critical paths:**
-- `e2e/happy-path.spec.js` — Landing → type question → submit → Chamber → share
+**Implemented:**
+- `e2e/happy-path.spec.js` — Landing → example question chip → Chamber renders through to a verdict; also covers the offline-fallback path (no `/api/*` backend behind `vite preview`) and asserts share links are correctly gated off when `debate.id` is absent. Second test drives the deterministic `?preview=eclipse` synthetic debate.
+
+**Still planned:**
 - `e2e/auth.spec.js` — sign-in → profile → update → sign-out
 - `e2e/onboarding.spec.js` — complete onboarding → submit question with profile
 - `e2e/shared-result.spec.js` — open `/r/:id` URL → Chamber renders
 - `e2e/language.spec.js` — switch language → UI text changes
-- `e2e/offline.spec.js` — block network → fallback debate shown
 - `e2e/mobile.spec.js` — 375px viewport → all features work, no horizontal scroll
 - `e2e/accessibility.spec.js` — axe-core scan on all major screens
 
@@ -122,24 +123,30 @@ npx vitest run src/lib/personas.test.js
 npx vitest run api/_session.test.js
 ```
 
-**To run Playwright (once configured):**
+**To run Playwright:**
 ```bash
-npx playwright test
+npm run test:e2e
 npx playwright test e2e/happy-path.spec.js
 npx playwright test --ui  # interactive mode
 ```
+
+`playwright.config.js` builds and serves the app via `vite preview` (no Vercel/API backend), so E2E runs exercise the real offline-fallback debate path — there's no `/api/council` to mock.
 
 ---
 
 ## CI Integration
 
-Current CI (GitHub Actions on push/PR to `main`):
-1. `npm install`
+Current CI (GitHub Actions on push/PR to `main`), two parallel jobs:
+
+`test-and-build`:
+1. `npm ci`
 2. `npm run lint` (ESLint)
 3. `npm test` (Vitest)
 4. `npm run build` (Vite build)
 
-Planned additions:
-- `npx playwright test` (once E2E suite is written)
+`e2e`:
+1. `npm ci`
+2. `npx playwright install --with-deps chromium`
+3. `npx playwright test`
 
-All steps must pass before merging to `main`.
+All `test-and-build` steps must pass before merging to `main`.
