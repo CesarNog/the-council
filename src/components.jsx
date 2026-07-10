@@ -3,7 +3,7 @@ import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js"
 import { Sigil } from "./lib/sigil.jsx";
 import { CouncilLogo } from "./components/CouncilLogo.jsx";
 import { tally, councilHeadline, shareText, downloadShareCard, downloadDebateJson, shareUrl, copyLink } from "./lib/share.js";
-import { summonCouncil, getFallback } from "./lib/api.js";
+import { summonCouncil } from "./lib/api.js";
 import { saveToHistory, isPremiumUser } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
@@ -221,8 +221,8 @@ function ShareIcon() {
 export function ShareBar({ asked, debate, language = "en" }) {
   const [copied, setCopied] = useState(false);
   const appUrl = shareUrl(debate?.id);
-  // no server-persisted id (e.g. the offline/demo fallback debate) means /r/:id
-  // points nowhere — link-based sharing only makes sense for a real decision
+  // no server-persisted id means /r/:id points nowhere — link-based sharing
+  // only makes sense once the debate has actually been saved
   const hasShareableLink = !!debate?.id;
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share && hasShareableLink;
 
@@ -508,10 +508,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         setPhase("error");
         return;
       }
-      Events.fallbackUsed({ kind: e.kind || "network" });
+      // Every other failure (network, timeout, Groq gateway/parse errors) used to
+      // silently substitute a canned, unrelated demo debate — a real question
+      // could end up looking like it got answered by someone else's decision.
+      // Show the honest "could not reach the Council, try again" state instead.
+      Events.apiErrorSeen({ kind: e.kind || "network" });
       captureError(e, { kind: e.kind, phase: "council" });
-      setDebate({ ...getFallback(language), offline: true });
-      setPhase("debate");
+      setPhase("error");
     }
   };
 
@@ -539,9 +542,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   };
 
   const appUrl = shareUrl(debate?.id);
-  // the offline/demo fallback debate has no server-persisted id, so /r/:id would
-  // point nowhere — link-based sharing (WhatsApp, X, LinkedIn, Facebook, native
-  // share, copy link) only makes sense once there is a real decision to link to
+  // no server-persisted id means /r/:id would point nowhere — link-based
+  // sharing (WhatsApp, X, LinkedIn, Facebook, native share, copy link) only
+  // makes sense once there is a real, saved decision to link to
   const hasShareableLink = !!debate?.id;
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share && hasShareableLink;
   const nativeShare = () => {
@@ -604,7 +607,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     updateProfile({
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
     }).catch(() => {}); // anonimo (401) ou falha de rede — nao afeta a experiencia, so nao persiste
-    if (!debate.offline) saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, language) });
+    saveToHistory({ id: debate.id, question: asked, headline: councilHeadline(debate, language) });
   }, [phase, debate, asked, eclipseVote, language]);
 
   const ambientColor = ringActive
@@ -679,7 +682,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
         {phase !== "idle" && asked && (
           <>
-          <div className="chapter-eyebrow" style={{ marginTop: 24 }}>{debate?.offline ? t(language, "offline_banner") : t(language, "chapter_question")}</div>
+          <div className="chapter-eyebrow" style={{ marginTop: 24 }}>{t(language, "chapter_question")}</div>
           <div className="question-banner" style={{ marginTop: 10 }}>
             <div className="eyebrow" style={{ display: "none" }}></div>
             <div className="q">"{asked}"</div>
