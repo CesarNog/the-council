@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { tally, councilHeadline, shareText, shareUrl, copyLink } from "./share.js";
+import { tally, councilHeadline, shareText, shareUrl, copyLink, debateToJson } from "./share.js";
 
 const mk = (pairs) => ({ votes: pairs.map(([p, v]) => ({ p, v })) });
 
@@ -122,6 +122,48 @@ describe("shareUrl", () => {
   it("falls back to production URL when window is undefined", () => {
     vi.stubGlobal("window", undefined);
     expect(shareUrl("abc")).toBe("https://the-council-murex.vercel.app/r/abc");
+  });
+});
+
+describe("debateToJson", () => {
+  const debate = {
+    id: "abc123",
+    verdict: "Verdict text.",
+    quote: "A quotable line.",
+    mood: "tense",
+    question: "Should you move?",
+    turns: [{ p: "founder", t: "Ship it." }, { p: "monk", t: "Sit with it first." }],
+    votes: [{ p: "founder", v: "yes" }, { p: "monk", v: "no" }],
+    realities: [{ label: "Stay", line: "Comfort, slower growth." }],
+  };
+
+  it("includes the full transcript, tally, and persona names", () => {
+    const json = debateToJson("Should I move?", debate);
+    expect(json.question).toBe("Should I move?");
+    expect(json.verdict).toBe("Verdict text.");
+    expect(json.quote).toBe("A quotable line.");
+    expect(json.tally).toEqual({ yes: 1, no: 1, depends: 0 });
+    expect(json.turns).toEqual([
+      { persona: "founder", name: "The Founder", text: "Ship it." },
+      { persona: "monk", name: "The Monk", text: "Sit with it first." },
+    ]);
+    expect(json.votes).toEqual([
+      { persona: "founder", name: "The Founder", vote: "yes" },
+      { persona: "monk", name: "The Monk", vote: "no" },
+    ]);
+    expect(json.realities).toEqual(debate.realities);
+    expect(json.url).toBe("https://the-council-murex.vercel.app/r/abc123");
+  });
+
+  it("returns null url when the debate has no persisted id", () => {
+    const json = debateToJson("Should I move?", { ...debate, id: null });
+    expect(json.url).toBeNull();
+  });
+
+  it("stamps an ISO exportedAt timestamp", () => {
+    const json = debateToJson("Should I move?", debate);
+    expect(() => new Date(json.exportedAt).toISOString()).not.toThrow();
+    expect(json.exportedAt).toBe(new Date(json.exportedAt).toISOString());
   });
 });
 

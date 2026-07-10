@@ -38,10 +38,11 @@ The Council is a premium AI deliberation product. The long-term goal is a platfo
 ## Next (Q4 2026) — Growth
 
 ### Features
-- [ ] Voice input for question (wire `/api/tts`)
-- [ ] Debate history tab in profile (paginated)
-- [ ] Debate export (PDF, JSON)
-- [ ] Life Mode expanded (daily check-in, all personas)
+- [x] Voice input for question (wired to `/api/tts`)
+- [x] Debate history tab in profile — linked to saved verdicts via `/r/:id`
+- [x] Debate export (JSON)
+- [ ] Debate export (PDF)
+- [x] Life Mode expanded (daily check-in, all 9 personas)
 - [ ] Question categories with smart defaults
 
 ### Infrastructure

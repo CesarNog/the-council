@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { PERSONAS, byId, MOOD_COLORS, INTENSITY, PACE } from "./lib/personas.js";
 import { Sigil } from "./lib/sigil.jsx";
 import { CouncilLogo } from "./components/CouncilLogo.jsx";
-import { tally, councilHeadline, shareText, downloadShareCard, shareUrl, copyLink } from "./lib/share.js";
+import { tally, councilHeadline, shareText, downloadShareCard, downloadDebateJson, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil, getFallback } from "./lib/api.js";
 import { saveToHistory, isPremiumUser } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
@@ -290,6 +290,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [copiedText, setCopiedText] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [jsonSaved, setJsonSaved] = useState(false);
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
   useEffect(() => {
@@ -553,6 +554,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     downloadShareCard(asked, debate, language);
     setCardSaved(true);
     setTimeout(() => setCardSaved(false), 2000);
+  };
+  const handleExportJson = () => {
+    downloadDebateJson(asked, debate, language);
+    setJsonSaved(true);
+    setTimeout(() => setJsonSaved(false), 2000);
   };
   const handleEmailVerdict = () => {
     const subj = t(language, "email_verdict_subject", asked);
@@ -879,6 +885,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                     </button>
                     <button className={"btn small" + (copiedText ? " feedback" : "")} onClick={handleCopyText}>
                       {copiedText ? t(language, "copy_text_done") : t(language, "copy_as_text")}
+                    </button>
+                    <button className={"btn small" + (jsonSaved ? " feedback" : "")} onClick={handleExportJson}>
+                      {jsonSaved ? t(language, "export_json_done") : t(language, "export_json")}
                     </button>
                     {isPremiumUser() && (
                       <button className={"btn small" + (emailSent ? " feedback" : "")} onClick={handleEmailVerdict}>
