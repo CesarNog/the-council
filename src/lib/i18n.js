@@ -145,6 +145,8 @@ const S = {
   in_another_life: { en: "In another life…", pt: "Em outra vida…", es: "En otra vida…", zh: "在另一种人生中……" },
   download_verdict: { en: "Download verdict card", pt: "Baixar cartão do veredito", es: "Descargar tarjeta del veredicto", zh: "下载裁决卡片" },
   copy_as_text: { en: "Copy as text", pt: "Copiar como texto", es: "Copiar como texto", zh: "复制为文本" },
+  export_json: { en: "Export as JSON", pt: "Exportar como JSON", es: "Exportar como JSON", zh: "导出为 JSON" },
+  export_json_done: { en: "Exported!", pt: "Exportado!", es: "¡Exportado!", zh: "已导出！" },
   bring_another: { en: "Bring another matter", pt: "Trazer outro assunto", es: "Traer otro asunto", zh: "提出新的问题" },
   chamber_stuck: { en: "The chamber doors are stuck — the Council could not be reached.", pt: "As portas da câmara emperraram — não foi possível contatar o Conselho.", es: "Las puertas de la cámara están atascadas — no se pudo contactar al Consejo.", zh: "议事厅的门卡住了——无法联系到议会。" },
   knock_again: { en: "Knock again", pt: "Bater novamente", es: "Llamar de nuevo", zh: "再次敲门" },

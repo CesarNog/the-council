@@ -150,3 +150,44 @@ export function downloadShareCard(question, debate, language = "en", format = "s
   a.href = c.toDataURL("image/png");
   a.click();
 }
+
+// Full debate transcript as portable JSON — the only export format that
+// preserves every turn and vote, not just the headline/verdict the PNG
+// card and share text summarize.
+export function debateToJson(question, debate, language = "en") {
+  const { yes, no, dep } = tally(debate);
+  return {
+    question,
+    askedOf: debate.question || null,
+    headline: councilHeadline(debate, language),
+    verdict: debate.verdict,
+    quote: debate.quote || null,
+    mood: debate.mood || null,
+    tally: { yes, no, depends: dep },
+    turns: debate.turns.map(turn => ({
+      persona: turn.p,
+      name: personaName(language, turn.p),
+      text: turn.t,
+    })),
+    votes: debate.votes.map(v => ({
+      persona: v.p,
+      name: personaName(language, v.p),
+      vote: v.v,
+    })),
+    realities: debate.realities || [],
+    url: debate.id ? shareUrl(debate.id) : null,
+    exportedAt: new Date().toISOString(),
+  };
+}
+
+export function downloadDebateJson(question, debate, language = "en") {
+  const blob = new Blob([JSON.stringify(debateToJson(question, debate, language), null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.download = "council-verdict.json";
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
+}
