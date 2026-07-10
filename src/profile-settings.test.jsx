@@ -87,6 +87,32 @@ describe("ProfileSettings — notifications tab", () => {
   });
 });
 
+describe("ProfileSettings — history tab", () => {
+  it("shows a View verdict link for entries with a saved debate id, and Revisit for all entries", () => {
+    localStorage.setItem("council:history", JSON.stringify([
+      { id: "abc123", question: "Should I move?", headline: "Leans yes.", timestamp: Date.now() },
+      { id: null, question: "Old entry with no id", headline: null, timestamp: Date.now() },
+    ]));
+    const onViewHistory = vi.fn();
+    const onRevisit = vi.fn();
+
+    render(
+      <ProfileSettings
+        user={baseUser} language="en" onSave={vi.fn()} onClose={vi.fn()} onSignOut={vi.fn()}
+        onViewHistory={onViewHistory} onRevisit={onRevisit}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /history/i }));
+
+    expect(screen.getAllByRole("button", { name: "Revisit" })).toHaveLength(2);
+    const viewButtons = screen.getAllByRole("button", { name: "View verdict" });
+    expect(viewButtons).toHaveLength(1); // only the entry with an id
+
+    fireEvent.click(viewButtons[0]);
+    expect(onViewHistory).toHaveBeenCalledWith("abc123");
+  });
+});
+
 describe("ProfileSettings — preferences tab", () => {
   it("calls onThemeToggle and onLanguageChange without touching save state", () => {
     const onThemeToggle = vi.fn();

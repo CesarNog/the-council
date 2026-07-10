@@ -713,7 +713,12 @@ button,a{min-width:0;}
 @keyframes memoryRipple{from{opacity:0; transform:translateY(6px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);}}
 
 .echo-timeline{margin-top:10px; display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto;}
-.echo-entry{display:flex; gap:10px; align-items:flex-start; padding:8px 4px; border-bottom:1px solid var(--line);}
+.echo-entry{display:flex; gap:10px; align-items:flex-start; padding:8px 4px; border-bottom:1px solid var(--line);
+  width:100%; background:none; border-left:none; border-right:none; border-top:none; text-align:left;
+  font:inherit; color:inherit; cursor:pointer; transition:background .2s ease; border-radius:2px;}
+.echo-entry:not(:disabled):hover{background:rgba(201,169,110,.06);}
+.echo-entry:disabled{cursor:default;}
+.echo-entry:focus-visible{outline:2px solid var(--gold); outline-offset:-2px;}
 .echo-entry.eclipse{color:#D8C08A;}
 .echo-dot{flex:0 0 16px; text-align:center; font-size:13px; opacity:.7;}
 .echo-entry.eclipse .echo-dot{opacity:1; text-shadow:0 0 8px currentColor;}
@@ -761,7 +766,7 @@ button,a{min-width:0;}
 .prof-session-card{border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-bottom:14px; background:rgba(255,255,255,.02);}
 .prof-session-name{font-family:var(--serif); font-size:15px; margin-bottom:4px;}
 .prof-session-sub{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ivory-faint);}
-.prof-hist-entry{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+.prof-hist-entry{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
 .prof-hist-entry:last-child{border-bottom:none;}
 .prof-hist-q{font-size:13px; color:var(--ivory-dim); line-height:1.4;}
 .prof-hist-meta{font-family:var(--mono); font-size:10px; color:var(--ivory-faint); margin-top:3px;}
@@ -923,7 +928,12 @@ button,a{min-width:0;}
 .landing-hero{
   position:relative; display:grid;
   grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
-  gap:clamp(16px,3vw,48px); align-items:center;
+  /* start, not center: the copy column's real height (sub, CTA, history)
+     runs well past the ring visual's capped height, so centering both
+     columns against that taller row left the ring floating below the
+     headline instead of sitting beside it — start-aligns both to the
+     same top edge, then landing-hero-visual nudges down to meet the copy */
+  gap:clamp(16px,3vw,48px); align-items:start;
   min-height:calc(100dvh - var(--header-h)); max-height:none;
   padding:clamp(20px,3vh,36px) clamp(20px,4vw,48px) clamp(28px,4vh,48px);
   max-width:1320px; margin:0 auto; width:100%;
@@ -941,7 +951,7 @@ button,a{min-width:0;}
 .landing-hero-visual{
   position:relative; width:100%; z-index:1;
   aspect-ratio:16/10; max-height:min(66vh,620px); min-height:320px;
-  align-self:center; overflow:visible;
+  align-self:start; margin-top:clamp(4px,4vh,56px); overflow:visible;
 }
 .landing-hero-canvas{
   position:absolute; inset:0; z-index:1;

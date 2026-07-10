@@ -535,6 +535,7 @@ const S = {
   hist_clear:         { en: "Clear history",   pt: "Limpar histórico",     es: "Borrar historial",     zh: "清除历史记录" },
   hist_cleared:       { en: "History cleared", pt: "Histórico apagado",    es: "Historial borrado",    zh: "历史记录已清除" },
   hist_revisit:       { en: "Revisit",         pt: "Revisitar",            es: "Revisitar",            zh: "重新辩论" },
+  hist_view:          { en: "View verdict",    pt: "Ver veredito",         es: "Ver veredicto",        zh: "查看裁决" },
 
   // premium active state
   sub_premium_active:   { en: "Beta Access",          pt: "Acesso Beta",            es: "Acceso Beta",            zh: "Beta访问" },
@@ -550,6 +551,11 @@ const S = {
   lifemode_shadow:      { en: q => `"${q}" — you already know what changed. Are you ready to admit it?`, pt: q => `"${q}" — você já sabe o que mudou. Está pronto para admitir?`, es: q => `"${q}" — ya sabes lo que cambió. ¿Estás listo para admitirlo?`, zh: q => `"${q}"——你已经知道什么变了。你准备好承认了吗？` },
   lifemode_romantic:    { en: q => `The Council remembers: "${q}". Who else was carrying that weight with you?`, pt: q => `O Conselho se lembra: "${q}". Quem mais carregava esse peso com você?`, es: q => `El Consejo recuerda: "${q}". ¿Quién más llevaba ese peso contigo?`, zh: q => `议会记得："${q}"。还有谁在和你一起承担那份重量？` },
   lifemode_explorer:    { en: q => `"${q}" — where did that path actually lead?`, pt: q => `"${q}" — para onde esse caminho realmente foi?`, es: q => `"${q}" — ¿adónde llevó realmente ese camino?`, zh: q => `"${q}"——那条路实际上通向了哪里？` },
+  lifemode_founder:     { en: q => `You asked: "${q}". Every day you wait is a day someone else ships first.`, pt: q => `Você perguntou: "${q}". Cada dia que você espera é um dia que outra pessoa sai na frente.`, es: q => `Preguntaste: "${q}". Cada día que esperas es un día que alguien más se adelanta.`, zh: q => `你曾问："${q}"。你每多等一天，就有人先你一步。` },
+  lifemode_billionaire: { en: q => `"${q}" — has the timeline moved, or just your tolerance for waiting?`, pt: q => `"${q}" — o prazo mudou, ou só a sua paciência para esperar?`, es: q => `"${q}" — ¿cambió el plazo, o solo tu paciencia para esperar?`, zh: q => `"${q}"——是时间表变了，还是你的耐心变了？` },
+  lifemode_artist:      { en: q => `You once asked: "${q}"... does it still feel the same, or has the light shifted?`, pt: q => `Você perguntou: "${q}"... ainda parece igual, ou a luz mudou?`, es: q => `Preguntaste: "${q}"... ¿todavía se siente igual, o la luz ha cambiado?`, zh: q => `你曾问："${q}"……感觉还一样吗，还是光线已经变了？` },
+  lifemode_athlete:     { en: q => `"${q}" — did you train for it today, or just think about it again?`, pt: q => `"${q}" — você treinou para isso hoje, ou só pensou nisso de novo?`, es: q => `"${q}" — ¿entrenaste para eso hoy, o solo lo pensaste de nuevo?`, zh: q => `"${q}"——你今天为它训练了吗，还是又只是想了想？` },
+  lifemode_scientist:   { en: q => `You asked: "${q}". Any new evidence since then, or still the same hypothesis?`, pt: q => `Você perguntou: "${q}". Alguma evidência nova desde então, ou ainda a mesma hipótese?`, es: q => `Preguntaste: "${q}". ¿Alguna evidencia nueva desde entonces, o sigue siendo la misma hipótesis?`, zh: q => `你曾问："${q}"。此后有新证据吗，还是仍是同一个假设？` },
 
   // custom personas
   sub_persona_heading:  { en: "Your Council",          pt: "Seu Conselho",           es: "Tu Consejo",             zh: "你的议会" },

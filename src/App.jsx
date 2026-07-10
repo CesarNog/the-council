@@ -14,6 +14,7 @@ import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
 import { detectBrowserLanguage, t } from "./lib/i18n.js";
 import { loadHistory } from "./lib/history.js";
+import { PERSONAS } from "./lib/personas.js";
 
 function buildLocalLifeMode(language) {
   try {
@@ -25,8 +26,10 @@ function buildLocalLifeMode(language) {
     if (!history.length) return null;
     const last = history[0];
     localStorage.setItem("council:lifemode_checkin", String(Date.now()));
-    const personas = ["monk", "shadow", "romantic", "explorer"];
-    const persona = personas[Math.floor(Date.now() / 86400000) % personas.length];
+    // rotate through all nine seats — daily check-ins previously only ever
+    // drew from 4 of 9 personas (roadmap: "Life Mode expanded ... all personas")
+    const personaIds = PERSONAS.map(p => p.id);
+    const persona = personaIds[Math.floor(Date.now() / 86400000) % personaIds.length];
     return {
       persona,
       teaser: t(language, "lifemode_teaser"),
@@ -579,6 +582,17 @@ function TheCouncilApp({ clerkSignOut }) {
     setScreen("landing");
   };
 
+  // history entries carry the id /api/council persisted the debate under —
+  // this opens the actual saved verdict via /r/:id instead of re-asking the
+  // same question and getting a different, brand-new debate
+  const viewHistoryDebate = (id) => {
+    if (!id) return;
+    window.history.pushState({}, "", `/r/${id}`);
+    setSharedId(id);
+    setShowProfileSettings(false);
+    setScreen("shared");
+  };
+
   const userBadge = user ? (
     <button className="user-badge" onClick={() => setShowProfileSettings(true)} aria-label={t(language, "profile_settings")}>
       {(user.customPicture || user.googlePicture)
@@ -695,6 +709,7 @@ function TheCouncilApp({ clerkSignOut }) {
                 language={language}
                 history={loadHistory()}
                 onRevisit={(q) => { setQuickQuestion(q); setScreen("chamber"); }}
+                onViewHistory={viewHistoryDebate}
                 displayName={displayName}
                 authenticated={!!user}
               />
@@ -752,6 +767,7 @@ function TheCouncilApp({ clerkSignOut }) {
           onClose={() => setShowProfileSettings(false)}
           onSignOut={handleSignOut}
           onRevisit={(q) => { setQuickQuestion(q); setShowProfileSettings(false); setScreen("chamber"); }}
+          onViewHistory={viewHistoryDebate}
         />
       )}
 
