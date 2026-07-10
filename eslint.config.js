@@ -52,6 +52,12 @@ export default [
     languageOptions: { globals: { ...globals.node } },
   },
   {
+    // page.evaluate() callbacks run in the browser context, not Node —
+    // they need `document`/`window`, not just the Playwright test globals.
+    files: ["e2e/**/*.js"],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
+  {
     files: ["*.config.js"],
     languageOptions: { ecmaVersion: 2023, sourceType: "module", globals: { ...globals.node } },
   },

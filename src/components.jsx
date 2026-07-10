@@ -439,6 +439,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   useEffect(() => {
     if (phase !== "verdict") return;
     verdictRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // move keyboard/screen-reader focus to the verdict so assistive tech
+    // announces it immediately instead of leaving focus stranded on a
+    // now-gone "voting" control — preventScroll avoids fighting the smooth
+    // scrollIntoView above
+    verdictRef.current?.focus({ preventScroll: true });
   }, [phase]);
 
   useEffect(() => stopSpeaking, []); // cleanup ao desmontar
@@ -808,7 +813,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           <>
             <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "") + (isEclipse ? " eclipse-dim" : "")} />
 
-            <div ref={verdictRef} className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24 }}>{t(language, "chapter_verdict")}</div>
+            <div ref={verdictRef} tabIndex={-1} className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24, outline: "none" }}>{t(language, "chapter_verdict")}</div>
 
             {isEclipse ? (
               <div className={"eclipse-mark" + (verdictStage >= 1 ? " in" : "")}>

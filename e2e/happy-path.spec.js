@@ -25,6 +25,10 @@ test("landing → example question → offline debate renders with a verdict", a
   await expect(verdict).toBeVisible({ timeout: 70000 });
   await expect(verdict).not.toBeEmpty();
 
+  // Focus moves to the verdict announcement so screen readers pick it up
+  // immediately instead of leaving focus stranded on a now-gone control.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.className)).toContain("chapter-eyebrow");
+
   // Offline debates have no persisted id, so share links must be gated off —
   // this is the bug fixed in PR #61 (broken WhatsApp/X/LinkedIn/Facebook links).
   await expect(page.locator(".share-link-note")).toBeVisible();
