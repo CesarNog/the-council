@@ -157,7 +157,7 @@ const NAV_HEADING_KEY = {
   history: "hist_heading",
 };
 
-export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggle, onLanguageChange, onRevisit, theme = "dark", language }) {
+export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggle, onLanguageChange, onRevisit, onViewHistory, theme = "dark", language }) {
   const [activeNav, setActiveNav] = useState("profile");
 
   // profile tab
@@ -450,7 +450,13 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                   {user.debateHistory.slice(0, 4).map((h, i) => {
                     const isEclipse = !!h.unanimousVote;
                     return (
-                      <div key={h.id || i} className={"echo-entry" + (isEclipse ? " eclipse" : "")}>
+                      <button
+                        key={h.id || i}
+                        type="button"
+                        className={"echo-entry" + (isEclipse ? " eclipse" : "")}
+                        onClick={() => onViewHistory?.(h.id)}
+                        disabled={!h.id}
+                      >
                         <div className="echo-dot">{isEclipse ? "☉" : "·"}</div>
                         <div>
                           <div className="echo-q">{h.question}</div>
@@ -458,7 +464,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                             {new Date(h.at).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -804,15 +810,26 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                           {new Date(h.timestamp || h.at || 0).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
                         </div>
                       </div>
-                      {onRevisit && (
-                        <button
-                          className="btn small"
-                          style={{ flexShrink: 0, fontSize: 10, padding: "8px 14px" }}
-                          onClick={() => onRevisit(h.question)}
-                        >
-                          {t(language, "hist_revisit")}
-                        </button>
-                      )}
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        {h.id && onViewHistory && (
+                          <button
+                            className="btn small"
+                            style={{ fontSize: 10, padding: "8px 14px" }}
+                            onClick={() => onViewHistory(h.id)}
+                          >
+                            {t(language, "hist_view")}
+                          </button>
+                        )}
+                        {onRevisit && (
+                          <button
+                            className="btn small"
+                            style={{ fontSize: 10, padding: "8px 14px" }}
+                            onClick={() => onRevisit(h.question)}
+                          >
+                            {t(language, "hist_revisit")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -859,7 +876,13 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                 {user.debateHistory.slice(0, 5).map((h, i) => {
                   const isEclipse = !!h.unanimousVote;
                   return (
-                    <div key={h.id || i} className={"echo-entry" + (isEclipse ? " eclipse" : "")}>
+                    <button
+                      key={h.id || i}
+                      type="button"
+                      className={"echo-entry" + (isEclipse ? " eclipse" : "")}
+                      onClick={() => onViewHistory?.(h.id)}
+                      disabled={!h.id}
+                    >
                       <div className="echo-dot">{isEclipse ? "☉" : "·"}</div>
                       <div>
                         <div className="echo-q">{h.question}</div>
@@ -867,7 +890,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
                           {new Date(h.at).toLocaleDateString(language === "pt" ? "pt-BR" : language)}
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

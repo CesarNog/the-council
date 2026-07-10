@@ -10,7 +10,7 @@ import { firstName } from "../../lib/name.js";
 import { t, personaShortName, LANDING_EXAMPLE_KEYS } from "../../lib/i18n.js";
 import { Events } from "../../lib/analytics.js";
 
-export function Landing({ onEnter, authSlot, language, history = [], onRevisit, displayName, authenticated }) {
+export function Landing({ onEnter, authSlot, language, history = [], onRevisit, onViewHistory, displayName, authenticated }) {
   const reducedMotion = useReducedMotion();
   const [activePersona, setActivePersona] = useState(null);
   const [ctaHover, setCtaHover] = useState(false);
@@ -99,7 +99,12 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
               <div className="landing-quick-label">{t(language, "past_questions")}</div>
               <div className="landing-quick-chips">
                 {recentQs.map(h => (
-                  <button key={h.id} type="button" className="landing-chip landing-chip--history" onClick={() => onRevisit(h.question)}>
+                  <button
+                    key={h.id || h.question}
+                    type="button"
+                    className="landing-chip landing-chip--history"
+                    onClick={() => (h.id && onViewHistory ? onViewHistory(h.id) : onRevisit(h.question))}
+                  >
                     <span className="landing-chip-q">{h.question}</span>
                     {h.headline && <span className="landing-chip-hl">{h.headline}</span>}
                   </button>

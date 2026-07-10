@@ -236,6 +236,20 @@ describe("personaTag()", () => {
   });
 });
 
+describe("lifemode_<persona> check-in lines", () => {
+  it("every persona has a check-in line in every language, quoting the past question", () => {
+    for (const id of PERSONA_IDS) {
+      for (const lang of SUPPORTED_LANGS) {
+        const line = t(lang, `lifemode_${id}`, "Should I move?");
+        expect(typeof line).toBe("string");
+        expect(line.length).toBeGreaterThan(0);
+        expect(line).not.toBe(`lifemode_${id}`); // t() falls back to the raw key when missing
+        expect(line).toContain("Should I move?");
+      }
+    }
+  });
+});
+
 describe("personaLine()", () => {
   it("returns signature line for each persona in each language", () => {
     for (const id of PERSONA_IDS) {
