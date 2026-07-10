@@ -101,5 +101,4 @@ export const Events = {
   shareCardDownloaded: (meta) => trackEvent("share_card_downloaded", meta),
   rateLimitSeen: (meta) => trackEvent("rate_limit_seen", meta),
   apiErrorSeen: (meta) => trackEvent("api_error_seen", meta),
-  fallbackUsed: (meta) => trackEvent("fallback_used", meta),
 };

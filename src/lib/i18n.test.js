@@ -315,7 +315,7 @@ describe("key coverage", () => {
     "before_council_speaks", "onb_decision_hint",
     "onb_name_q", "onb_situation_q", "onb_values_q",
     "continue", "convene",
-    "chamber_label", "bring_question", "offline_banner",
+    "chamber_label", "bring_question",
     "council_votes", "vote_yes", "vote_no", "vote_depends",
     "in_another_life", "download_verdict", "copy_as_text",
     "chamber_stuck", "knock_again",
