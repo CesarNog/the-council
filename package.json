@@ -24,7 +24,7 @@
     "@upstash/redis": "^1.38.0",
     "impeccable": "^2.3.2",
     "jose": "^6.2.3",
-    "posthog-js": "^1.398.2",
+    "posthog-js": "^1.399.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "resend": "^6.17.1",
