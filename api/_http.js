@@ -10,9 +10,11 @@ export function badRequest(res, detail = "invalid request") {
 }
 
 export function safeError(res, status, error, detail) {
-  const body = { error };
-  if (detail && process.env.NODE_ENV !== "production") body.detail = detail;
-  return res.status(status).json(body);
+  // detail NUNCA vai pro cliente: vazamento real observado em producao (upstream
+  // error body com org ID) provou que gate por NODE_ENV nao e' confiavel em
+  // runtime de function na Vercel. Cliente recebe o kind tipado; detail vai pro log.
+  if (detail) console.error(`safeError ${status} ${error}:`, String(detail).slice(0, 500));
+  return res.status(status).json({ error });
 }
 
 /** Reject oversized JSON bodies (Content-Length hint). */
