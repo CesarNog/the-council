@@ -266,6 +266,16 @@ const S = {
   read_more: { en: "Read more", pt: "Ler mais", es: "Leer más", zh: "展开" },
   read_less: { en: "Less", pt: "Menos", es: "Menos", zh: "收起" },
   your_journey: { en: "Your journey with the Council", pt: "Sua jornada com o Conselho", es: "Tu viaje con el Consejo", zh: "你与议会的旅程" },
+
+  eclipse_react_founder: { en: "The Founder smiles with confidence.", pt: "O Fundador sorri com confiança.", es: "El Fundador sonríe con confianza.", zh: "创业者自信地微笑。" },
+  eclipse_react_billionaire: { en: "The Billionaire closes the ledger, satisfied.", pt: "O Bilionário fecha o livro-caixa, satisfeito.", es: "El Multimillonario cierra el libro, satisfecho.", zh: "富豪合上账本，心满意足。" },
+  eclipse_react_artist: { en: "The Artist admires the atmosphere.", pt: "O Artista admira a atmosfera.", es: "El Artista admira la atmósfera.", zh: "艺术家欣赏着这氛围。" },
+  eclipse_react_athlete: { en: "The Athlete nods once, sharply.", pt: "O Atleta assente uma vez, firme.", es: "El Atleta asiente una vez, con firmeza.", zh: "运动员干脆地点了一次头。" },
+  eclipse_react_monk: { en: "The Monk closes their eyes peacefully.", pt: "O Monge fecha os olhos em paz.", es: "El Monje cierra los ojos en paz.", zh: "僧人平静地闭上双眼。" },
+  eclipse_react_scientist: { en: "The Scientist quietly nods.", pt: "O Cientista assente em silêncio.", es: "El Científico asiente en silencio.", zh: "科学家静静地点头。" },
+  eclipse_react_explorer: { en: "The Explorer looks fascinated.", pt: "O Explorador observa, fascinado.", es: "El Explorador mira, fascinado.", zh: "探险家一脸着迷。" },
+  eclipse_react_romantic: { en: "The Romantic holds a hand to their heart.", pt: "O Romântico leva a mão ao peito.", es: "El Romántico se lleva la mano al corazón.", zh: "浪漫者将手放在心口。" },
+  eclipse_react_shadow: { en: "The Shadow gives a subtle smile.", pt: "A Sombra esboça um sorriso sutil.", es: "La Sombra esboza una sonrisa sutil.", zh: "阴影自我露出一丝微笑。" },
   past_questions: { en: "Questions you've brought before", pt: "Questões que você trouxe antes", es: "Preguntas que trajiste antes", zh: "你之前提出的问题" },
 
   // shared verdict page

@@ -15,9 +15,12 @@ export { CouncilLogo } from "./components/CouncilLogo.jsx";
 export { Sigil } from "./lib/sigil.jsx";
 export { Landing } from "./components/landing/LandingPage.jsx";
 
-export function Ring({ active, speaking, mentioned, phase, label, language = "en" }) {
+export function Ring({ active, speaking, mentioned, phase, label, language = "en", eclipse = false, echoRipple = false }) {
   return (
-    <div className="ring-wrap">
+    <div className={"ring-wrap" + (eclipse ? " eclipse-ring" : "")}>
+      {eclipse && <div className="eclipse-pulse" />}
+      {eclipse && <div className="eclipse-pulse delayed" />}
+      {echoRipple && <div className="echo-ripple" />}
       <div className="ring-orbit" />
       <div className="ring-orbit inner" />
       {PERSONAS.map((p, i) => {
@@ -26,7 +29,8 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
         const cls = "node"
           + (active === p.id ? " active" : " breathing")
           + (speaking === p.id ? " speaking-voice" : "")
-          + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "");
+          + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "")
+          + (eclipse ? " unison" : "");
         return (
           <div key={p.id} className={cls} role="img" aria-label={personaName(language, p.id)} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--intensity": INTENSITY[p.id] }}>
             <Sigil id={p.id} />
@@ -35,8 +39,8 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
         );
       })}
       <div className="ring-center">
-        <span className={"glyph" + (phase === "summoning" ? " pulse" : "")}>
-          <CouncilLogo size={22} />
+        <span className={"glyph" + (phase === "summoning" ? " pulse" : "") + (eclipse ? " eclipse-glyph-center" : "")}>
+          {eclipse ? "☉" : <CouncilLogo size={22} />}
         </span>
         {label && <span className="eyebrow" style={{ fontSize: 9, opacity: .8 }}>{label}</span>}
       </div>
@@ -643,6 +647,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             mentioned={mentionedIds}
             phase={phase}
             language={language}
+            eclipse={isEclipse && phase === "verdict"}
+            echoRipple={phase === "reflecting" && !!debate?.memoryEcho}
             label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
           />
 
@@ -815,6 +821,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {debate && phase === "verdict" && (
           <>
             <div className={"verdict-dim" + (verdictStage >= 1 ? " lifted" : "") + (isEclipse ? " eclipse-dim" : "")} />
+            {isEclipse && (
+              <div className="eclipse-particles" aria-hidden="true">
+                {Array.from({ length: 12 }, (_, i) => (
+                  <span key={i} style={{ left: `${(i * 83) % 100}%`, animationDelay: `${(i * 0.7) % 4}s`, animationDuration: `${6 + (i % 5)}s` }} />
+                ))}
+              </div>
+            )}
 
             <div ref={verdictRef} tabIndex={-1} className={"chapter-eyebrow reveal" + (verdictStage >= 1 ? " in" : "")} style={{ marginTop: 24, outline: "none" }}>{t(language, "chapter_verdict")}</div>
 
@@ -823,6 +836,16 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 <div className="eclipse-glyph">☉</div>
                 <div className="eclipse-title serif">{t(language, "council_eclipse")}</div>
                 <div className="eclipse-sub">{t(language, "eclipse_sub")}</div>
+                {verdictStage >= 3 && (
+                  <div className="eclipse-reactions">
+                    {PERSONAS.map((p, i) => (
+                      <div className="eclipse-reaction" key={p.id} style={{ color: p.color, animationDelay: `${i * 0.35}s` }}>
+                        <span className="sig"><Sigil id={p.id} /></span>
+                        <span className="line">{t(language, `eclipse_react_${p.id}`)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <>

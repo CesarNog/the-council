@@ -43,6 +43,45 @@ export function GoogleSignIn({ onCredential }) {
   return <div ref={ref} />;
 }
 
+const MOOD_STAR_COLORS = { tense: "#B57BFF", warm: "#FFB27B", hopeful: "#8FD0FF", somber: "#7B8BA8", electric: "#FFE07B" };
+
+function hashY(id = "") {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 997;
+  return 25 + (h % 50); // 25-75% da altura, deterministico por debate
+}
+
+function EchoConstellation({ history, language, onViewHistory }) {
+  if (!history?.length) return null;
+  const pts = history.slice().reverse().map((h, i, arr) => ({
+    ...h,
+    x: arr.length === 1 ? 50 : 8 + (i / (arr.length - 1)) * 84,
+    y: hashY(h.id),
+  }));
+  return (
+    <svg className="echo-constellation" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={t(language, "your_journey")}>
+      {pts.slice(1).map((p, i) => (
+        <line key={i} x1={pts[i].x} y1={pts[i].y} x2={p.x} y2={p.y} className="echo-line" />
+      ))}
+      {pts.map((p, i) => {
+        const eclipse = !!p.unanimousVote;
+        const color = eclipse ? "#D8C08A" : (MOOD_STAR_COLORS[p.mood] || "#8B93A8");
+        return (
+          <circle
+            key={p.id || i}
+            cx={p.x} cy={p.y} r={eclipse ? 2.6 : 1.6}
+            fill={color}
+            className={"echo-star" + (eclipse ? " eclipse" : "")}
+            onClick={() => p.id && onViewHistory?.(p.id)}
+          >
+            <title>{p.question}</title>
+          </circle>
+        );
+      })}
+    </svg>
+  );
+}
+
 const PROFILE_VALUE_KEYS = [
   "value_freedom", "value_security", "value_meaning", "value_ambition",
   "value_love", "value_peace", "value_truth", "value_adventure",
@@ -446,6 +485,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
             {user.debateHistory?.length > 0 && (
               <div className="field profile-history-mobile">
                 <div className="hint">{t(language, "your_journey")}</div>
+                <EchoConstellation history={user.debateHistory} language={language} onViewHistory={onViewHistory} />
                 <div className="echo-timeline">
                   {user.debateHistory.slice(0, 4).map((h, i) => {
                     const isEclipse = !!h.unanimousVote;
@@ -872,6 +912,7 @@ export function ProfileSettings({ user, onSave, onClose, onSignOut, onThemeToggl
           {user.debateHistory?.length > 0 && (
             <div className="profile-aside-history">
               <div className="hint" style={{ marginBottom: 8, fontSize: 11 }}>{t(language, "your_journey")}</div>
+              <EchoConstellation history={user.debateHistory} language={language} onViewHistory={onViewHistory} />
               <div className="echo-timeline">
                 {user.debateHistory.slice(0, 5).map((h, i) => {
                   const isEclipse = !!h.unanimousVote;
