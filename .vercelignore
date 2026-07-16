@@ -1,0 +1,10 @@
+# Vitest files under api/ are NOT automatically excluded from Vercel's
+# zero-config function detection the way underscore-prefixed helpers are —
+# every other .js file directly under api/ is treated as a routable
+# function by default (confirmed via Vercel's own vercel.json docs, which
+# use "api/test.js" as an example *matchable* function path). Without this,
+# api/*.test.js files get built as broken function routes and can fail the
+# deployment outright.
+**/*.test.js
+**/*.test.jsx
+e2e/
