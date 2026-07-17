@@ -30,10 +30,13 @@ function mockReq(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  global.fetch = vi.fn(async () => ({ text: async () => SHELL }));
+  vi.stubGlobal("fetch", vi.fn(async () => ({ text: async () => SHELL })));
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("GET /api/share-page", () => {
   it("returns a 502 when the index.html shell can't be fetched", async () => {

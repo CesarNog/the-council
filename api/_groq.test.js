@@ -14,11 +14,12 @@ const origEnv = { ...process.env };
 
 beforeEach(() => {
   process.env = { ...origEnv, GROQ_API_KEY: "test-groq-key" };
-  global.fetch = vi.fn();
+  vi.stubGlobal("fetch", vi.fn());
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   process.env = { ...origEnv };
 });
 

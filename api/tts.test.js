@@ -35,11 +35,12 @@ beforeEach(() => {
   process.env = { ...origEnv, OPENAI_API_KEY: "", GEMINI_TTS_API_KEY: "" };
   delete process.env.OPENAI_API_KEY;
   delete process.env.GEMINI_TTS_API_KEY;
-  global.fetch = vi.fn();
+  vi.stubGlobal("fetch", vi.fn());
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   process.env = { ...origEnv };
 });
 

@@ -10,11 +10,12 @@ beforeEach(() => {
     CLOUDFLARE_KV_NAMESPACE_ID: "ns-1",
     CLOUDFLARE_API_TOKEN: "cf-token",
   };
-  global.fetch = vi.fn();
+  vi.stubGlobal("fetch", vi.fn());
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   process.env = { ...origEnv };
 });
 

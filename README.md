@@ -81,7 +81,7 @@ More detail in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`CLAUDE.md`](
 
 ## Known limitations
 
-- **Groq free tier TPM (8000/min) is shared across the org.** Each debate costs ~2000–2300 output tokens (input/prompt tokens are additional — not yet measured against a live Groq call; see CLAUDE.md before changing `buildPrompt` or `maxTokens`). Rate limiting (Upstash Redis or Cloudflare KV) is used to prevent exhaustion.
+- **Groq free tier TPM (8000/min) is shared across the org.** Each debate costs ~2000–2300 output tokens (input/prompt tokens are additional — not yet measured against a live Groq call; see CLAUDE.md before changing `buildPrompt` or `maxTokens`). Upstash Redis provides reliable production rate limiting; the Cloudflare KV fallback (used when Upstash isn't configured) is best-effort and can over-admit concurrent requests — see `docs/PRODUCTION_CHECKLIST.md`.
 - **If Groq is unreachable or fails for any reason other than rate limiting, the chamber shows an honest "could not reach the Council, try again" state** — it never substitutes a fake debate for a real question (fixed after a real incident; see PR #75).
 - **Text-to-Speech (TTS) falls back to the browser's Web Speech API** if both `OPENAI_API_KEY` and `GEMINI_TTS_API_KEY` are missing or fail.
 
