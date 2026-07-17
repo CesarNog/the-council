@@ -225,3 +225,46 @@ describe("enforceEndpointLimit", () => {
     expect(res.setHeader).toHaveBeenCalledWith("Retry-After", "30");
   });
 });
+
+// The KV fallback path is documented (CLAUDE.md, README) as "best-effort,
+// not atomic" — these tests turn that prose caveat into a concrete,
+// executable measurement of the actual behavior under real concurrency,
+// rather than leaving it as an untested assumption. This is exactly the
+// scenario "a lot of users at the same time" produces: several requests
+// from the same IP landing close enough together that their KV
+// read-then-write cycles overlap.
+describe("checkRateLimit under concurrent load (KV fallback has no atomicity)", () => {
+  it("can admit more requests than the configured limit when calls race on the same read", async () => {
+    // Five truly concurrent callers, limit of 2 — every call's kvGet(...) fires
+    // before any of their kvPut(...) writes have landed, so all five read the
+    // same pre-write state and all five see themselves as "under the limit."
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => checkRateLimit("rl:race", "9.9.9.9", { limit: 2, windowMs: 60_000 }))
+    );
+    const allowedCount = results.filter(r => r.allowed).length;
+    expect(allowedCount).toBeGreaterThan(2); // the documented gap, made concrete
+    expect(allowedCount).toBe(5); // every racer read count=0 and admitted itself
+  });
+
+  it("enforces the limit correctly once calls are no longer racing on the same read (sequential awaits)", async () => {
+    // Same limiter, same IP, but each call fully completes (read AND write)
+    // before the next starts — this is the path every real request takes once
+    // the burst has spread out even slightly, and confirms the race above is
+    // specifically a same-tick concurrency artifact, not a broken counter.
+    let allowedCount = 0;
+    for (let i = 0; i < 5; i++) {
+      const r = await checkRateLimit("rl:sequential", "9.9.9.9", { limit: 2, windowMs: 60_000 });
+      if (r.allowed) allowedCount++;
+    }
+    expect(allowedCount).toBe(2);
+  });
+
+  it("does not let a burst on one IP consume another IP's budget, even when racing", async () => {
+    const [a, b] = await Promise.all([
+      checkRateLimit("rl:race2", "1.1.1.1", { limit: 1, windowMs: 60_000 }),
+      checkRateLimit("rl:race2", "2.2.2.2", { limit: 1, windowMs: 60_000 }),
+    ]);
+    expect(a.allowed).toBe(true);
+    expect(b.allowed).toBe(true); // different keys — this is correct isolation, not a race
+  });
+});
