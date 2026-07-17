@@ -16,7 +16,7 @@
 - [ ] `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (optional client)
 
 ### Rate limiting
-- [ ] `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- [ ] `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — **not just a nice-to-have.** Without these, rate limiting silently falls back to the Cloudflare KV path, which is read-then-write with no atomic compare-and-swap: concurrent requests from the same IP/user can all read the same pre-write count and all get admitted, exceeding the configured limit (proven in `api/_rateLimit.test.js`'s concurrency tests). Upstash's sliding-window limiter is atomic and is what actually protects the shared Groq TPM budget under real traffic.
 
 ### Observability
 - [ ] `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`
