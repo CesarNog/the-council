@@ -56,6 +56,28 @@ node scripts/load-test.js --base-url <your-preview-url> \
   --endpoint /api/council --concurrency 10 --requests 10 --expected-admitted 3
 ```
 
+## Measured production baseline (read-only path)
+
+The one production run that IS safe without authorization: `GET /api/result`
+with an unknown id — a pure Cloudflare KV lookup returning 404. No Groq/TTS
+cost, no rate limiter on that route, no side effects. Measured 2026-07-17
+against `the-council-murex.vercel.app`:
+
+| Run | Concurrency | Requests | Errors / 5xx | p50 | p95 | max |
+|---|---|---|---|---|---|---|
+| Cold (first burst) | 6 | 24 | 0 | 286ms | 1587ms | 1597ms |
+| Warm (immediately after) | 8 | 24 | 0 | 220ms | 523ms | 647ms |
+
+Takeaways: the serving path (Vercel function + KV read) handled 8-way
+concurrent bursts with zero errors; the ~1.3s p95 gap between runs is
+cold-start amortization, not contention. Re-run these two commands after
+infra changes and compare against this table:
+
+```bash
+node scripts/load-test.js --base-url https://the-council-murex.vercel.app \
+  --endpoint "/api/result?id=zzzzzzzzzz" --method GET --requests 24 --concurrency 8
+```
+
 ## Interpreting results
 
 - **Rate-limited (429) count lower than expected**: the limiter isn't
