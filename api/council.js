@@ -125,17 +125,23 @@ export default async function handler(req, res) {
     .catch(e => console.error("council: persist failed", e.message));
 
   if (isSupabaseConfigured()) {
-    const profileRow = sessionUser
-      ? await upsertProfileFromUser({ sub: session.sub, ...sessionUser }).catch(() => null)
-      : null;
-    persistDecisionBundle({
-      userId: profileRow?.id || null,
-      question: q,
-      language,
-      decisionContext,
-      debate: json,
-      publicSlug: id,
-    }).catch(e => console.error("council: supabase persist failed", e.message));
+    // fire-and-forget, same as the KV persist above — awaiting Supabase here
+    // ate directly into the ~1s of headroom left after callGroq's 9s timeout
+    // on Vercel's 10s function cap (see api/_groq.js), risking a hard function
+    // kill under any latency for a step that isn't on the response's critical path
+    (async () => {
+      const profileRow = sessionUser
+        ? await upsertProfileFromUser({ sub: session.sub, ...sessionUser }).catch(() => null)
+        : null;
+      await persistDecisionBundle({
+        userId: profileRow?.id || null,
+        question: q,
+        language,
+        decisionContext,
+        debate: json,
+        publicSlug: id,
+      });
+    })().catch(e => console.error("council: supabase persist failed", e.message));
   }
 
   return res.status(200).json({ id, ...json });
