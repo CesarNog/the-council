@@ -13,7 +13,8 @@
     "test": "vitest run",
     "lint": "eslint .",
     "pretest:e2e": "vite build",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "load-test": "node scripts/load-test.js"
   },
   "dependencies": {
     "@clerk/backend": "^3.11.3",

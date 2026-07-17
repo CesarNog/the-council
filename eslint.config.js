@@ -61,4 +61,8 @@ export default [
     files: ["*.config.js"],
     languageOptions: { ecmaVersion: 2023, sourceType: "module", globals: { ...globals.node } },
   },
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: { ecmaVersion: 2023, sourceType: "module", globals: { ...globals.node } },
+  },
 ];
