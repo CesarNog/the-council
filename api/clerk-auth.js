@@ -1,4 +1,5 @@
 import { verifyToken } from "@clerk/backend";
+import { waitUntil } from "@vercel/functions";
 import { kvGet, kvPut } from "./_kv.js";
 import { makeSessionCookie, clearSessionCookie } from "./_session.js";
 import { enforceEndpointLimit } from "./_rateLimit.js";
@@ -62,10 +63,12 @@ export default async function handler(req, res) {
   };
 
   await kvPut(key, JSON.stringify(user));
+  // waitUntil: keep the welcome email and Supabase sync alive after the
+  // response — Vercel may otherwise freeze the function before they finish
   if (!existing && user.email) {
-    sendWelcomeEmail({ to: user.email, name: user.name }).catch(e => console.error("clerk-auth: welcome email failed", e.message));
+    waitUntil(sendWelcomeEmail({ to: user.email, name: user.name }).catch(e => console.error("clerk-auth: welcome email failed", e.message)));
   }
-  upsertProfileFromUser(user).catch(e => console.error("clerk-auth: supabase sync failed", e.message));
+  waitUntil(upsertProfileFromUser(user).catch(e => console.error("clerk-auth: supabase sync failed", e.message)));
   res.setHeader("Set-Cookie", makeSessionCookie(sub));
   return res.status(200).json(user);
 }

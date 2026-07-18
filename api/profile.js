@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { kvPut } from "./_kv.js";
 import { requireUser } from "./auth.js";
 import { callGroq, GroqError } from "./_groq.js";
@@ -43,7 +44,10 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     const updated = await maybeGenerateLifeMode(auth.user);
-    kvPut(`user:${auth.sub}`, JSON.stringify(updated)).catch(e => console.error("profile: kv put failed", e.message));
+    // waitUntil: without it Vercel may freeze the function right after the
+    // response, silently dropping the lastVisit/lifeMode write — Life Mode
+    // would then never trigger because staleness is measured against lastVisit
+    waitUntil(kvPut(`user:${auth.sub}`, JSON.stringify(updated)).catch(e => console.error("profile: kv put failed", e.message)));
     return res.status(200).json(updated);
   }
 

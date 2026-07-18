@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { kvGet, kvPut } from "./_kv.js";
 import { badRequest, methodNotAllowed, safeError } from "./_http.js";
 import { enforceRateLimit } from "./_rateLimit.js";
@@ -67,7 +68,9 @@ export default async function handler(req, res) {
       console.error("waitlist: kv put failed", e.message);
       return safeError(res, 503, "storage_unavailable");
     }
-    sendWaitlistConfirmation({ to: canonical, language }).catch(() => {});
+    // waitUntil: the confirmation email must survive the function freezing
+    // right after the 200 response, or it silently never sends
+    waitUntil(sendWaitlistConfirmation({ to: canonical, language }).catch(() => {}));
   }
 
   return res.status(200).json({ ok: true, alreadyIn });
