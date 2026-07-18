@@ -78,6 +78,35 @@ node scripts/load-test.js --base-url https://the-council-murex.vercel.app \
   --endpoint "/api/result?id=zzzzzzzzzz" --method GET --requests 24 --concurrency 8
 ```
 
+## Measured production baseline (write-path function, zero-cost)
+
+The `/api/council` function itself can also be burst-tested on production
+without authorization: an invalid body (`{"question":""}`) is rejected by
+zod validation with a 400 *before* the rate limiter or Groq are ever
+touched (see the gating order in `api/council.js`), so the run costs no
+Groq tokens, consumes nobody's rate-limit quota, and writes nothing. It
+covers the pre-limiter validation path only: function invocation, cold
+start, body parsing, and zod validation. Everything downstream of a
+successful validation — session/KV reads, persona extraction, prompt
+construction, limiter enforcement, and the Groq call — is NOT exercised
+by this burst (the limiter and Groq error mapping are covered by unit
+tests). Measured 2026-07-17 against `the-council-murex.vercel.app`:
+
+| Run | Concurrency | Requests | Errors / 5xx | p50 | p95 | max |
+|---|---|---|---|---|---|---|
+| Invalid-body burst (all 400 as designed) | 8 | 24 | 0 | 344ms | 837ms | 866ms |
+
+```bash
+node scripts/load-test.js --base-url https://the-council-murex.vercel.app \
+  --endpoint /api/council --method POST --body '{"question":""}' --requests 24 --concurrency 8
+```
+
+Covering the downstream path (session/KV reads, prompt construction, live
+limiter behavior, and real Groq generation latency under concurrent load)
+requires a full-payload run, which spends real tokens from the org-shared
+8000 TPM budget — get explicit authorization first, then use the
+full-payload command from "Testing the rate limiter" above.
+
 ## Interpreting results
 
 - **Rate-limited (429) count lower than expected**: the limiter isn't
