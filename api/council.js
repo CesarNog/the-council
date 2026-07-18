@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { kvGet, kvPut } from "./_kv.js";
 import { callGroq, GroqError } from "./_groq.js";
 import { PERSONAS } from "../src/lib/personas.js";
@@ -121,15 +122,19 @@ export default async function handler(req, res) {
   if (json.memoryEcho && !allowedIds.has(json.memoryEcho.persona)) json.memoryEcho = null;
 
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
-  kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
-    .catch(e => console.error("council: persist failed", e.message));
+  // waitUntil keeps these persists alive after the response returns — without
+  // it Vercel may freeze the function the moment the response ends, silently
+  // killing the KV write that /r/:id share links depend on. Awaiting them
+  // instead is not an option: callGroq's 9s timeout against Vercel's 10s cap
+  // (see api/_groq.js) leaves ~1s of headroom, so any persist latency there
+  // risks a hard kill after the debate was generated but before it was sent.
+  waitUntil(
+    kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
+      .catch(e => console.error("council: persist failed", e.message))
+  );
 
   if (isSupabaseConfigured()) {
-    // fire-and-forget, same as the KV persist above — awaiting Supabase here
-    // ate directly into the ~1s of headroom left after callGroq's 9s timeout
-    // on Vercel's 10s function cap (see api/_groq.js), risking a hard function
-    // kill under any latency for a step that isn't on the response's critical path
-    (async () => {
+    waitUntil((async () => {
       const profileRow = sessionUser
         ? await upsertProfileFromUser({ sub: session.sub, ...sessionUser }).catch(() => null)
         : null;
@@ -141,7 +146,7 @@ export default async function handler(req, res) {
         debate: json,
         publicSlug: id,
       });
-    })().catch(e => console.error("council: supabase persist failed", e.message));
+    })().catch(e => console.error("council: supabase persist failed", e.message)));
   }
 
   return res.status(200).json({ id, ...json });
