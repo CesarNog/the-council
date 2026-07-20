@@ -9,6 +9,13 @@
     <link rel="canonical" href="https://the-council-murex.vercel.app/" />
     <link rel="manifest" href="/manifest.json" />
 
+    <!-- Fonts: loaded here instead of a CSS @import so the browser starts the
+         Google Fonts fetch in parallel with the JS/CSS bundles rather than
+         serially after discovering the import inside the compiled stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="The Council" />
