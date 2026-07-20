@@ -1,5 +1,7 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Fonts are loaded via <link> in index.html (with preconnect) — an @import here
+   forced a serial waterfall: bundle CSS had to download and parse before the
+   Google Fonts CSS fetch could even start. */
 
 :root{
   --bg:#0B0A12; --bg2:#100E1A; --surface:#161322; --line:rgba(214,196,161,.14);
