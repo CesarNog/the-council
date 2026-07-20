@@ -14,7 +14,7 @@ vi.mock("./_upstash.js", () => ({
 
 import { kvGet, kvPut } from "./_kv.js";
 import { checkUpstashLimit, councilTier, isUpstashConfigured } from "./_upstash.js";
-import { checkRateLimit, clientIp, enforceRateLimit, enforceCouncilLimit, enforceEndpointLimit } from "./_rateLimit.js";
+import { checkRateLimit, clientIp, enforceRateLimit, enforceCouncilLimit, enforceEndpointLimit, _resetMemCounters } from "./_rateLimit.js";
 
 function mockRes() {
   const res = {};
@@ -30,7 +30,10 @@ function mockReq(overrides = {}) {
 
 beforeEach(() => {
   kvStore.clear();
+  _resetMemCounters();
   vi.clearAllMocks();
+  kvGet.mockImplementation(async (key) => (kvStore.has(key) ? kvStore.get(key) : null));
+  kvPut.mockImplementation(async (key, value) => { kvStore.set(key, value); });
   isUpstashConfigured.mockReturnValue(false);
 });
 
@@ -226,31 +229,31 @@ describe("enforceEndpointLimit", () => {
   });
 });
 
-// The KV fallback path is documented (CLAUDE.md, README) as "best-effort,
-// not atomic" — these tests turn that prose caveat into a concrete,
-// executable measurement of the actual behavior under real concurrency,
-// rather than leaving it as an untested assumption. This is exactly the
-// scenario "a lot of users at the same time" produces: several requests
-// from the same IP landing close enough together that their KV
-// read-then-write cycles overlap.
-describe("checkRateLimit under concurrent load (KV fallback has no atomicity)", () => {
-  it("can admit more requests than the configured limit when calls race on the same read", async () => {
-    // Five truly concurrent callers, limit of 2 — every call's kvGet(...) fires
-    // before any of their kvPut(...) writes have landed, so all five read the
-    // same pre-write state and all five see themselves as "under the limit."
+// The KV fallback's read-then-write has no atomicity: concurrent calls
+// racing on the same key can all read the same pre-write count and all be
+// admitted past the limit. An earlier version of this suite measured that
+// gap directly (5 racers with limit 2 → all 5 admitted). The synchronous
+// in-memory same-instance guard now closes it for requests handled by the
+// same warm function instance — exactly what a burst produces under
+// Vercel's instance reuse. Cross-instance over-admission remains possible
+// without Upstash; that part stays prose (CLAUDE.md) because it can't be
+// reproduced inside one process.
+describe("checkRateLimit under concurrent load (same-instance guard)", () => {
+  it("blocks same-instance racers at the limit even when their KV reads race", async () => {
+    // Five truly concurrent callers, limit of 2 — every call's kvGet(...)
+    // fires before any kvPut(...) lands, so KV alone would admit all five.
+    // The synchronous in-memory counter runs before the first await and
+    // admits exactly two.
     const results = await Promise.all(
       Array.from({ length: 5 }, () => checkRateLimit("rl:race", "9.9.9.9", { limit: 2, windowMs: 60_000 }))
     );
     const allowedCount = results.filter(r => r.allowed).length;
-    expect(allowedCount).toBeGreaterThan(2); // the documented gap, made concrete
-    expect(allowedCount).toBe(5); // every racer read count=0 and admitted itself
+    expect(allowedCount).toBe(2);
+    const blocked = results.find(r => !r.allowed);
+    expect(blocked.retryAfter).toBeGreaterThan(0);
   });
 
-  it("enforces the limit correctly once calls are no longer racing on the same read (sequential awaits)", async () => {
-    // Same limiter, same IP, but each call fully completes (read AND write)
-    // before the next starts — this is the path every real request takes once
-    // the burst has spread out even slightly, and confirms the race above is
-    // specifically a same-tick concurrency artifact, not a broken counter.
+  it("enforces the limit for sequential calls (memory and KV agree)", async () => {
     let allowedCount = 0;
     for (let i = 0; i < 5; i++) {
       const r = await checkRateLimit("rl:sequential", "9.9.9.9", { limit: 2, windowMs: 60_000 });
@@ -265,6 +268,16 @@ describe("checkRateLimit under concurrent load (KV fallback has no atomicity)", 
       checkRateLimit("rl:race2", "2.2.2.2", { limit: 1, windowMs: 60_000 }),
     ]);
     expect(a.allowed).toBe(true);
-    expect(b.allowed).toBe(true); // different keys — this is correct isolation, not a race
+    expect(b.allowed).toBe(true); // different keys — correct isolation, not a race
+  });
+
+  it("still blocks via the memory guard when KV is down entirely (no more fail-open for same-instance bursts)", async () => {
+    kvGet.mockRejectedValue(new Error("kv down"));
+    kvPut.mockRejectedValue(new Error("kv down"));
+    const results = [];
+    for (let i = 0; i < 4; i++) {
+      results.push(await checkRateLimit("rl:kvdown", "9.9.9.9", { limit: 2, windowMs: 60_000 }));
+    }
+    expect(results.filter(r => r.allowed)).toHaveLength(2);
   });
 });
