@@ -17,7 +17,7 @@
     "load-test": "node scripts/load-test.js"
   },
   "dependencies": {
-    "@clerk/backend": "^3.11.3",
+    "@clerk/backend": "^3.11.7",
     "@clerk/clerk-react": "^5.61.9",
     "@sentry/react": "^10.64.0",
     "@supabase/supabase-js": "^2.110.7",
