@@ -12,4 +12,22 @@ export default defineConfig({
       process.env.VITE_GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID
     ),
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // The single ~680 kB chunk re-downloaded on every deploy was mostly
+        // vendor code that never changes between deploys. Splitting the heavy,
+        // rarely-updated packages into their own chunks lets returning
+        // visitors reuse them from HTTP cache (Vite content-hashes filenames)
+        // and lets first-time visitors download them in parallel.
+        codeSplitting: {
+          groups: [
+            { name: "react", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 30 },
+            { name: "observability", test: /node_modules[\\/](@sentry|posthog-js)[\\/]/, priority: 20 },
+            { name: "clerk", test: /node_modules[\\/]@clerk[\\/]/, priority: 20 },
+          ],
+        },
+      },
+    },
+  },
 });
