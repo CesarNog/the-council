@@ -59,6 +59,16 @@
 :root.light .node .tip{color:color-mix(in srgb, var(--pc, currentColor) 45%, #1C1A28) !important;}
 :root.light .reply-quote-name{color:color-mix(in srgb, var(--reply-color) 45%, #1C1A28) !important;}
 :root.light .reply-quote{border-left-color:color-mix(in srgb, var(--reply-color) 55%, #1C1A28);}
+/* Landing hero orbit: the seat discs, sigils and centre medallion hard-code the
+   dark canvas (rgba(11,10,18,…) fills, a white 8% border that vanishes on light,
+   raw seat-coloured glyphs). Re-tone them for the light canvas — --p-color, set
+   inline on each node, carries the raw seat colour. */
+:root.light .landing-orbit-node{background:rgba(255,255,255,.72); border-color:rgba(28,26,40,.12);}
+:root.light .landing-orbit-node.active,
+:root.light .landing-orbit-node:hover{border-color:color-mix(in srgb, var(--p-color) 55%, #1C1A28);}
+:root.light .landing-orbit-sigil,
+:root.light .landing-orbit-tooltip{color:color-mix(in srgb, var(--p-color) 45%, #1C1A28) !important;}
+:root.light .landing-orbit-center{background:radial-gradient(circle, rgba(255,246,230,.95), rgba(228,225,218,.92)); border-color:rgba(122,92,40,.5);}
 *,*::before,*::after{box-sizing:border-box; margin:0; padding:0;}
 /* overflow-x:clip (not hidden) — hidden on one axis forces the other axis's
    'visible' to compute as 'auto', turning html/body/.council-root into nested
