@@ -32,9 +32,9 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
           + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "")
           + (eclipse ? " unison" : "");
         return (
-          <div key={p.id} className={cls} role="img" aria-label={personaName(language, p.id)} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--intensity": INTENSITY[p.id] }}>
+          <div key={p.id} className={cls} role="img" aria-label={personaName(language, p.id)} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--pc": p.color, "--intensity": INTENSITY[p.id] }}>
             <Sigil id={p.id} />
-            <span className="tip" style={{ color: p.color }}>{personaShortName(language, p.id)}</span>
+            <span className="tip" style={{ color: p.color, "--pc": p.color }}>{personaShortName(language, p.id)}</span>
           </div>
         );
       })}
@@ -730,12 +730,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                   key={i}
                   ref={el => { turnRefs.current[i] = el; }}
                   data-turn-index={i}
-                  style={{ color: p.color }}
+                  style={{ color: p.color, "--pc": p.color }}
                 >
                   <div className="sig"><Sigil id={p.id} /></div>
                   <div className="turn-body">
                     <div className="who">
-                      <span className="who-name" style={{ color: p.color }}>{personaName(language, p.id)}</span>
+                      <span className="who-name" style={{ color: p.color, "--pc": p.color }}>{personaName(language, p.id)}</span>
                       <span className="who-tag">{personaTag(language, p.id)}</span>
                     </div>
                     {replyTurn && (
@@ -772,7 +772,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               );
             })}
             {phase === "debate" && shown < debate.turns.length && (
-              <div className="speaking" role="status" style={{ color: byId[debate.turns[shown].p].color }}>
+              <div className="speaking" role="status" style={{ color: byId[debate.turns[shown].p].color, "--pc": byId[debate.turns[shown].p].color }}>
                 <span className="dots"><i /><i /><i /></span>
                 {t(language, "is_speaking", personaName(language, debate.turns[shown].p))}
               </div>
@@ -781,7 +781,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               <div className="reflection">{t(language, "chamber_falls_quiet")}</div>
             )}
             {phase === "reflecting" && debate.memoryEcho && (
-              <div className="memory-echo" style={{ color: byId[debate.memoryEcho.persona]?.color }}>
+              <div className="memory-echo" style={{ color: byId[debate.memoryEcho.persona]?.color, "--pc": byId[debate.memoryEcho.persona]?.color }}>
                 <div className="sig"><Sigil id={debate.memoryEcho.persona} /></div>
                 <div>
                   <div className="memory-echo-label">{t(language, "memory_echo_label")}</div>
@@ -806,9 +806,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 const cls = v.v === "yes" ? "yes" : v.v === "no" ? "no" : "dep";
                 const label = v.v === "yes" ? t(language, "vote_yes") : v.v === "no" ? t(language, "vote_no") : t(language, "vote_depends");
                 return (
-                  <div className="vote" key={i} style={{ color: p.color, animationDelay: `${i * .09}s` }}>
+                  <div className="vote" key={i} style={{ color: p.color, "--pc": p.color, animationDelay: `${i * .09}s` }}>
                     <div className="sig"><Sigil id={p.id} /></div>
-                    <div className="nm" style={{ color: p.color }}>{personaShortName(language, p.id)}</div>
+                    <div className="nm" style={{ color: p.color, "--pc": p.color }}>{personaShortName(language, p.id)}</div>
                     <div className={"vv " + cls}>{label}</div>
                     <div className="rr">{v.r}</div>
                   </div>
