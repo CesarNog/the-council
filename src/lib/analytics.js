@@ -1,5 +1,10 @@
 import { isAnalyticsEnabled } from "./consent.js";
-import posthog from "posthog-js";
+
+// posthog-js is ~50 kB gzip and only ever runs after cookie consent — lazily
+// imported inside initPostHog() so it stays out of the first-paint bundle.
+// _posthogReady only flips true after the module has loaded AND init ran, so
+// every capture/identify call below is already correctly gated.
+let posthog = null;
 
 const HOTJAR_ID = typeof import.meta !== "undefined" ? import.meta.env?.VITE_HOTJAR_ID : undefined;
 const HOTJAR_VERSION = typeof import.meta !== "undefined" ? (import.meta.env?.VITE_HOTJAR_VERSION || "6") : "6";
@@ -40,13 +45,18 @@ export function initPostHog() {
   if (_posthogReady) return;
   if (import.meta.env?.DEV) return;
 
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    person_profiles: "identified_only",
-    capture_pageview: false,
-    persistence: "localStorage+cookie",
-  });
-  _posthogReady = true;
+  return import("posthog-js")
+    .then(mod => {
+      posthog = mod.default;
+      posthog.init(POSTHOG_KEY, {
+        api_host: POSTHOG_HOST,
+        person_profiles: "identified_only",
+        capture_pageview: false,
+        persistence: "localStorage+cookie",
+      });
+      _posthogReady = true;
+    })
+    .catch(e => console.error("posthog: failed to load", e));
 }
 
 export function initAnalytics() {

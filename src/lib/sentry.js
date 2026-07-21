@@ -1,17 +1,25 @@
-import * as Sentry from "@sentry/react";
-
 const DSN = typeof import.meta !== "undefined" ? import.meta.env?.VITE_SENTRY_DSN : undefined;
+
+// Lazily imported so @sentry/react stays out of the first-paint bundle — it
+// only downloads when a DSN is actually configured. Errors thrown before the
+// module finishes loading fall back to console.error, same as the no-DSN path.
+let _sentry = null;
 
 export function initSentry() {
   if (!DSN || import.meta.env?.DEV) return;
-  Sentry.init({
-    dsn: DSN,
-    environment: import.meta.env?.MODE || "production",
-    tracesSampleRate: 0.1,
-    beforeSend(event) {
-      return redactEvent(event);
-    },
-  });
+  return import("@sentry/react")
+    .then(Sentry => {
+      _sentry = Sentry;
+      Sentry.init({
+        dsn: DSN,
+        environment: import.meta.env?.MODE || "production",
+        tracesSampleRate: 0.1,
+        beforeSend(event) {
+          return redactEvent(event);
+        },
+      });
+    })
+    .catch(e => console.error("sentry: failed to load", e));
 }
 
 function redactEvent(event) {
@@ -24,11 +32,11 @@ function redactEvent(event) {
 }
 
 export function captureError(error, context = {}) {
-  if (!DSN) {
+  if (!DSN || !_sentry) {
     console.error("sentry:", error, context);
     return;
   }
-  Sentry.captureException(error, { extra: redactContext(context) });
+  _sentry.captureException(error, { extra: redactContext(context) });
 }
 
 function redactContext(ctx) {
@@ -38,5 +46,3 @@ function redactContext(ctx) {
   delete safe.token;
   return safe;
 }
-
-export { Sentry };
