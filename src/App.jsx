@@ -483,6 +483,13 @@ function TheCouncilApp({ clerkSignOut }) {
     try { localStorage.setItem("council:theme", theme); } catch {}
   }, [theme]);
 
+  // <html lang> ships as "en" but the UI switches to pt/es/zh — keep the
+  // attribute in sync so screen readers announce the right language (WCAG 3.1.1)
+  // and search engines target the right locale.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const changeLanguage = (code) => {
     setLanguage(code);
     try { localStorage.setItem("council:lang", code); } catch {}
