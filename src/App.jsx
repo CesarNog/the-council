@@ -12,7 +12,7 @@ import { acceptAll, rejectOptional } from "./lib/consent.js";
 import { initAnalytics, trackPageView } from "./lib/analytics.js";
 import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
-import { detectBrowserLanguage, t } from "./lib/i18n.js";
+import { detectBrowserLanguage, normalizeLanguage, t } from "./lib/i18n.js";
 import { loadHistory } from "./lib/history.js";
 import { PERSONAS } from "./lib/personas.js";
 
@@ -468,8 +468,9 @@ function TheCouncilApp({ clerkSignOut }) {
   const [localLifeMode, setLocalLifeMode] = useState(null);
   const [language, setLanguage] = useState(() => {
     try {
-      const saved = localStorage.getItem("council:lang");
-      return saved || detectBrowserLanguage();
+      // normalizeLanguage coerces a stale/malformed council:lang (or null) to a
+      // supported code, so it never reaches t() or <html lang>.
+      return normalizeLanguage(localStorage.getItem("council:lang"));
     } catch {
       return detectBrowserLanguage();
     }
