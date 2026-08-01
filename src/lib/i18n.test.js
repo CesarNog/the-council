@@ -4,6 +4,8 @@ import {
   LANGUAGES,
   TTS_LANG,
   detectBrowserLanguage,
+  isSupportedLanguage,
+  normalizeLanguage,
   personaName,
   personaShortName,
   personaTag,
@@ -346,5 +348,29 @@ describe("detectBrowserLanguage()", () => {
   it("returns a code in SUPPORTED_LANGS or 'en'", () => {
     const code = detectBrowserLanguage();
     expect(SUPPORTED_LANGS.includes(code) || code === "en").toBe(true);
+  });
+});
+
+describe("isSupportedLanguage()", () => {
+  it("accepts every registered language code", () => {
+    for (const code of SUPPORTED_LANGS) expect(isSupportedLanguage(code)).toBe(true);
+  });
+  it("rejects unknown, empty, null and malformed codes", () => {
+    for (const bad of ["fr", "de", "", "EN", "en-US", null, undefined, "xyz"]) {
+      expect(isSupportedLanguage(bad)).toBe(false);
+    }
+  });
+});
+
+describe("normalizeLanguage()", () => {
+  it("passes registered codes through unchanged", () => {
+    for (const code of SUPPORTED_LANGS) expect(normalizeLanguage(code)).toBe(code);
+  });
+  it("coerces stale/malformed/null values to a supported code (never leaks them)", () => {
+    // A stale council:lang must not reach <html lang> or t(); it falls back to a
+    // detected (already-validated) code, so the result is always supported.
+    for (const bad of ["de", "en-US", "", null, undefined, "zz"]) {
+      expect(isSupportedLanguage(normalizeLanguage(bad))).toBe(true);
+    }
   });
 });

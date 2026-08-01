@@ -12,7 +12,7 @@ import { acceptAll, rejectOptional } from "./lib/consent.js";
 import { initAnalytics, trackPageView } from "./lib/analytics.js";
 import { initAds } from "./lib/ads.js";
 import { signInWithGoogle, signOut, getProfile, updateProfile } from "./lib/auth.js";
-import { detectBrowserLanguage, t } from "./lib/i18n.js";
+import { detectBrowserLanguage, normalizeLanguage, t } from "./lib/i18n.js";
 import { loadHistory } from "./lib/history.js";
 import { PERSONAS } from "./lib/personas.js";
 
@@ -468,8 +468,9 @@ function TheCouncilApp({ clerkSignOut }) {
   const [localLifeMode, setLocalLifeMode] = useState(null);
   const [language, setLanguage] = useState(() => {
     try {
-      const saved = localStorage.getItem("council:lang");
-      return saved || detectBrowserLanguage();
+      // normalizeLanguage coerces a stale/malformed council:lang (or null) to a
+      // supported code, so it never reaches t() or <html lang>.
+      return normalizeLanguage(localStorage.getItem("council:lang"));
     } catch {
       return detectBrowserLanguage();
     }
@@ -482,6 +483,13 @@ function TheCouncilApp({ clerkSignOut }) {
     document.documentElement.classList.toggle("light", theme === "light");
     try { localStorage.setItem("council:theme", theme); } catch {}
   }, [theme]);
+
+  // <html lang> ships as "en" but the UI switches to pt/es/zh — keep the
+  // attribute in sync so screen readers announce the right language (WCAG 3.1.1)
+  // and search engines target the right locale.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const changeLanguage = (code) => {
     setLanguage(code);

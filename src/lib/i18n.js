@@ -7,10 +7,21 @@ export const LANGUAGES = [
 
 export const TTS_LANG = { en: "en-US", pt: "pt-BR", es: "es-ES", zh: "zh-CN" };
 
+export function isSupportedLanguage(code) {
+  return LANGUAGES.some(l => l.code === code);
+}
+
 export function detectBrowserLanguage() {
   if (typeof navigator === "undefined") return "en";
   const code = (navigator.language || "en").slice(0, 2).toLowerCase();
-  return LANGUAGES.some(l => l.code === code) ? code : "en";
+  return isSupportedLanguage(code) ? code : "en";
+}
+
+// Coerce a persisted/untrusted language code to a supported one. A stale or
+// malformed council:lang value (e.g. a code removed in a past version) must not
+// reach t() or <html lang> — fall back to browser detection instead.
+export function normalizeLanguage(code) {
+  return isSupportedLanguage(code) ? code : detectBrowserLanguage();
 }
 
 const S = {
