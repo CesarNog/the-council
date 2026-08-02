@@ -32,6 +32,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Don't leave GITHUB_TOKEN in the local git config; the Claude step
+          # gets its own token via the github_token input below.
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -44,6 +47,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           # Bound cost/time; allow the tools an improvement cycle needs.
           claude_args: '--max-turns 40 --allowedTools "Bash,Edit,Write,Read,Glob,Grep"'
           prompt: |
@@ -52,8 +56,9 @@ jobs:
             conventions exactly.
 
             Do exactly ONE focused, high-value improvement:
-            1. Create a working branch off the default branch:
-               git checkout -b chore/daily-improvement-$(date +%Y%m%d).
+            1. Create a working branch off the default branch, uniquely named per
+               run so reruns never collide:
+               git checkout -b chore/daily-improvement-${{ github.run_id }}-${{ github.run_attempt }}.
             2. Audit the codebase and pick the single highest-impact
                production-readiness item — critical bugs, mobile breakage,
                security, API reliability, accessibility, i18n consistency, SEO,
