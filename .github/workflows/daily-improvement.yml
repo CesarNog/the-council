@@ -1,0 +1,74 @@
+name: Daily Autonomous Improvement
+
+# Runs Claude Code once a day to make ONE focused, high-value improvement and
+# open a pull request for it. Durable (survives restarts) — unlike a session
+# cron. Also runnable on demand via the "Run workflow" button.
+#
+# Requires one repo secret: ANTHROPIC_API_KEY (Settings → Secrets and variables
+# → Actions). A Claude Code OAuth token works too — swap the input below for
+# claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}.
+
+on:
+  schedule:
+    # 09:07 UTC daily. NOTE: GitHub cron is always UTC — adjust for your zone.
+    # Weekdays only? use '7 9 * * 1-5'.
+    - cron: "7 9 * * *"
+  workflow_dispatch: {}
+
+# Least privilege: enough to push a branch and open a PR, nothing more.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: daily-improvement
+  cancel-in-progress: false
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Autonomous improvement cycle
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Bound cost/time; allow the tools an improvement cycle needs.
+          claude_args: '--max-turns 40 --allowedTools "Bash,Edit,Write,Read,Glob,Grep"'
+          prompt: |
+            Autonomous daily improvement run for this repository (Vite + React SPA
+            with Vercel serverless functions). Read CLAUDE.md first and follow its
+            conventions exactly.
+
+            Do exactly ONE focused, high-value improvement:
+            1. Create a working branch off the default branch:
+               git checkout -b chore/daily-improvement-$(date +%Y%m%d).
+            2. Audit the codebase and pick the single highest-impact
+               production-readiness item — critical bugs, mobile breakage,
+               security, API reliability, accessibility, i18n consistency, SEO,
+               performance, or user conversion. Prefer genuine gaps over cosmetic
+               churn. If nothing is clearly worth doing, make NO change and stop
+               rather than manufacturing work.
+            3. Implement it as a minimal, focused diff aligned with repo
+               conventions. Add or extend tests when it makes sense.
+            4. Verify locally: npm run lint && npm test && npm run build. All must
+               pass before you open anything.
+            5. Commit with a clear message and open a pull request (ready for
+               review, not a draft) describing the change and how you verified it.
+               Do NOT merge — leave it for review; CI will run on the PR.
+
+            Constraints: never commit secrets; keep diffs minimal; respect the
+            Groq TPM limits in CLAUDE.md before touching api/council.js prompts;
+            do not add boilerplate docstrings (the repo forbids superfluous
+            comments).
