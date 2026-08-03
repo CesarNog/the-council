@@ -5,7 +5,7 @@ import { PERSONAS } from "../src/lib/personas.js";
 import { getSessionFromRequest } from "./_session.js";
 import { enforceCouncilLimit } from "./_rateLimit.js";
 import { badRequest, bodyTooLarge, methodNotAllowed, safeError } from "./_http.js";
-import { councilBodySchema, parseBody } from "./_validate.js";
+import { councilBodySchema, parseBody, normalizeDebate } from "./_validate.js";
 import { isSupabaseConfigured, persistDecisionBundle, upsertProfileFromUser } from "./_supabase.js";
 
 const VALID_IDS = new Set(PERSONAS.map(p => p.id));
@@ -109,17 +109,15 @@ export default async function handler(req, res) {
     throw e;
   }
 
-  if (!Array.isArray(json.turns) || !Array.isArray(json.votes) || !json.verdict) {
+  // normalizeDebate validates + gracefully repairs the model output (drops
+  // malformed/duplicated/invented personas, clamps mood, backfills quote) and
+  // returns null when it can't meet a minimum viable shape — see _validate.js.
+  const allowedIds = activePersonas ? new Set(activePersonas) : VALID_IDS;
+  const debate = normalizeDebate(json, allowedIds);
+  if (!debate) {
     console.error("council: bad shape", JSON.stringify(json).slice(0, 300));
     return res.status(502).json({ error: "unparseable_response" });
   }
-
-  // modelo ocasionalmente inventa/duplica persona (nao-determinismo com reasoning_effort:low) — observado em producao
-  const allowedIds = activePersonas ? new Set(activePersonas) : VALID_IDS;
-  json.turns = json.turns.filter(turn => allowedIds.has(turn.p));
-  const seen = new Set();
-  json.votes = json.votes.filter(v => allowedIds.has(v.p) && !seen.has(v.p) && (seen.add(v.p), true));
-  if (json.memoryEcho && !allowedIds.has(json.memoryEcho.persona)) json.memoryEcho = null;
 
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   // waitUntil keeps these persists alive after the response returns — without
@@ -129,7 +127,7 @@ export default async function handler(req, res) {
   // (see api/_groq.js) leaves ~1s of headroom, so any persist latency there
   // risks a hard kill after the debate was generated but before it was sent.
   waitUntil(
-    kvPut(`result:${id}`, JSON.stringify({ asked: q, ...json }), 60 * 60 * 24 * 30) // 30 dias, best-effort
+    kvPut(`result:${id}`, JSON.stringify({ asked: q, ...debate }), 60 * 60 * 24 * 30) // 30 dias, best-effort
       .catch(e => console.error("council: persist failed", e.message))
   );
 
@@ -143,11 +141,11 @@ export default async function handler(req, res) {
         question: q,
         language,
         decisionContext,
-        debate: json,
+        debate,
         publicSlug: id,
       });
     })().catch(e => console.error("council: supabase persist failed", e.message)));
   }
 
-  return res.status(200).json({ id, ...json });
+  return res.status(200).json({ id, ...debate });
 }
