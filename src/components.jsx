@@ -11,6 +11,14 @@ import { updateProfile } from "./lib/auth.js";
 import { captureError } from "./lib/sentry.js";
 import { Events } from "./lib/analytics.js";
 
+// scrollIntoView's behavior option is honored by the browser directly and is
+// NOT overridden by CSS scroll-behavior, so reduced-motion has to be checked
+// here too — otherwise these programmatic scrolls stay smooth for those users.
+const scrollBehavior = () =>
+  (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
+    ? "auto"
+    : "smooth";
+
 export { CouncilLogo } from "./components/CouncilLogo.jsx";
 export { Sigil } from "./lib/sigil.jsx";
 export { Landing } from "./components/landing/LandingPage.jsx";
@@ -332,7 +340,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const jumpToTurn = (index) => {
     const el = turnRefs.current[index];
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
     setHighlightedTurn(index);
     setTimeout(() => setHighlightedTurn(h => (h === index ? null : h)), 1600);
   };
@@ -437,12 +445,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     // very bottom of the page (past share/continue buttons), so block:"end"
     // was overshooting past the verdict into the footer
     if (phase === "verdict") return;
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    endRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "end" });
   }, [shown, votesShown, phase]);
 
   useEffect(() => {
     if (phase !== "verdict") return;
-    verdictRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    verdictRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     // move keyboard/screen-reader focus to the verdict so assistive tech
     // announces it immediately instead of leaving focus stranded on a
     // now-gone "voting" control — preventScroll avoids fighting the smooth
