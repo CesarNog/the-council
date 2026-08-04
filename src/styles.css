@@ -306,6 +306,19 @@ button,a{min-width:0;}
   .council-stage .ring-wrap .tip{display:none;}
 }
 @media (prefers-reduced-motion: reduce){
+  /* Global safety net so no animation escapes the per-selector blocks below
+     (e.g. .node.mentioned's mentionFlash, .btn.feedback's pop, eclipseGlow).
+     Collapse to end-state near-instantly rather than animation:none, which can
+     strand entrance animations on their hidden start frame. The specific rules
+     below still win by specificity where they need a tailored fallback. */
+  *, *::before, *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+@media (prefers-reduced-motion: reduce){
   /* stop decorative infinite animations */
   .ring-orbit, .node.breathing, .node.speaking-voice, .pulse, .dots i{animation:none !important;}
   .node.breathing{opacity:.55;}
