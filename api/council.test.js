@@ -126,6 +126,16 @@ describe("POST /api/council — success path", () => {
     expect(stored.question).toBe("A completely different probing question");
   });
 
+  it("persists the debate language to KV when provided", async () => {
+    callGroq.mockResolvedValue(fullDebate());
+    const res = mockRes();
+    await handler(mockReq({ body: { question: "Should I move to another city?", language: "es" } }), res);
+    const id = res.json.mock.calls[0][0].id;
+    const stored = JSON.parse(kvStore.get(`result:${id}`));
+    expect(stored.asked).toBe("Should I move to another city?");
+    expect(stored.language).toBe("es");
+  });
+
   it("persists the result to KV with a 30-day TTL", async () => {
     callGroq.mockResolvedValue(fullDebate());
     const res = mockRes();

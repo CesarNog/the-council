@@ -1,14 +1,7 @@
 import { kvGet } from "./_kv.js";
+import { councilHeadline } from "../src/lib/share.js";
 
 const esc = (s = "") => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-function headline(debate) {
-  const yes = debate.votes.filter(v => v.v === "yes").length;
-  const no = debate.votes.filter(v => v.v === "no").length;
-  if (yes === debate.votes.length) return "Every Council member agreed. Go.";
-  if (no === debate.votes.length) return "Every Council member agreed. Don't.";
-  return `The Council ruled ${yes}-${no}, ${debate.votes.length - yes - no} undecided.`;
-}
 
 export default async function handler(req, res) {
   const id = req.query.id;
@@ -30,9 +23,16 @@ export default async function handler(req, res) {
     return res.status(200).send(html); // id invalido/expirado — SPA mostra "verdict already adjourned"
   }
 
-  const title = `"${debate.asked}" — ${headline(debate)}`;
+  const lang = debate.language || "en";
+  const title = `"${debate.asked}" — ${councilHeadline(debate, lang)}`;
   const description = debate.quote || debate.verdict || "Nine versions of you. One verdict.";
   const appUrl = `${origin}/r/${id}`;
+
+  if (html.includes('<html lang="en">')) {
+    html = html.replace('<html lang="en">', `<html lang="${esc(lang)}">`);
+  } else if (html.includes('<html>')) {
+    html = html.replace('<html>', `<html lang="${esc(lang)}">`);
+  }
 
   html = html
     .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)

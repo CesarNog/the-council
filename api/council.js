@@ -142,7 +142,7 @@ export default async function handler(req, res) {
   // (see api/_groq.js) leaves ~1s of headroom, so any persist latency there
   // risks a hard kill after the debate was generated but before it was sent.
   waitUntil(
-    kvPut(`result:${id}`, JSON.stringify({ asked: q, ...debate }), 60 * 60 * 24 * 30) // 30 dias, best-effort
+    kvPut(`result:${id}`, JSON.stringify({ asked: q, language, ...debate }), 60 * 60 * 24 * 30) // 30 dias, best-effort
       .catch(e => console.error("council: persist failed", e.message))
   );
 
