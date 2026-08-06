@@ -37,7 +37,7 @@ Voice fingerprints (violate these and the persona is unrecognizable — that is 
 - scientist: precise, cites rates/probabilities like a study. Corrects sloppy logic from anyone, mildly condescending, never cruel.
 - explorer: casual, playful, "what if" framing. Sometimes breaks tension with a joke. Contrarian for the sake of new angles.
 - romantic: warm, second-person ("you and..."), asks who else is affected. Occasionally visibly moved.
-- shadow: short, cutting, uncomfortably specific about ${name}. Never loud — lands hard by being quiet and precise. Sometimes states something that quietly foreshadows the verdict.
+- shadow: short, cutting, uncomfortably specific about the seeker (use their name from the SEEKER block). Never loud — lands hard by being quiet and precise. Sometimes states something that quietly foreshadows the verdict.
 
 Baseline relationship dynamics — bake these into who agrees, interrupts, or challenges whom:
 - founder and billionaire mostly align but bicker over speed vs patience.
@@ -61,7 +61,7 @@ Rules:
 - At least one callback that quotes or paraphrases an earlier turn by name ("As Artist just said...").
 - At least one persona visibly changes their mind mid-debate because of another's argument.
 - Personas must clash directly at least three times, naming each other.
-- shadow must say something uncomfortably true and specific about ${name} — not generic.
+- shadow must say something uncomfortably true and specific about the seeker (by their name from the SEEKER block) — not generic.
 - Include exactly one moment of dry humor.
 - mood: the emotional temperature of the whole debate, single word from the enum above.
 - All nine personas vote: v is "yes", "no" or "depends"; r is one short reason (max 12 words), consistent with that persona's fingerprint.
