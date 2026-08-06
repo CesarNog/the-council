@@ -66,34 +66,46 @@ describe("GET /api/share-page", () => {
       asked: "Should I move?",
       quote: "Staying is just fear wearing a salary.",
       verdict: "Go for it.",
-      votes: [{ v: "yes" }, { v: "yes" }, { v: "no" }],
+      language: "es",
+      votes: [
+        { p: "founder", v: "yes" },
+        { p: "billionaire", v: "yes" },
+        { p: "artist", v: "yes" },
+        { p: "athlete", v: "yes" },
+        { p: "monk", v: "no" },
+        { p: "scientist", v: "no" },
+      ],
     }));
     const res = mockRes();
     await handler(mockReq({ query: { id: "abc123" } }), res);
 
     const html = res.send.mock.calls[0][0];
     // esc() HTML-encodes quotes even in <title> text content — valid and safe, just not literal `"`
-    expect(html).toContain('<title>&quot;Should I move?&quot; — The Council ruled 2-1, 0 undecided.</title>');
+    expect(html).toContain('<title>&quot;Should I move?&quot; — El Consejo se inclina por el sí, 4–2.</title>');
     expect(html).toContain('content="Staying is just fear wearing a salary."');
     expect(html).toContain('href="https://the-council-murex.vercel.app/r/abc123"');
     expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", expect.stringContaining("max-age"));
   });
 
-  it("reports a unanimous verdict distinctly", async () => {
+  it("reports a unanimous verdict distinctly and supports Portuguese", async () => {
     kvGet.mockResolvedValue(JSON.stringify({
       asked: "Should I quit?", verdict: "Yes.",
+      language: "pt",
       votes: Array.from({ length: 9 }, () => ({ v: "yes" })),
     }));
     const res = mockRes();
     await handler(mockReq({ query: { id: "abc123" } }), res);
     const html = res.send.mock.calls[0][0];
-    expect(html).toContain("Every Council member agreed. Go.");
+    expect(html).toContain("Todo o Conselho concordou. Vá em frente.");
   });
 
   it("HTML-escapes the question to prevent injection via a crafted title", async () => {
     kvGet.mockResolvedValue(JSON.stringify({
       asked: '<script>alert(1)</script>', verdict: "V.",
-      votes: [{ v: "yes" }, { v: "no" }],
+      votes: [
+        { p: "founder", v: "yes" },
+        { p: "billionaire", v: "no" },
+      ],
     }));
     const res = mockRes();
     await handler(mockReq({ query: { id: "abc123" } }), res);
