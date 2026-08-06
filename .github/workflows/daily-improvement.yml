@@ -44,6 +44,10 @@ jobs:
         env:
           # The action's GitHub tooling reads the token from the environment.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Gemini CLI refuses --yolo (needed here so tool calls run
+          # unattended) in a directory it doesn't consider trusted. The
+          # checkout is always this repo at a known commit, so trust it.
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           # Leave the model at the action's current default (a Gemini model), or
