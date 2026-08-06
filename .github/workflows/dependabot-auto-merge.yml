@@ -1,0 +1,33 @@
+name: Dependabot auto-merge
+
+# Enables GitHub's native auto-merge on every Dependabot PR (any update type —
+# patch, minor, or major). This does NOT bypass CI: gh pr merge --auto only
+# queues the merge, which GitHub completes once the PR's required status
+# checks pass. If "main" has no required status checks configured in branch
+# protection, GitHub can complete the merge as soon as the PR is mergeable,
+# without waiting on test-and-build/e2e — see the setup note below.
+#
+# One-time repo setup required (Settings, not available via this workflow):
+# 1. Settings -> General -> Pull Requests -> enable "Allow auto-merge".
+# 2. Settings -> Branches -> protect "main" -> Require status checks to pass
+#    -> select "test-and-build" and "e2e" as required. This is what makes
+#    auto-merge actually wait for CI instead of merging immediately.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "${PR_URL}"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
