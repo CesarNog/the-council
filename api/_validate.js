@@ -48,6 +48,22 @@ export const profilePatchSchema = z.object({
   }).optional(),
 }).strict();
 
+// User-supplied dilemma text is embedded in the council prompt as DATA inside a
+// fenced <<<SEEKER>>> block. Neutralize anything that could break out of that
+// fence or smuggle control characters, so a dilemma can't be turned into
+// orchestration instructions (prompt injection). Conservative: it only strips
+// structural attack surface, not ordinary prose or punctuation.
+// eslint-disable-next-line no-control-regex -- matching control chars is the point: strip them from untrusted input
+const CONTROL_CHARS = new RegExp("[\\u0000-\\u001F\\u007F]+", "g");
+const FENCE_MARKERS = /<<<\s*\/?\s*(?:SEEKER|END\s+SEEKER)\s*>>>/gi;
+export function sanitizeSeekerText(s) {
+  return String(s ?? "")
+    .replace(CONTROL_CHARS, " ")
+    .replace(FENCE_MARKERS, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 const DEBATE_MOODS = ["tense", "warm", "hopeful", "somber", "electric"];
 const VOTE_VALUES = ["yes", "no", "depends"];
 
