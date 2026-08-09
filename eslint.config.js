@@ -7,7 +7,7 @@ export default [
   {
     // .github/skills is vendored third-party tooling, not app code — never lint it.
     // supabase/ is SQL only; dist/public are build output/static assets.
-    ignores: ["dist/**", "node_modules/**", "public/**", "supabase/**", ".github/**"],
+    ignores: ["dist/**", "node_modules/**", "public/**", "supabase/**", ".github/**", "playwright-report/**", "test-results/**"],
   },
   js.configs.recommended,
   {

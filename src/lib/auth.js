@@ -1,7 +1,10 @@
 function parseGoogleJwt(credential) {
   try {
     const b64 = credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const p = JSON.parse(atob(b64));
+    const binaryStr = atob(b64);
+    const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    const p = JSON.parse(decoded);
     return { name: p.name, email: p.email, googlePicture: p.picture, sub: p.sub, situation: "", values: [], debateHistory: [], _local: true };
   } catch { return null; }
 }
