@@ -13,6 +13,12 @@ export default defineConfig({
     ),
   },
   build: {
+    // The "observability" chunk (Sentry + PostHog) trips Vite's default 500 kB
+    // warning, but neither library is in the initial bundle — both are loaded
+    // via dynamic import() only when a DSN is configured / analytics consent is
+    // granted (see src/lib/sentry.js, src/lib/analytics.js). Raised so the
+    // build log doesn't cry wolf about a chunk that's never on the critical path.
+    chunkSizeWarningLimit: 800,
     rolldownOptions: {
       output: {
         // The single ~680 kB chunk re-downloaded on every deploy was mostly
