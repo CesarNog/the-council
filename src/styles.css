@@ -697,7 +697,10 @@ button,a{min-width:0;}
 @media (hover:none){
   .listen-btn{width:44px; height:44px;} /* touch target minimo */
   .btn.small{padding:13px 20px; font-size:11px;}
-  .lang-chip{padding:10px 14px; font-size:10px;}
+  /* .header-right .lang-chip (max-width:640px, above) outranks a bare
+     .lang-chip on specificity regardless of source order — match it here
+     so this touch-target fix actually wins on phones, where it matters most. */
+  .header-right .lang-chip, .lang-chip{padding:10px 14px; font-size:10px; min-height:44px;}
   .chip{padding:12px 18px;}
   .quick-questions .chip{padding:12px 18px;}
 }
