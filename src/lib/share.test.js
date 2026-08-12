@@ -234,4 +234,11 @@ describe("copyLink", () => {
     const result = await copyLink("https://example.com/r/abc");
     expect(result).toBe(false);
   });
+
+  it("returns false instead of throwing when writeText rejects (e.g. permission denied)", async () => {
+    const writeText = vi.fn().mockRejectedValue(new DOMException("Permission denied", "NotAllowedError"));
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const result = await copyLink("https://example.com/r/abc");
+    expect(result).toBe(false);
+  });
 });

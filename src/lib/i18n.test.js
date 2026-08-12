@@ -90,6 +90,23 @@ describe("t()", () => {
     expect(t("en", "rate_limited_retry_in", 30)).toBe("Retrying in 30s…");
     expect(t("pt", "rate_limited_retry_in", 30)).toBe("Tentando novamente em 30s…");
   });
+
+  // Regression: the Chamber's decisionContext deadline chip used to build its
+  // i18n key by interpolating the raw onboarding value directly
+  // (`onb_deadline_${value}`), but the stored values ("this_week",
+  // "few_months", ...) don't match their key suffixes ("week", "months",
+  // ...) 1:1 — "this_month" in particular resolved to the nonexistent
+  // "onb_deadline_this_month" and t() silently returned that raw key,
+  // rendering it verbatim on screen instead of "Este mês" / "This month".
+  it("every onboarding deadline value maps to a real translation, not a raw key", () => {
+    const DEADLINE_I18N_KEY = { this_week: "onb_deadline_week", this_month: "onb_deadline_month", few_months: "onb_deadline_months", none: "onb_deadline_none" };
+    for (const [value, key] of Object.entries(DEADLINE_I18N_KEY)) {
+      for (const lang of SUPPORTED_LANGS) {
+        expect(t(lang, key)).not.toBe(key);
+        expect(t(lang, key)).not.toBe(`onb_deadline_${value}`);
+      }
+    }
+  });
 });
 
 // ── Vote label translations ────────────────────────────────────────────────
