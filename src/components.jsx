@@ -70,6 +70,10 @@ const CAT_KEYS = ["onb_cat_career", "onb_cat_love", "onb_cat_money", "onb_cat_fa
 const CAT_VALS = ["career", "love", "money", "family", "life_change", "creativity", "emotional", "other"];
 const FEAR_KEYS = ["onb_fear_security", "onb_fear_regret", "onb_fear_hurt", "onb_fear_fail", "onb_fear_judged", "onb_fear_start", "onb_fear_unknown"];
 const FEAR_VALS = ["security", "regret", "hurt", "fail", "judged", "start", "unknown"];
+// The stored deadline value ("this_week", "few_months", ...) doesn't match
+// its i18n key suffix ("week", "months", ...) 1:1, unlike weight/cat/fear
+// above — needs an explicit map instead of string interpolation.
+const DEADLINE_I18N_KEY = { this_week: "onb_deadline_week", this_month: "onb_deadline_month", few_months: "onb_deadline_months", none: "onb_deadline_none" };
 
 export function Onboarding({ onDone, initial, language, googleNames, initialDisplayName }) {
   const [step, setStep] = useState(0);
@@ -857,7 +861,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 {decisionContext.decisionCategory && <span className="context-chip">{t(language, `onb_cat_${decisionContext.decisionCategory}`) || decisionContext.decisionCategory}</span>}
                 {decisionContext.emotionalWeight && <span className="context-chip">{t(language, `onb_weight_${decisionContext.emotionalWeight}`) || decisionContext.emotionalWeight}</span>}
                 {decisionContext.mainFear && <span className="context-chip">{t(language, `onb_fear_${decisionContext.mainFear}`) || decisionContext.mainFear}</span>}
-                {decisionContext.deadline && <span className="context-chip">{t(language, `onb_deadline_${decisionContext.deadline === "none" ? "none" : decisionContext.deadline}`)}</span>}
+                {decisionContext.deadline && <span className="context-chip">{t(language, DEADLINE_I18N_KEY[decisionContext.deadline] || "onb_deadline_none")}</span>}
                 {decisionContext.reversible && <span className="context-chip">{t(language, `onb_reversible_${decisionContext.reversible}`)}</span>}
               </div>
             )}

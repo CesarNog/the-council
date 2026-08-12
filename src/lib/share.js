@@ -48,8 +48,15 @@ export function shareUrl(id, origin) {
 
 export async function copyLink(url) {
   if (typeof navigator !== "undefined" && navigator.clipboard) {
-    await navigator.clipboard.writeText(url);
-    return true;
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch {
+      // Permission denied, tab not focused, insecure context, etc. — the
+      // caller treats a false return as "show the failure state", not an
+      // unhandled rejection.
+      return false;
+    }
   }
   return false;
 }

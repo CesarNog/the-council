@@ -20,6 +20,10 @@ export default defineConfig({
     locale: "en-US",
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : undefined,
+    // Headless Chromium denies clipboard-write by default, which the share
+    // "copy link" flow depends on (see e2e/happy-path.spec.js's redaction
+    // test) — grant it so tests exercise the real success path.
+    permissions: ["clipboard-read", "clipboard-write"],
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
