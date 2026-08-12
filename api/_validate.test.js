@@ -53,6 +53,29 @@ describe("parseBody councilBodySchema", () => {
     const r = parseBody(councilBodySchema, { question: "Hi", language: "fr" });
     expect(r.ok).toBe(false);
   });
+
+  it("accepts Deep Council decisionContext fields and defaults them when absent", () => {
+    const withDeep = parseBody(councilBodySchema, {
+      question: "Should I move?",
+      decisionContext: { options: ["Stay", "Go"], deadline: "this_month", reversible: "hard" },
+    });
+    expect(withDeep.ok).toBe(true);
+    expect(withDeep.data.decisionContext.options).toEqual(["Stay", "Go"]);
+    expect(withDeep.data.decisionContext.deadline).toBe("this_month");
+    expect(withDeep.data.decisionContext.known).toBe("");
+
+    const quickOnly = parseBody(councilBodySchema, { question: "Should I move?" });
+    expect(quickOnly.ok).toBe(true);
+    expect(quickOnly.data.decisionContext).toBeUndefined();
+  });
+
+  it("rejects more than 2 Deep Council options", () => {
+    const r = parseBody(councilBodySchema, {
+      question: "Should I move?",
+      decisionContext: { options: ["A", "B", "C"] },
+    });
+    expect(r.ok).toBe(false);
+  });
 });
 
 describe("parseBody ttsBodySchema", () => {
@@ -128,8 +151,8 @@ describe("normalizeDebate", () => {
       ],
     }), ids);
     expect(d.votes).toEqual([
-      { p: "founder", v: "yes", r: "a" },
-      { p: "artist", v: "depends", r: "b" },
+      { p: "founder", v: "yes", r: "a", condition: null },
+      { p: "artist", v: "depends", r: "b", condition: "b" },
     ]);
   });
 
@@ -177,6 +200,114 @@ describe("normalizeDebate", () => {
 
   it("accepts an array for allowedIds too", () => {
     expect(normalizeDebate(validRaw(), ALL_IDS)).not.toBeNull();
+  });
+});
+
+describe("normalizeDebate — V1/V2 response contract compatibility", () => {
+  const ids = new Set(ALL_IDS);
+
+  function v2Raw(overrides = {}) {
+    return validRaw({
+      verdict: undefined,
+      synthesis: {
+        verdict: "Lean toward the leap, but only once the runway question is answered.",
+        assumptions: ["the offer is genuine", "the seeker can negotiate"],
+        unknowns: ["exact equity", "burn rate"],
+        dissent: "Founder wants speed; Billionaire wants a cushion first.",
+        confidence: "medium",
+      },
+      protocol: {
+        next48Hours: "Ask for a 3-month cash-flow forecast.",
+        experiment: "Freelance for two weeks to test extra income.",
+        checkpoint: "When the forecast arrives, in ten days.",
+        stopCondition: "If runway is under six months.",
+      },
+      votes: [
+        { p: "founder", v: "yes", r: "Momentum matters.", condition: null },
+        { p: "monk", v: "depends", r: "Depends on your peace.", condition: "if it costs your peace" },
+      ],
+      ...overrides,
+    });
+  }
+
+  it("a V1 stored result (no synthesis/protocol) still renders with a plain verdict", () => {
+    const d = normalizeDebate(validRaw(), ids);
+    expect(d).not.toBeNull();
+    expect(d.verdict).toBe("You lean yes, but sit with the cost first.");
+    expect(d.synthesis).toBeUndefined();
+    expect(d.protocol).toBeUndefined();
+  });
+
+  it("a V2 result flattens synthesis.verdict onto the top-level verdict field", () => {
+    const d = normalizeDebate(v2Raw(), ids);
+    expect(d).not.toBeNull();
+    expect(d.verdict).toBe("Lean toward the leap, but only once the runway question is answered.");
+    expect(d.synthesis.confidence).toBe("medium");
+    expect(d.synthesis.assumptions).toEqual(["the offer is genuine", "the seeker can negotiate"]);
+    expect(d.protocol).toEqual({
+      next48Hours: "Ask for a 3-month cash-flow forecast.",
+      experiment: "Freelance for two weeks to test extra income.",
+      checkpoint: "When the forecast arrives, in ten days.",
+      stopCondition: "If runway is under six months.",
+    });
+  });
+
+  it("every depends vote gets a nonempty condition even if the model omitted it", () => {
+    const d = normalizeDebate(v2Raw({
+      votes: [
+        { p: "founder", v: "yes", r: "Momentum matters." },
+        { p: "monk", v: "depends", r: "Depends on your peace." }, // no condition field at all
+      ],
+    }), ids);
+    const dependsVote = d.votes.find(v => v.v === "depends");
+    expect(dependsVote.condition).toBeTruthy();
+    expect(typeof dependsVote.condition).toBe("string");
+  });
+
+  it("non-depends votes always have a null condition, never an invented one", () => {
+    const d = normalizeDebate(v2Raw({
+      votes: [
+        { p: "founder", v: "yes", r: "Momentum matters.", condition: "this should be ignored" },
+      ],
+    }), ids);
+    expect(d.votes[0].condition).toBeNull();
+  });
+
+  it("a malformed synthesis (wrong types, bad confidence enum) is repaired deterministically, not rejected", () => {
+    const d = normalizeDebate(v2Raw({
+      synthesis: {
+        verdict: "Lean yes, carefully.",
+        assumptions: "not an array",
+        unknowns: null,
+        dissent: 42,
+        confidence: "extremely-sure",
+      },
+    }), ids);
+    expect(d).not.toBeNull();
+    expect(d.synthesis.assumptions).toEqual([]);
+    expect(d.synthesis.unknowns).toEqual([]);
+    expect(d.synthesis.dissent).toBeNull();
+    expect(d.synthesis.confidence).toBe("medium"); // safe default, not the invalid enum value
+  });
+
+  it("a partially-filled protocol is dropped entirely rather than shown half-empty", () => {
+    const d = normalizeDebate(v2Raw({
+      protocol: { next48Hours: "Ask for numbers.", experiment: "", checkpoint: "Soon.", stopCondition: "" },
+    }), ids);
+    expect(d).not.toBeNull();
+    expect(d.protocol).toBeUndefined();
+  });
+
+  it("an empty synthesis object with no verdict anywhere fails safely (returns null)", () => {
+    expect(normalizeDebate(v2Raw({ synthesis: {}, verdict: undefined }), ids)).toBeNull();
+  });
+
+  it("falls back to a legacy top-level verdict if synthesis.verdict is somehow empty", () => {
+    const d = normalizeDebate(v2Raw({
+      synthesis: { ...v2Raw().synthesis, verdict: "" },
+      verdict: "Legacy fallback verdict.",
+    }), ids);
+    expect(d.verdict).toBe("Legacy fallback verdict.");
   });
 });
 

@@ -13,12 +13,27 @@ export function councilHeadline(debate, language = "en") {
   const total = debate.votes.length;
   if (yes === total) return t(language, "every_agreed_go");
   if (no === total) return t(language, "every_agreed_dont");
-  const outlier = debate.votes.length - Math.max(yes, no) === 1
+  const outlier = total - Math.max(yes, no) === 1
     ? debate.votes.find(v => (yes > no ? v.v !== "yes" : v.v !== "no"))
     : null;
   if (outlier) return t(language, "only_x_disagreed", personaName(language, outlier.p));
-  if (Math.abs(yes - no) <= 1 && dep >= 2) return t(language, "could_not_agree");
-  return yes > no ? t(language, "leans_yes", yes, no) : no > yes ? t(language, "leans_no", no, yes) : t(language, "split_middle");
+
+  // No depends votes in play: a clean two-way score is accurate on its own.
+  if (dep === 0) {
+    if (Math.abs(yes - no) <= 1) return t(language, "split_middle");
+    return yes > no ? t(language, "leans_yes", yes, no) : t(language, "leans_no", no, yes);
+  }
+
+  // Depends votes are numerically significant here (e.g. 4 yes / 3 depends /
+  // 2 no) — a two-number "leans yes, 4–2" score is mathematically incomplete
+  // and erases a third of the room. Always name all three counts and call the
+  // result divided rather than a decisive win.
+  if (yes === no) return t(language, "divided_tied", yes, no, dep);
+  const top = Math.max(yes, no, dep);
+  if (top === dep) return t(language, "divided_depends_lead", dep, yes, no);
+  return yes > no
+    ? t(language, "divided_leans_yes", yes, dep, no)
+    : t(language, "divided_leans_no", no, dep, yes);
 }
 
 export function siteUrl(origin) {
@@ -39,7 +54,13 @@ export async function copyLink(url) {
   return false;
 }
 
-export function shareText(question, debate, { max, language = "en" } = {}) {
+// redact: true swaps the seeker's verbatim question and personalized verdict
+// for a generic placeholder, keeping only the headline + tally — the part
+// that's genuinely shareable without exposing what was actually asked. This
+// only changes the text/card being generated here; it does NOT change what
+// the linked /r/:id page itself shows (see the share preview UI in
+// components.jsx, which is explicit about that distinction).
+export function shareText(question, debate, { max, language = "en", redact = false } = {}) {
   const { yes, no, dep } = tally(debate);
   const headline = councilHeadline(debate, language);
   const lYes = t(language, "share_yes");
@@ -47,11 +68,15 @@ export function shareText(question, debate, { max, language = "en" } = {}) {
   const lDep = t(language, "share_depends");
   const tagline = t(language, "share_tagline");
   const tallyLine = `${lYes} ${yes} · ${lNo} ${no} · ${lDep} ${dep}`;
+  const displayQuestion = redact ? t(language, "share_redacted_question") : question;
+  if (redact) {
+    return `⚖️ ${headline.toUpperCase()}\n\n"${displayQuestion}"\n\n${tallyLine}\n\n${tagline}`;
+  }
   // quote appears before tally so the punchy line grabs attention first
   const quoteLine = debate.quote ? `\n\n"${debate.quote}"` : "";
-  const full = `⚖️ ${headline.toUpperCase()}\n\n"${question}"${quoteLine}\n\n${tallyLine}\n\n${debate.verdict}\n\n${tagline}`;
+  const full = `⚖️ ${headline.toUpperCase()}\n\n"${displayQuestion}"${quoteLine}\n\n${tallyLine}\n\n${debate.verdict}\n\n${tagline}`;
   if (!max || full.length <= max) return full;
-  const shortPrefix = `⚖️ ${t(language, "share_ruled")}\n\n"${question}"\n\n${tallyLine}\n\n`;
+  const shortPrefix = `⚖️ ${t(language, "share_ruled")}\n\n"${displayQuestion}"\n\n${tallyLine}\n\n`;
   const room = max - shortPrefix.length;
   const shortVerdict = debate.verdict.length > room ? debate.verdict.slice(0, Math.max(room, 0)) + "…" : debate.verdict;
   return `${shortPrefix}${shortVerdict}`;
@@ -65,7 +90,8 @@ export const CARD_FORMATS = {
   landscape: { width: 1200, height: 630, label: "Landscape" },
 };
 
-export function downloadShareCard(question, debate, language = "en", format = "square") {
+export function downloadShareCard(question, debate, language = "en", format = "square", redact = false) {
+  const displayQuestion = redact ? t(language, "share_redacted_question") : question;
   const dims = CARD_FORMATS[format] || CARD_FORMATS.square;
   const W = dims.width, H = dims.height;
   const c = document.createElement("canvas");
@@ -113,7 +139,7 @@ export function downloadShareCard(question, debate, language = "en", format = "s
 
   y += 40;
   const qFont = "italic 300 46px 'Cormorant Garamond', Georgia, serif";
-  wrap(`"${question}"`, qFont, 860).forEach(l => { x.font = qFont; x.fillText(l, W / 2, y); y += 60; });
+  wrap(`"${displayQuestion}"`, qFont, 860).forEach(l => { x.font = qFont; x.fillText(l, W / 2, y); y += 60; });
 
   const { yes, no, dep } = tally(debate);
   y += 40;
@@ -123,8 +149,11 @@ export function downloadShareCard(question, debate, language = "en", format = "s
   y += 70;
   x.strokeStyle = "rgba(201,169,110,.4)"; x.beginPath(); x.moveTo(W / 2 - 60, y); x.lineTo(W / 2 + 60, y); x.stroke();
 
-  // Verdict or quote — prefer quote for visual punch
-  if (debate.quote) {
+  // Verdict or quote — prefer quote for visual punch. Redacted cards skip
+  // both: they're personalized text derived from the seeker's own words.
+  if (redact) {
+    // no-op — headline + tally already convey the shareable part
+  } else if (debate.quote) {
     y += 70;
     x.fillStyle = "rgba(201,169,110,.9)";
     const qqFont = "italic 400 36px 'Cormorant Garamond', Georgia, serif";

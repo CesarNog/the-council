@@ -561,8 +561,15 @@ function TheCouncilApp({ clerkSignOut }) {
       setDisplayName(p.displayName);
       try { localStorage.setItem("council:displayName", p.displayName); } catch {}
     }
-    if (p.emotionalWeight || p.decisionCategory || p.mainFear) {
-      setDecisionContext({ emotionalWeight: p.emotionalWeight, decisionCategory: p.decisionCategory, mainFear: p.mainFear });
+    const hasDeepContext = p.options?.length || p.constraints || p.deadline || p.reversible || p.costOfWaiting || p.successPicture || p.known || p.unknown;
+    if (p.emotionalWeight || p.decisionCategory || p.mainFear || hasDeepContext) {
+      setDecisionContext({
+        emotionalWeight: p.emotionalWeight, decisionCategory: p.decisionCategory, mainFear: p.mainFear,
+        ...(hasDeepContext ? {
+          options: p.options, constraints: p.constraints, deadline: p.deadline, reversible: p.reversible,
+          costOfWaiting: p.costOfWaiting, successPicture: p.successPicture, known: p.known, unknown: p.unknown,
+        } : {}),
+      });
     }
     if (p.question) {
       setQuickQuestion(p.question);

@@ -13,6 +13,15 @@ const decisionContextSchema = z.object({
   decisionCategory: z.string().max(60).optional().default(""),
   emotionalWeight: z.string().max(60).optional().default(""),
   mainFear: z.string().max(200).optional().default(""),
+  // Deep Council (optional structured intake) — all omitted on the Quick path
+  options: z.array(z.string().max(80)).max(2).optional().default([]),
+  constraints: z.string().max(200).optional().default(""),
+  deadline: z.string().max(30).optional().default(""),
+  reversible: z.string().max(30).optional().default(""),
+  costOfWaiting: z.string().max(30).optional().default(""),
+  successPicture: z.string().max(300).optional().default(""),
+  known: z.string().max(300).optional().default(""),
+  unknown: z.string().max(300).optional().default(""),
 }).optional();
 
 export const councilBodySchema = z.object({
@@ -66,6 +75,44 @@ export function sanitizeSeekerText(s) {
 
 const DEBATE_MOODS = ["tense", "warm", "hopeful", "somber", "electric"];
 const VOTE_VALUES = ["yes", "no", "depends"];
+const CONFIDENCE_LEVELS = ["low", "medium", "high"];
+
+// AI Response Contract V2 adds votes[].condition, synthesis{}, and protocol{}
+// on top of the V1 shape (which had a single top-level `verdict` string and no
+// condition field). Stored/shared V1 results are re-served verbatim from KV
+// (see api/result.js) and never re-enter this function, so no migration step
+// is needed there — this adapter only has to accept EITHER shape from a fresh
+// model response and always normalize to the same superset: `verdict` stays a
+// top-level string either way (so every existing consumer that reads
+// debate.verdict keeps working unchanged), and `synthesis`/`protocol` are only
+// present when the source data actually had them.
+function normalizeSynthesis(raw, verdictFallback) {
+  const str = (v) => (typeof v === "string" ? v.trim() : "");
+  const strList = (v, max) => (Array.isArray(v) ? v.map(str).filter(Boolean).slice(0, max) : []);
+  if (!raw || typeof raw !== "object") return null;
+  const verdict = str(raw.verdict) || verdictFallback;
+  if (!verdict) return null;
+  return {
+    verdict,
+    assumptions: strList(raw.assumptions, 3),
+    unknowns: strList(raw.unknowns, 3),
+    dissent: str(raw.dissent) || null,
+    confidence: CONFIDENCE_LEVELS.includes(raw.confidence) ? raw.confidence : "medium",
+  };
+}
+
+function normalizeProtocol(raw) {
+  const str = (v) => (typeof v === "string" ? v.trim() : "");
+  if (!raw || typeof raw !== "object") return null;
+  const next48Hours = str(raw.next48Hours);
+  const experiment = str(raw.experiment);
+  const checkpoint = str(raw.checkpoint);
+  const stopCondition = str(raw.stopCondition);
+  // partial protocol is worse than none — a half-filled "next steps" panel
+  // reads as broken UI, so require all four fields or omit the block entirely
+  if (!next48Hours || !experiment || !checkpoint || !stopCondition) return null;
+  return { next48Hours, experiment, checkpoint, stopCondition };
+}
 
 // Validate and gracefully repair a raw model debate before it is persisted or
 // rendered. gpt-oss-120b at reasoning_effort:low is non-deterministic and
@@ -88,13 +135,25 @@ export function normalizeDebate(raw, allowedIds) {
   const votes = Array.isArray(raw.votes)
     ? raw.votes
         .filter(v => v && isId(v.p) && VOTE_VALUES.includes(v.v) && !seen.has(v.p) && (seen.add(v.p), true))
-        .map(v => ({ p: v.p, v: v.v, r: str(v.r) }))
+        .map(v => {
+          const r = str(v.r);
+          // a "depends" vote without a named condition is not actionable —
+          // repair with the vote's own reason rather than drop the vote
+          const condition = v.v === "depends" ? (str(v.condition) || r || "needs more context") : null;
+          return { p: v.p, v: v.v, r, condition };
+        })
     : [];
 
-  const verdict = str(raw.verdict);
+  // V2: model returns synthesis.verdict. V1 (and any legacy stored shape):
+  // top-level verdict string. Either way this normalizes to the same
+  // top-level `verdict` field so downstream consumers never have to branch.
+  const synthesis = normalizeSynthesis(raw.synthesis, str(raw.verdict));
+  const verdict = synthesis?.verdict || str(raw.verdict);
 
   // minimum viable debate: it has to read as a debate with a conclusion
   if (turns.length < 2 || votes.length < 1 || !verdict) return null;
+
+  const protocol = normalizeProtocol(raw.protocol);
 
   const realities = Array.isArray(raw.realities)
     ? raw.realities.filter(r => r && str(r.label) && str(r.line)).slice(0, 3)
@@ -110,6 +169,8 @@ export function normalizeDebate(raw, allowedIds) {
     turns,
     votes,
     verdict,
+    ...(synthesis ? { synthesis } : {}),
+    ...(protocol ? { protocol } : {}),
     // quote must be a real line the reader can screenshot — fall back to the
     // longest turn rather than shipping an empty or fabricated one
     quote: str(raw.quote) || turns.reduce((a, b) => (b.t.length > a.length ? b.t : a), ""),

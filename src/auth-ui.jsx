@@ -7,6 +7,16 @@ import { joinWaitlist } from "./lib/waitlist.js";
 
 export function GoogleSignIn({ onCredential }) {
   const ref = useRef(null);
+  // onCredential is typically a fresh function identity on every render of the
+  // caller (it's not memoized there, and doesn't need to be just for this).
+  // Reading it through a ref — rather than putting it in the effect's deps —
+  // means google.accounts.id.initialize() runs exactly once per mount instead
+  // of once per render, which is what was actually causing GSI's "initialize()
+  // called more than once" console warning in production (StrictMode's dev-only
+  // double-invoke was a red herring; this fired with a stable component tree,
+  // no double-mount, just repeated App re-renders).
+  const onCredentialRef = useRef(onCredential);
+  onCredentialRef.current = onCredential;
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -14,7 +24,7 @@ export function GoogleSignIn({ onCredential }) {
     const init = () => {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: (resp) => onCredential(resp.credential),
+        callback: (resp) => onCredentialRef.current(resp.credential),
       });
       window.google.accounts.id.renderButton(ref.current, {
         theme: "filled_black", size: "large", shape: "pill", text: "continue_with",
@@ -37,7 +47,7 @@ export function GoogleSignIn({ onCredential }) {
     script.async = true;
     script.onload = () => { script.dataset.gsiReady = "1"; init(); };
     document.head.appendChild(script);
-  }, [onCredential]);
+  }, []);
 
   if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) return null;
   return <div ref={ref} />;

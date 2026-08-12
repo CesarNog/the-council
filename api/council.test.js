@@ -334,3 +334,76 @@ describe("buildPrompt injection fencing", () => {
     expect(p).toContain("uncomfortably specific about the seeker");
   });
 });
+
+describe("buildPrompt grounding contract (AI Response Contract V2)", () => {
+  const p = buildPrompt("Should I take the job?", { name: "Alex" }, "en", [], {}, null);
+
+  it("forbids inventing facts, statistics, or private information about the seeker", () => {
+    expect(p).toMatch(/no persona may invent facts/i);
+    expect(p).toMatch(/statistics|studies|finances/i);
+  });
+
+  it("requires the scientist to only cite numbers the seeker actually supplied", () => {
+    expect(p).toMatch(/only cites? a specific number, rate, or study if the seeker supplied it/i);
+    expect(p).not.toMatch(/cites rates\/probabilities like a study/i);
+  });
+
+  it("requires strong inferences to read as inferences, never asserted as fact", () => {
+    expect(p).toMatch(/must read as an inference/i);
+  });
+
+  it("requests the V2 JSON shape: votes[].condition, synthesis, and protocol", () => {
+    expect(p).toContain('"condition":null');
+    expect(p).toContain('"synthesis":{');
+    expect(p).toContain('"protocol":{');
+    expect(p).toContain('"assumptions"');
+    expect(p).toContain('"unknowns"');
+    expect(p).toContain('"confidence"');
+    expect(p).toContain('"next48Hours"');
+    expect(p).toContain('"stopCondition"');
+  });
+
+  it("instructs a nonempty condition for depends votes and null otherwise", () => {
+    expect(p).toMatch(/if v is "depends", the exact thing/i);
+    expect(p).toMatch(/condition is null/i);
+  });
+
+  it("instructs the synthesis to never claim the Council decided for the seeker", () => {
+    expect(p).toMatch(/never claims to have decided for the seeker/i);
+  });
+});
+
+describe("buildPrompt Deep Council optional context", () => {
+  it("includes Deep Council fields in the seeker block when the seeker opted in", () => {
+    const p = buildPrompt("Should I move?", { name: "Alex" }, "en", [], {
+      options: ["Stay in Chicago", "Move to Lisbon"],
+      constraints: "Can't relocate before my lease ends",
+      deadline: "this_month",
+      reversible: "hard",
+      costOfWaiting: "medium",
+      successPicture: "I'm settled and fluent in Portuguese",
+      known: "The cost of living is lower there",
+      unknown: "Whether I can find remote work",
+    }, null);
+    expect(p).toContain("Options on the table: Stay in Chicago vs. Move to Lisbon");
+    expect(p).toContain("Hard constraints / non-negotiables: Can't relocate before my lease ends");
+    expect(p).toContain("Decision deadline: this_month");
+    expect(p).toContain("Reversibility of this decision: hard");
+    expect(p).toContain("Cost of waiting to decide: medium");
+    expect(p).toContain("What success looks like a year from now, in their words: I'm settled and fluent in Portuguese");
+    expect(p).toContain("What they already know for certain: The cost of living is lower there");
+    expect(p).toContain("What's still unknown to them: Whether I can find remote work");
+  });
+
+  it("omits every Deep Council line entirely on the Quick Council path", () => {
+    const p = buildPrompt("Should I move?", { name: "Alex" }, "en", [], {}, null);
+    expect(p).not.toContain("Options on the table");
+    expect(p).not.toContain("Hard constraints");
+    expect(p).not.toContain("Decision deadline");
+    expect(p).not.toContain("Reversibility of this decision");
+    expect(p).not.toContain("Cost of waiting");
+    expect(p).not.toContain("What success looks like");
+    expect(p).not.toContain("already know for certain");
+    expect(p).not.toContain("still unknown to them");
+  });
+});
