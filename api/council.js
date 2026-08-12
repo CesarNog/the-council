@@ -102,7 +102,11 @@ export default async function handler(req, res) {
   const parsed = parseBody(councilBodySchema, req.body);
   if (!parsed.ok) return badRequest(res, parsed.detail);
 
-  const { question: q, profile = {}, language, decisionContext: rawCtx = {} } = parsed.data;
+  const { question: q, profile = {}, language } = parsed.data;
+  // Destructuring defaults only fire for `undefined`, not `null` — and
+  // decisionContext arrives as `null` for any seeker who hasn't gone
+  // through onboarding yet, so `?? {}` here (not a default param) is load-bearing.
+  const rawCtx = parsed.data.decisionContext ?? {};
   const decisionContext = {
     decisionCategory: rawCtx.decisionCategory || "",
     emotionalWeight: rawCtx.emotionalWeight || "",

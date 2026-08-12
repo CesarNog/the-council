@@ -22,7 +22,13 @@ const decisionContextSchema = z.object({
   successPicture: z.string().max(300).optional().default(""),
   known: z.string().max(300).optional().default(""),
   unknown: z.string().max(300).optional().default(""),
-}).optional();
+})
+  // nullish, not optional: the frontend's decisionContext state starts as
+  // `null` (before onboarding sets it) and is sent as literal JSON `null`,
+  // which .optional() alone rejects with invalid_type — every debate
+  // request from a user who hadn't filled in onboarding context failed
+  // with 400.
+  .nullish();
 
 export const councilBodySchema = z.object({
   question: z.string().trim().min(1).max(500),

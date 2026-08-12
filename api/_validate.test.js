@@ -76,6 +76,17 @@ describe("parseBody councilBodySchema", () => {
     });
     expect(r.ok).toBe(false);
   });
+
+  // Regression: the frontend's decisionContext state starts as `null` before
+  // onboarding sets it, and JSON.stringify sends that as a literal `null`,
+  // not an omitted key. A plain .optional() schema rejects null with
+  // invalid_type, which made every debate request 400 for any seeker who
+  // hadn't been through onboarding yet (reported live in production).
+  it("accepts a literal null decisionContext (pre-onboarding state)", () => {
+    const r = parseBody(councilBodySchema, { question: "Should I move?", decisionContext: null });
+    expect(r.ok).toBe(true);
+    expect(r.data.decisionContext).toBeNull();
+  });
 });
 
 describe("parseBody ttsBodySchema", () => {

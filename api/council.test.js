@@ -116,6 +116,14 @@ describe("POST /api/council — success path", () => {
     expect(payload.verdict).toBe("Go for it.");
   });
 
+  it("returns 200 (not 400/500) when decisionContext is a literal null (regression: pre-onboarding state broke every request)", async () => {
+    callGroq.mockResolvedValue(fullDebate());
+    const res = mockRes();
+    await handler(mockReq({ body: { question: "Should I move to another city?", decisionContext: null } }), res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(callGroq).toHaveBeenCalled();
+  });
+
   it("persists to KV under asked — the debate's own `question` field never overwrites the real asked question (regression: CLAUDE.md's documented spread-order bug)", async () => {
     callGroq.mockResolvedValue(fullDebate({ question: "A completely different probing question" }));
     const res = mockRes();
