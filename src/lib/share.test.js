@@ -27,16 +27,45 @@ describe("councilHeadline", () => {
     expect(councilHeadline(d)).toBe("Only The Shadow disagreed.");
   });
 
-  it("empate com depends", () => {
+  it("empate 4-4 sem depends continua split_middle", () => {
     const d = mk([["founder", "yes"], ["billionaire", "yes"], ["artist", "yes"], ["athlete", "yes"],
-                  ["monk", "no"], ["scientist", "no"], ["explorer", "no"], ["romantic", "no"], ["shadow", "depends"]]);
+                  ["monk", "no"], ["scientist", "no"], ["explorer", "no"], ["romantic", "no"]]);
     expect(councilHeadline(d)).toBe("The Council is split down the middle.");
   });
 
-  it("lean normal", () => {
+  it("empate 4-4 com 1 depends nomeia as tres contagens em vez de esconder o depends", () => {
+    const d = mk([["founder", "yes"], ["billionaire", "yes"], ["artist", "yes"], ["athlete", "yes"],
+                  ["monk", "no"], ["scientist", "no"], ["explorer", "no"], ["romantic", "no"], ["shadow", "depends"]]);
+    expect(councilHeadline(d)).toBe("The Council is divided — 4 yes, 4 no, 1 depends.");
+  });
+
+  it("lean normal (sem depends)", () => {
     const d = mk([["founder", "yes"], ["billionaire", "yes"], ["artist", "yes"], ["athlete", "yes"],
                   ["monk", "yes"], ["scientist", "yes"], ["explorer", "no"], ["romantic", "no"], ["shadow", "no"]]);
     expect(councilHeadline(d)).toBe("The Council leans yes, 6–3.");
+  });
+
+  it("4 yes / 3 depends / 2 no nunca vira um placar de dois numeros (bug reportado)", () => {
+    const d = mk([["founder", "yes"], ["billionaire", "yes"], ["artist", "yes"], ["athlete", "yes"],
+                  ["monk", "depends"], ["scientist", "depends"], ["explorer", "depends"],
+                  ["romantic", "no"], ["shadow", "no"]]);
+    const headline = councilHeadline(d);
+    expect(headline).toBe("The Council is divided. Yes leans ahead — 4 yes, 3 depends, 2 no.");
+    expect(headline).not.toMatch(/4[–-]2/);
+    expect(headline).toContain("divided");
+  });
+
+  it("no leans ahead com depends significativo", () => {
+    const d = mk([["founder", "no"], ["billionaire", "no"], ["artist", "no"], ["athlete", "no"],
+                  ["monk", "depends"], ["scientist", "depends"], ["explorer", "depends"],
+                  ["romantic", "yes"], ["shadow", "yes"]]);
+    expect(councilHeadline(d)).toBe("The Council is divided. No leans ahead — 4 no, 3 depends, 2 yes.");
+  });
+
+  it("depends e a resposta mais comum", () => {
+    const d = mk([["founder", "depends"], ["billionaire", "depends"], ["artist", "depends"], ["athlete", "depends"],
+                  ["monk", "yes"], ["scientist", "yes"], ["explorer", "no"], ["romantic", "no"], ["shadow", "no"]]);
+    expect(councilHeadline(d)).toBe("The Council is divided. Most say it depends — 4 depends, 2 yes, 3 no.");
   });
 });
 
@@ -99,6 +128,22 @@ describe("shareText", () => {
   it("formato curto traduzido em portugues", () => {
     const text = shareText("Devo me mudar?", debate, { max: 50, language: "pt" });
     expect(text).toContain("O CONSELHO DECIDIU");
+  });
+
+  it("redact: true excludes the original private question, verdict, and quote", () => {
+    const text = shareText("Should I leave my husband?", debate, { redact: true });
+    expect(text).not.toContain("Should I leave my husband?");
+    expect(text).not.toContain("Verdict text.");
+    expect(text).not.toContain("A quotable line.");
+    expect(text).toContain("A personal decision");
+    // the shareable part — headline + tally — is still present
+    expect(text).toContain("YES 1");
+  });
+
+  it("redact: true is respected even when a max length is also passed", () => {
+    const text = shareText("Should I leave my husband?", debate, { redact: true, max: 260 });
+    expect(text).not.toContain("Should I leave my husband?");
+    expect(text).toContain("A personal decision");
   });
 });
 

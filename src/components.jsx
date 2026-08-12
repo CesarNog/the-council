@@ -4,7 +4,7 @@ import { Sigil } from "./lib/sigil.jsx";
 import { CouncilLogo } from "./components/CouncilLogo.jsx";
 import { tally, councilHeadline, shareText, downloadShareCard, downloadDebateJson, shareUrl, copyLink } from "./lib/share.js";
 import { summonCouncil } from "./lib/api.js";
-import { saveToHistory, isPremiumUser } from "./lib/history.js";
+import { saveToHistory, isPremiumUser, loadHistory } from "./lib/history.js";
 import { t, TTS_LANG, QUICK_QUESTIONS_I18N, personaName, personaTag, personaShortName } from "./lib/i18n.js";
 import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
@@ -18,6 +18,14 @@ const scrollBehavior = () =>
   (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
     ? "auto"
     : "smooth";
+
+// CSS's prefers-reduced-motion media query only shortens transition/animation
+// durations — it has no effect on the JS setTimeout chain that stages each
+// turn/vote's *appearance* during the reveal, so a reduced-motion user still
+// sat through the full ~40s ceremony before this existed. Checked live (not
+// cached) since the OS setting can change between renders.
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export { CouncilLogo } from "./components/CouncilLogo.jsx";
 export { Sigil } from "./lib/sigil.jsx";
@@ -77,6 +85,16 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
   const [decisionCategory, setDecisionCategory] = useState("");
   // step 4: main fear
   const [mainFear, setMainFear] = useState("");
+  // step 5+: Deep Council (optional) — steps 5=choice, 6/7/8=deep screens
+  const [optionA, setOptionA] = useState("");
+  const [optionB, setOptionB] = useState("");
+  const [constraints, setConstraints] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [reversible, setReversible] = useState("");
+  const [costOfWaiting, setCostOfWaiting] = useState("");
+  const [successPicture, setSuccessPicture] = useState("");
+  const [known, setKnown] = useState("");
+  const [unknown, setUnknown] = useState("");
 
   const totalSteps = 5;
   const goBack = () => setStep(s => Math.max(0, s - 1));
@@ -91,6 +109,20 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
       emotionalWeight,
       decisionCategory,
       mainFear,
+      // Deep Council fields are omitted entirely (not sent as empty strings)
+      // when the seeker took the Quick Council path (step 5, the choice
+      // screen itself, still counts as Quick) — App.jsx only builds a deep
+      // decisionContext when at least one of these is present.
+      ...(step > 5 ? {
+        options: [optionA.trim(), optionB.trim()].filter(Boolean),
+        constraints: constraints.trim(),
+        deadline,
+        reversible,
+        costOfWaiting,
+        successPicture: successPicture.trim(),
+        known: known.trim(),
+        unknown: unknown.trim(),
+      } : {}),
     });
   };
 
@@ -214,7 +246,92 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
             ))}
           </div>
           <div style={{ marginTop: 44 }}>
-            <button className="btn primary" onClick={finish} disabled={!mainFear}>{t(language, "convene")}</button>
+            <button className="btn primary" onClick={() => setStep(5)} disabled={!mainFear}>{t(language, "continue")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Quick vs Deep Council */}
+      {step === 5 && (
+        <div className="onb-step" key="s5">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <h2>{t(language, "onb_depth_q")}</h2>
+          <p className="hint">{t(language, "onb_depth_hint")}</p>
+          <div className="onb-depth-choice">
+            <button className="onb-depth-card" onClick={finish}>
+              <div className="onb-depth-card-title">{t(language, "onb_depth_quick")}</div>
+              <div className="onb-depth-card-sub">{t(language, "onb_depth_quick_sub")}</div>
+            </button>
+            <button className="onb-depth-card deep" onClick={() => setStep(6)}>
+              <div className="onb-depth-card-title">{t(language, "onb_depth_deep")}</div>
+              <div className="onb-depth-card-sub">{t(language, "onb_depth_deep_sub")}</div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Deep I — the choice itself */}
+      {step === 6 && (
+        <div className="onb-step" key="s6">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <div className="eyebrow">{t(language, "onb_deep_progress_1")}</div>
+          <h2>{t(language, "onb_options_q")}</h2>
+          <div className="onb-option-pair">
+            <input type="text" value={optionA} onChange={e => setOptionA(e.target.value)} placeholder={t(language, "onb_option_a_placeholder")} maxLength={80} />
+            <input type="text" value={optionB} onChange={e => setOptionB(e.target.value)} placeholder={t(language, "onb_option_b_placeholder")} maxLength={80} />
+          </div>
+          <p className="hint" style={{ marginTop: 28 }}>{t(language, "onb_constraints_q")}</p>
+          <textarea rows={2} value={constraints} onChange={e => setConstraints(e.target.value)} placeholder={t(language, "onb_constraints_placeholder")} maxLength={200} />
+          <div style={{ marginTop: 44, display: "flex", gap: 14, alignItems: "center" }}>
+            <button className="btn primary" onClick={() => setStep(7)}>{t(language, "continue")}</button>
+            <button className="onb-skip-link" onClick={finish}>{t(language, "onb_skip_to_quick")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 7: Deep II — deadline, reversibility, cost of waiting */}
+      {step === 7 && (
+        <div className="onb-step" key="s7">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <div className="eyebrow">{t(language, "onb_deep_progress_2")}</div>
+          <h2>{t(language, "onb_deadline_q")}</h2>
+          <div className="onb-option-row">
+            {[["this_week", "onb_deadline_week"], ["this_month", "onb_deadline_month"], ["few_months", "onb_deadline_months"], ["none", "onb_deadline_none"]].map(([val, key]) => (
+              <button key={val} className={"onb-option" + (deadline === val ? " on" : "")} onClick={() => setDeadline(val)}>{t(language, key)}</button>
+            ))}
+          </div>
+          <p className="hint" style={{ marginTop: 28 }}>{t(language, "onb_reversible_q")}</p>
+          <div className="onb-option-row">
+            {[["easy", "onb_reversible_easy"], ["hard", "onb_reversible_hard"], ["permanent", "onb_reversible_permanent"]].map(([val, key]) => (
+              <button key={val} className={"onb-option" + (reversible === val ? " on" : "")} onClick={() => setReversible(val)}>{t(language, key)}</button>
+            ))}
+          </div>
+          <p className="hint" style={{ marginTop: 28 }}>{t(language, "onb_cost_waiting_q")}</p>
+          <div className="onb-option-row">
+            {[["low", "onb_cost_low"], ["medium", "onb_cost_medium"], ["high", "onb_cost_high"]].map(([val, key]) => (
+              <button key={val} className={"onb-option" + (costOfWaiting === val ? " on" : "")} onClick={() => setCostOfWaiting(val)}>{t(language, key)}</button>
+            ))}
+          </div>
+          <div style={{ marginTop: 44, display: "flex", gap: 14, alignItems: "center" }}>
+            <button className="btn primary" onClick={() => setStep(8)}>{t(language, "continue")}</button>
+            <button className="onb-skip-link" onClick={finish}>{t(language, "onb_skip_to_quick")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 8: Deep III — success picture, known, unknown */}
+      {step === 8 && (
+        <div className="onb-step" key="s8">
+          <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
+          <div className="eyebrow">{t(language, "onb_deep_progress_3")}</div>
+          <h2>{t(language, "onb_success_q")}</h2>
+          <textarea rows={2} autoFocus value={successPicture} onChange={e => setSuccessPicture(e.target.value)} placeholder={t(language, "onb_success_placeholder")} maxLength={300} />
+          <p className="hint" style={{ marginTop: 28 }}>{t(language, "onb_known_q")}</p>
+          <textarea rows={2} value={known} onChange={e => setKnown(e.target.value)} placeholder={t(language, "onb_known_placeholder")} maxLength={300} />
+          <p className="hint" style={{ marginTop: 20 }}>{t(language, "onb_unknown_q")}</p>
+          <textarea rows={2} value={unknown} onChange={e => setUnknown(e.target.value)} placeholder={t(language, "onb_unknown_placeholder")} maxLength={300} />
+          <div style={{ marginTop: 44 }}>
+            <button className="btn primary" onClick={finish}>{t(language, "onb_convene_deep")}</button>
           </div>
         </div>
       )}
@@ -303,6 +420,24 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [cardSaved, setCardSaved] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [jsonSaved, setJsonSaved] = useState(false);
+  // Public-share preview/confirm gate — every action that exposes the /r/:id
+  // link (native share, copy link, WhatsApp/X/LinkedIn/Facebook) routes
+  // through this instead of firing immediately. sharePreview holds the
+  // pending action; redactShare is remembered across opens in one session
+  // since a seeker who opts into it once likely wants it for the rest.
+  const [sharePreview, setSharePreview] = useState(null); // null | { run: () => void }
+  const [redactShare, setRedactShare] = useState(false);
+  // A returning visitor already knows the ceremony — halve the pacing from
+  // their very first debate of this visit. Read once at mount: history is
+  // only written on a *completed* debate, so this can't flip mid-reveal.
+  const [fastPace] = useState(() => loadHistory().length > 0);
+  const reducedMotion = prefersReducedMotion();
+  const revealAll = () => {
+    if (!debate) return;
+    setShown(debate.turns.length);
+    setVotesShown(debate.votes.length);
+    setPhase("verdict");
+  };
 
   // visita via /r/:id — pula convene(), entra direto no reveal com o debate ja gerado
   useEffect(() => {
@@ -374,19 +509,22 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     });
   }, [debate, language]);
 
-  // sequential turn reveal
+  // sequential turn reveal — reducedMotion collapses every staged wait to a
+  // near-zero flat delay (the ceremony still renders as a sequence, just not
+  // a ~40s one); fastPace (returning visitor) halves the normal pacing.
   useEffect(() => {
     if (phase !== "debate" || !debate) return;
     if (shown >= debate.turns.length) {
-      const t = setTimeout(() => setPhase("reflecting"), 500);
+      const t = setTimeout(() => setPhase("reflecting"), reducedMotion ? 30 : 500);
       return () => clearTimeout(t);
     }
     const turn = debate.turns[shown];
     const paceMult = PACE[turn.p] || 1;
-    const delay = shown === 0 ? 700 : Math.min((1000 + turn.t.length * 16) * paceMult, 3400);
+    const base = shown === 0 ? 700 : Math.min((1000 + turn.t.length * 16) * paceMult, 3400);
+    const delay = reducedMotion ? 30 : fastPace ? base * 0.5 : base;
     const t = setTimeout(() => setShown(s => s + 1), delay);
     return () => clearTimeout(t);
-  }, [phase, shown, debate]);
+  }, [phase, shown, debate, reducedMotion, fastPace]);
 
   // move focus to the debate once the first turn arrives — screen reader users
   // otherwise stay parked on the submit button through the whole reveal
@@ -401,21 +539,21 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   // reflection beat — silêncio com peso antes do voto
   useEffect(() => {
     if (phase !== "reflecting") return;
-    const t = setTimeout(() => setPhase("voting"), 2200);
+    const t = setTimeout(() => setPhase("voting"), reducedMotion ? 30 : fastPace ? 1100 : 2200);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [phase, reducedMotion, fastPace]);
 
   // sequential vote reveal
   useEffect(() => {
     if (phase !== "voting" || !debate) return;
     if (votesShown >= debate.votes.length) {
-      const t = setTimeout(() => setPhase("verdict"), 1400);
+      const t = setTimeout(() => setPhase("verdict"), reducedMotion ? 30 : fastPace ? 700 : 1400);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setVotesShown(v => v + 1), 520);
+    const t = setTimeout(() => setVotesShown(v => v + 1), reducedMotion ? 30 : fastPace ? 260 : 520);
     vibrate(12);
     return () => clearTimeout(t);
-  }, [phase, votesShown, debate]);
+  }, [phase, votesShown, debate, reducedMotion, fastPace]);
 
   // verdict: sequencia cinematografica — escurece, tally, headline+verdict, quote, resto
   const { yes, no, dep } = tally(debate || { votes: [] });
@@ -427,7 +565,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const [verdictStage, setVerdictStage] = useState(0);
   useEffect(() => {
     if (phase !== "verdict") { setVerdictStage(0); return; }
-    const delays = isEclipse ? [2600, 1800, 1400, 1200] : [50, 900, 1000, 900];
+    const base = isEclipse ? [2600, 1800, 1400, 1200] : [50, 900, 1000, 900];
+    const scale = reducedMotion ? 0.03 : fastPace ? 0.5 : 1;
+    const delays = base.map(d => Math.max(15, d * scale));
     let stage = 0;
     const timers = delays.map(() => {
       stage += 1;
@@ -438,7 +578,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       }, delays.slice(0, s).reduce((a, b) => a + b, 0));
     });
     return () => timers.forEach(clearTimeout);
-  }, [phase, isEclipse]);
+  }, [phase, isEclipse, reducedMotion, fastPace]);
 
   useEffect(() => {
     // once the verdict lands, scroll to its top instead — endRef sits at the
@@ -559,11 +699,23 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   // makes sense once there is a real, saved decision to link to
   const hasShareableLink = !!debate?.id;
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share && hasShareableLink;
-  const nativeShare = () => {
-    navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language }), url: appUrl }).catch(() => {});
+  // Every action below that would expose the public /r/:id link opens the
+  // preview/confirm modal instead of firing immediately; the modal's confirm
+  // button re-reads redactShare at click time and invokes this.
+  const requestNativeShare = () => {
+    setSharePreview({ run: (redact) => {
+      navigator.share({ title: t(language, "share_native_title"), text: shareText(asked, debate, { language, redact }), url: appUrl }).catch(() => {});
+    } });
   };
-  const handleCopyLink = () => {
-    copyLink(appUrl).then(ok => { if (ok) { setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); } });
+  const requestCopyLink = () => {
+    setSharePreview({ run: () => {
+      copyLink(appUrl).then(ok => { if (ok) { setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); } });
+    } });
+  };
+  const requestSocialShare = (buildHref) => {
+    setSharePreview({ run: (redact) => {
+      window.open(buildHref(redact), "_blank", "noopener,noreferrer");
+    } });
   };
   const handleCopyText = () => {
     navigator.clipboard?.writeText(shareText(asked, debate, { language }))
@@ -597,10 +749,10 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setTimeout(() => setEmailSent(false), 3000);
   };
   const shareLinks = hasShareableLink ? [
-    { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language }) + "\n\n" + appUrl)}` },
-    { label: "X", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language }))}&url=${encodeURIComponent(appUrl)}` },
-    { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
-    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}` },
+    { label: "WhatsApp", buildHref: (redact) => `https://wa.me/?text=${encodeURIComponent(shareText(asked, debate, { language, redact }) + "\n\n" + appUrl)}` },
+    { label: "X", buildHref: (redact) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText(asked, debate, { max: 260, language, redact }))}&url=${encodeURIComponent(appUrl)}` },
+    { label: "LinkedIn", buildHref: () => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}` },
+    { label: "Facebook", buildHref: () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}` },
   ] : [];
   const totalRevealSteps = debate ? debate.turns.length + debate.votes.length : 0;
   const doneSteps = debate ? Math.min(shown, debate.turns.length) + Math.min(votesShown, debate.votes.length) : 0;
@@ -705,6 +857,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 {decisionContext.decisionCategory && <span className="context-chip">{t(language, `onb_cat_${decisionContext.decisionCategory}`) || decisionContext.decisionCategory}</span>}
                 {decisionContext.emotionalWeight && <span className="context-chip">{t(language, `onb_weight_${decisionContext.emotionalWeight}`) || decisionContext.emotionalWeight}</span>}
                 {decisionContext.mainFear && <span className="context-chip">{t(language, `onb_fear_${decisionContext.mainFear}`) || decisionContext.mainFear}</span>}
+                {decisionContext.deadline && <span className="context-chip">{t(language, `onb_deadline_${decisionContext.deadline === "none" ? "none" : decisionContext.deadline}`)}</span>}
+                {decisionContext.reversible && <span className="context-chip">{t(language, `onb_reversible_${decisionContext.reversible}`)}</span>}
               </div>
             )}
           </div>
@@ -721,6 +875,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {debate && (phase === "debate" || phase === "reflecting" || phase === "voting" || phase === "verdict") && (
           <>
           {shown > 0 && <div className="chapter-eyebrow">{t(language, "chapter_debate")}</div>}
+          {shown > 0 && phase !== "verdict" && (
+            <div className="reveal-all-wrap">
+              <button type="button" className="reveal-all-btn" onClick={revealAll}>
+                {t(language, "reveal_all")}
+              </button>
+            </div>
+          )}
           <div className="feed" ref={feedRef} tabIndex={-1} aria-label={t(language, "chapter_debate")} aria-live="polite" aria-atomic="false">
             {debate.turns.slice(0, shown).map((turn, i) => {
               const p = byId[turn.p];
@@ -819,6 +980,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                     <div className="nm" style={{ color: p.color, "--pc": p.color }}>{personaShortName(language, p.id)}</div>
                     <div className={"vv " + cls}>{label}</div>
                     <div className="rr">{v.r}</div>
+                    {v.v === "depends" && v.condition && (
+                      <div className="vote-condition">{t(language, "vote_condition_label")}: {v.condition}</div>
+                    )}
                   </div>
                 );
               })}
@@ -894,6 +1058,61 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                 </div>
               )}
 
+              {debate.synthesis && (debate.synthesis.dissent || debate.synthesis.assumptions?.length > 0 || debate.synthesis.unknowns?.length > 0) && (
+                <div className={"synthesis-panel reveal" + (verdictStage >= 4 ? " in" : "")}>
+                  <div className="chapter-eyebrow" style={{ margin: "36px 0 20px" }}>{t(language, "chapter_synthesis")}</div>
+                  {debate.synthesis.dissent && (
+                    <div className="synthesis-row">
+                      <span className="synthesis-label">{t(language, "synthesis_dissent_label")}</span>
+                      <span>{debate.synthesis.dissent}</span>
+                    </div>
+                  )}
+                  {debate.synthesis.assumptions?.length > 0 && (
+                    <div className="synthesis-row">
+                      <span className="synthesis-label">{t(language, "synthesis_assumptions_label")}</span>
+                      <span>{debate.synthesis.assumptions.join(" · ")}</span>
+                    </div>
+                  )}
+                  {debate.synthesis.unknowns?.length > 0 && (
+                    <div className="synthesis-row">
+                      <span className="synthesis-label">{t(language, "synthesis_unknowns_label")}</span>
+                      <span>{debate.synthesis.unknowns.join(" · ")}</span>
+                    </div>
+                  )}
+                  <div className="synthesis-confidence">
+                    {t(language, "synthesis_confidence_label")}: {t(language, `confidence_${debate.synthesis.confidence}`)}
+                  </div>
+                </div>
+              )}
+
+              {debate.protocol && (
+                <div className={"protocol-panel reveal" + (verdictStage >= 4 ? " in" : "")}>
+                  <div className="chapter-eyebrow" style={{ margin: "36px 0 20px" }}>{t(language, "chapter_protocol")}</div>
+                  <div className="protocol-grid">
+                    <div className="protocol-item">
+                      <div className="protocol-num">1</div>
+                      <div className="protocol-label">{t(language, "protocol_next48_label")}</div>
+                      <div className="protocol-text">{debate.protocol.next48Hours}</div>
+                    </div>
+                    <div className="protocol-item">
+                      <div className="protocol-num">2</div>
+                      <div className="protocol-label">{t(language, "protocol_experiment_label")}</div>
+                      <div className="protocol-text">{debate.protocol.experiment}</div>
+                    </div>
+                    <div className="protocol-item">
+                      <div className="protocol-num">3</div>
+                      <div className="protocol-label">{t(language, "protocol_checkpoint_label")}</div>
+                      <div className="protocol-text">{debate.protocol.checkpoint}</div>
+                    </div>
+                    <div className="protocol-item">
+                      <div className="protocol-num">4</div>
+                      <div className="protocol-label">{t(language, "protocol_stop_label")}</div>
+                      <div className="protocol-text">{debate.protocol.stopCondition}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className={"actions-groups reveal" + (verdictStage >= 4 ? " in" : "")}>
                 <div className="chapter-eyebrow" style={{ margin: "36px 0 20px" }}>{t(language, "chapter_share")}</div>
                 <div className="actions-group">
@@ -901,14 +1120,14 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
                   {hasShareableLink ? (
                     <div className="actions-group-row">
                       {canNativeShare && (
-                        <button className="btn share-btn" onClick={nativeShare}><ShareIcon /> {t(language, "share_native")}</button>
+                        <button className="btn share-btn" onClick={requestNativeShare}><ShareIcon /> {t(language, "share_native")}</button>
                       )}
                       {shareLinks.map(l => (
-                        <a key={l.label} className="btn share-btn" href={l.href} target="_blank" rel="noopener noreferrer">
+                        <button key={l.label} type="button" className="btn share-btn" onClick={() => requestSocialShare(l.buildHref)}>
                           <ShareIcon /> {l.label}
-                        </a>
+                        </button>
                       ))}
-                      <button className={"btn share-btn" + (copiedLink ? " feedback" : "")} onClick={handleCopyLink}>
+                      <button className={"btn share-btn" + (copiedLink ? " feedback" : "")} onClick={requestCopyLink}>
                         <ShareIcon /> {copiedLink ? t(language, "link_copied") : t(language, "copy_link")}
                       </button>
                     </div>
@@ -957,6 +1176,27 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             )}
             <div style={{ marginTop: 22 }}>
               <button className="btn" onClick={() => convene(asked)}>{t(language, "knock_again")}</button>
+            </div>
+          </div>
+        )}
+
+        {sharePreview && (
+          <div className="share-preview-overlay" onClick={() => setSharePreview(null)} role="dialog" aria-modal="true" aria-label={t(language, "share_preview_title")}>
+            <div className="share-preview-modal" onClick={e => e.stopPropagation()}>
+              <div className="eyebrow">{t(language, "share_preview_title")}</div>
+              <p className="share-preview-explain">{t(language, "share_preview_explain")}</p>
+              <pre className="share-preview-text">{shareText(asked, debate, { language, redact: redactShare })}</pre>
+              <label className="share-preview-redact-row">
+                <input type="checkbox" checked={redactShare} onChange={e => setRedactShare(e.target.checked)} />
+                <span>{t(language, "share_preview_redact_toggle")}</span>
+              </label>
+              {redactShare && <p className="share-preview-redact-hint">{t(language, "share_preview_redact_hint")}</p>}
+              <div className="share-preview-actions">
+                <button className="btn small" onClick={() => setSharePreview(null)}>{t(language, "share_preview_cancel")}</button>
+                <button className="btn primary small" onClick={() => { sharePreview.run(redactShare); setSharePreview(null); }}>
+                  {t(language, "share_preview_confirm")}
+                </button>
+              </div>
             </div>
           </div>
         )}
