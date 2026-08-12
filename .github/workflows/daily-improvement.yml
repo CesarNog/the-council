@@ -4,8 +4,18 @@ name: Daily Autonomous Improvement
 # open a pull request for it. Durable (survives restarts) — unlike a session
 # cron. Also runnable on demand via the "Run workflow" button.
 #
-# Requires one repo secret: GEMINI_API_KEY (Settings → Secrets and variables →
-# Actions), a key from Google AI Studio.
+# If Gemini fails (e.g. the AI Studio project hits its monthly spend cap —
+# this has happened in production, see run 31586748889), the job falls back
+# to aider (https://aider.chat) driven by Groq's OpenAI-compatible API
+# instead of just failing outright. Same one-improvement-per-day contract,
+# different model backend.
+#
+# Requires two repo secrets (Settings → Secrets and variables → Actions):
+#   - GEMINI_API_KEY: a key from Google AI Studio (primary path)
+#   - GROQ_API_KEY:   a key from console.groq.com (fallback path). This is a
+#     SEPARATE secret from the GROQ_API_KEY already configured in Vercel's
+#     project env vars for the live app — Vercel and GitHub Actions secrets
+#     are different stores; the same key value needs to be added here too.
 
 on:
   schedule:
@@ -39,7 +49,9 @@ jobs:
 
       - run: npm ci
 
-      - name: Autonomous improvement cycle
+      - name: Autonomous improvement cycle (Gemini)
+        id: gemini_run
+        continue-on-error: true
         uses: google-github-actions/run-gemini-cli@v0
         env:
           # The action's GitHub tooling reads the token from the environment.
@@ -80,3 +92,82 @@ jobs:
             Groq TPM limits in CLAUDE.md before touching api/council.js prompts;
             do not add boilerplate docstrings (the repo forbids superfluous
             comments).
+
+      - name: Fallback — autonomous improvement via aider + Groq
+        id: aider_fallback
+        if: steps.gemini_run.outcome == 'failure'
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          echo "::notice::Gemini failed this run — falling back to aider + Groq."
+
+          if [ -z "$GROQ_API_KEY" ]; then
+            echo "::error::GROQ_API_KEY repo secret is not set — cannot run the fallback. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="chore/daily-improvement-groq-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH"
+
+          pip install --quiet --disable-pip-version-check aider-chat
+
+          # llama-3.3-70b-versatile, not openai/gpt-oss-120b (the model
+          # api/council.js uses) — chosen for broad, well-documented aider/
+          # litellm compatibility as a coding-agent backend, which matters
+          # more here than matching the persona-debate model elsewhere in
+          # this repo.
+          aider \
+            --yes-always \
+            --no-analytics \
+            --no-check-update \
+            --model groq/llama-3.3-70b-versatile \
+            --message "$(cat <<'PROMPT'
+          Autonomous daily improvement run for this repository (Vite + React SPA
+          with Vercel serverless functions). Read CLAUDE.md first and follow its
+          conventions exactly.
+
+          Do exactly ONE focused, high-value improvement:
+          1. Audit the codebase and pick the single highest-impact
+             production-readiness item — critical bugs, mobile breakage,
+             security, API reliability, accessibility, i18n consistency, SEO,
+             performance, or user conversion. Prefer genuine gaps over cosmetic
+             churn. If nothing is clearly worth doing, make NO change and stop
+             rather than manufacturing work.
+          2. Implement it as a minimal, focused diff aligned with repo
+             conventions. Add or extend tests when it makes sense.
+
+          Constraints: never commit secrets; keep diffs minimal; respect the
+          Groq TPM limits in CLAUDE.md before touching api/council.js prompts;
+          do not add boilerplate docstrings (the repo forbids superfluous
+          comments).
+          PROMPT
+          )"
+
+          if [ -z "$(git log origin/main..HEAD --oneline)" ]; then
+            echo "::notice::aider made no changes this run — nothing to verify or open a PR for."
+            exit 0
+          fi
+
+          npm run lint
+          npm test
+          npm run build
+
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --title "$(git log -1 --format=%s)" \
+            --body "Autonomous daily improvement — Groq/aider fallback (Gemini hit its monthly AI Studio spend cap this run, see the failed \`gemini_run\` step above). Verified locally before pushing: \`npm run lint && npm test && npm run build\` all passed. CI will also run on this PR. Not merged — left for review." \
+            --head "$BRANCH" \
+            --base main
+
+      - name: Fail the job if both providers failed
+        if: steps.gemini_run.outcome == 'failure' && steps.aider_fallback.outcome == 'failure'
+        run: |
+          echo "::error::Both the Gemini step and the Groq/aider fallback failed this run — see their logs above for the real cause."
+          exit 1
