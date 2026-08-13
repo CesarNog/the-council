@@ -30,11 +30,24 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
   // of scrolling all the way back up — this sticky bar keeps "Consult my
   // Council" reachable once the hero's own CTA has scrolled out of view.
   const heroSentinelRef = useRef(null);
+  // The observer's first callback can fire with isIntersecting: false if the
+  // CTA happens to start below the fold (a short viewport, larger text
+  // scaling) — without heroSeenRef, that reads as "already scrolled past"
+  // and shows the sticky bar immediately instead of only after the seeker
+  // has actually had the real CTA in view.
+  const heroSeenRef = useRef(false);
   const [heroPassed, setHeroPassed] = useState(false);
   useEffect(() => {
     if (!heroSentinelRef.current || typeof IntersectionObserver === "undefined") return;
     const obs = new IntersectionObserver(
-      ([entry]) => setHeroPassed(!entry.isIntersecting),
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          heroSeenRef.current = true;
+          setHeroPassed(false);
+        } else if (heroSeenRef.current) {
+          setHeroPassed(true);
+        }
+      },
       { threshold: 0 }
     );
     obs.observe(heroSentinelRef.current);

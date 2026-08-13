@@ -422,6 +422,16 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const feedRef = useRef(null);
   const feedFocusedRef = useRef(false);
   const questionInputRef = useRef(null);
+  // Refs, not state: the entry guard must be readable/settable synchronously
+  // within the same tick two near-simultaneous calls (a real double-tap, or
+  // the rate-limit retry effect racing a manual "knock again" click) can
+  // both make before React commits a phase update — a `phase === "summoning"`
+  // check alone reads a stale render snapshot in that window. requestSeqRef
+  // additionally lets an async continuation recognize it's been superseded
+  // (by a newer convene(), or by a confirmed reset) and no-op instead of
+  // resurrecting discarded state.
+  const summoningRef = useRef(false);
+  const requestSeqRef = useRef(0);
   const [stageCompact, setStageCompact] = useState(false);
   const [viewportSpeaker, setViewportSpeaker] = useState(null);
   const [expandedTurns, setExpandedTurns] = useState(new Set());
@@ -671,11 +681,16 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const convene = async (q) => {
     const qq = (q || question).trim();
     if (!qq) return;
-    // A double-tap on the CTA, or an example chip clicked right after
-    // pressing Enter, would otherwise fire two /api/council calls at once —
-    // wastes the shared Groq TPM budget (see CLAUDE.md) and races two
-    // responses against the same phase/debate state.
-    if (phase === "summoning") return;
+    // A double-tap on the CTA, an example chip clicked right after pressing
+    // Enter, or the rate-limit retry effect racing a manual "knock again"
+    // click, would otherwise fire two /api/council calls at once — wastes
+    // the shared Groq TPM budget (see CLAUDE.md) and races two responses
+    // against the same phase/debate state. summoningRef (not phase) is the
+    // guard because it's read/set synchronously — two calls in the same
+    // tick can both still see the old `phase` from their closure.
+    if (summoningRef.current) return;
+    summoningRef.current = true;
+    const mySeq = ++requestSeqRef.current;
     setAsked(qq); setQuestion(""); setRateLimited(false); setRetryIn(0);
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
@@ -686,8 +701,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     } catch {}
     try {
       const result = await summonCouncil(qq, profile, language, decisionContext, personaIds);
+      // Superseded by a confirmed "new question" reset (or a newer convene)
+      // while this was in flight — applying it now would resurrect a debate
+      // the seeker explicitly discarded.
+      if (mySeq !== requestSeqRef.current) return;
       setDebate(result); setPhase("debate");
     } catch (e) {
+      if (mySeq !== requestSeqRef.current) return;
       if (e.kind === "rate_limited") {
         Events.rateLimitSeen({ retryAfter: e.retryAfter || 60 });
         setRateLimited(true);
@@ -702,6 +722,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       Events.apiErrorSeen({ kind: e.kind || "network" });
       captureError(e, { kind: e.kind, phase: "council" });
       setPhase("error");
+    } finally {
+      summoningRef.current = false;
     }
   };
 
@@ -740,6 +762,12 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     }
     clearTimeout(confirmingResetTimeoutRef.current);
     setConfirmingReset(false);
+    // A confirmed discard while a request is still in flight must stop that
+    // request's result from ever landing — bump the sequence so convene()'s
+    // continuation recognizes itself as stale and no-ops instead of
+    // resurrecting the debate the seeker just chose to discard.
+    requestSeqRef.current++;
+    summoningRef.current = false;
     if (onExit) return onExit();
     setPhase("idle"); setAsked(""); setDebate(null); setShown(0); setVotesShown(0);
   };
