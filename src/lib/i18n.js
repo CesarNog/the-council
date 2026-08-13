@@ -132,6 +132,7 @@ const S = {
   chamber_title_idle: { en: "The chamber awaits", pt: "A câmara aguarda", es: "La cámara espera", zh: "议事厅等候中" },
   chamber_title_active: { en: "The Council is in session", pt: "O Conselho está em sessão", es: "El Consejo está en sesión", zh: "议会正在议事" },
   new_question: { en: "New question", pt: "Nova pergunta", es: "Nueva pregunta", zh: "新问题" },
+  new_question_confirm: { en: "Tap again to discard", pt: "Toque de novo para descartar", es: "Toca de nuevo para descartar", zh: "再次点击以放弃" },
   bring_question: { en: "Bring your question before the Council", pt: "Traga sua pergunta ao Conselho", es: "Trae tu pregunta al Consejo", zh: "向议会提出你的问题" },
   question_placeholder: { en: "Should I…", pt: "Devo…", es: "¿Debería…", zh: "我应该……" },
   share_link_unavailable: { en: "No shareable link is available for this verdict yet.", pt: "Ainda não há um link compartilhável para este veredito.", es: "Todavía no hay un enlace compartible para este veredicto.", zh: "此裁决暂无可分享的链接。" },

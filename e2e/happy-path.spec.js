@@ -32,6 +32,43 @@ test("eclipse QA preview renders a full synthetic debate deterministically", asy
   await expect.poll(() => page.evaluate(() => document.activeElement?.className)).toContain("chapter-eyebrow");
 });
 
+// Regression: feedRef.focus() and the onboarding/ask inputs' autoFocus used
+// to call .focus() with no options, which native-scrolls the element into
+// view even when it's already on screen — on mobile this silently shoved
+// the page down and left the chamber title half-hidden behind the sticky
+// header the moment the first turn arrived. preventScroll fixed it.
+test("the chamber never auto-scrolls the page when the first turn arrives or the ask box gets focus", async ({ page }) => {
+  // 360px, not just 375/390 — narrow enough that the header's language
+  // selector wraps to two rows, which is what originally exposed this bug:
+  // any auto-scroll away from y=0 pushed the chamber title under it.
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/?preview=eclipse", { waitUntil: "domcontentloaded" });
+
+  await page.locator(".turn").first().waitFor({ state: "visible", timeout: 15000 });
+  // give the feed-focus and follow-scroll effects a moment to fire and, if
+  // either were going to scroll, to actually do it
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  // The chamber title must be fully visible, not clipped under the sticky
+  // header, right when the debate is underway.
+  const header = await page.locator(".site-header").boundingBox();
+  const title = await page.locator(".chamber-head .title").boundingBox();
+  expect(title.y).toBeGreaterThanOrEqual(header.y + header.height);
+});
+
+test("a persistent mobile CTA stays reachable once the landing hero scrolls out of view", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator(".landing-sticky-cta")).toHaveCount(0);
+
+  await page.locator(".landing-hero-examples").scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 900);
+  await expect(page.locator(".landing-sticky-cta")).toBeVisible();
+  await expect(page.locator(".landing-sticky-cta button")).toHaveText(/consult|consultar/i);
+});
+
 test("Reveal all skips the staged ceremony straight to the verdict", async ({ page }) => {
   await page.goto("/?preview=eclipse");
 

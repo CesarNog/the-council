@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LandingHeroFallback } from "./LandingHeroFallback.jsx";
 import { HowItWorks } from "./HowItWorks.jsx";
 import { PersonaPreview } from "./PersonaPreview.jsx";
@@ -23,6 +23,22 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
     onChange();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // The page is ~6 screens tall on mobile (marketing sections between the
+  // hero and the footer CTA) with no way back to the primary action short
+  // of scrolling all the way back up — this sticky bar keeps "Consult my
+  // Council" reachable once the hero's own CTA has scrolled out of view.
+  const heroSentinelRef = useRef(null);
+  const [heroPassed, setHeroPassed] = useState(false);
+  useEffect(() => {
+    if (!heroSentinelRef.current || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setHeroPassed(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    obs.observe(heroSentinelRef.current);
+    return () => obs.disconnect();
   }, []);
 
   const recentQs = history.slice(0, 2);
@@ -68,6 +84,7 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
           {personaHint}
           <div className="fade-up d4 cta-group landing-cta-group">
             <button
+              ref={heroSentinelRef}
               className="btn primary landing-cta-primary"
               onClick={() => { Events.landingCta({ action: "primary", authenticated: !!authenticated, language }); onEnter(); }}
               onMouseEnter={() => setCtaHover(true)}
@@ -132,6 +149,18 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
           </div>
         </div>
       </section>
+
+      {isMobile && heroPassed && (
+        <div className="landing-sticky-cta" role="region" aria-label={t(language, "enter_chamber_cta")}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => { Events.landingCta({ action: "sticky", authenticated: !!authenticated, language }); onEnter(); }}
+          >
+            {t(language, "enter_chamber_cta")}
+          </button>
+        </div>
+      )}
 
       <HowItWorks language={language} />
       <PersonaPreview language={language} />

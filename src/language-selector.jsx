@@ -8,6 +8,7 @@ export function LanguageSelector({ language, onChange }) {
           key={l.code}
           className={"lang-chip" + (l.code === language ? " on" : "")}
           onClick={() => onChange(l.code)}
+          aria-pressed={l.code === language}
         >
           {l.label}
         </button>

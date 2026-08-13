@@ -1397,6 +1397,21 @@ button,a{min-width:0;}
   }
 }
 
+/* Keeps the primary CTA reachable through the ~6 screens of marketing
+   content between the hero and the footer CTA on mobile. Sits on top of
+   the cookie-consent banner's reserved space (--consent-reserve) rather
+   than under it. */
+.landing-sticky-cta{
+  position:fixed; left:0; right:0; bottom:var(--consent-reserve, 0px); z-index:80;
+  display:flex; justify-content:center;
+  padding:12px 20px calc(12px + var(--safe-bottom));
+  background:linear-gradient(to top, rgba(11,10,18,.97) 60%, transparent);
+  backdrop-filter:blur(6px);
+  animation:fadeUp .3s ease;
+}
+.landing-sticky-cta .btn{width:min(100%, 400px);}
+:root.light .landing-sticky-cta{background:linear-gradient(to top, rgba(245,243,238,.97) 60%, transparent);}
+
 /* --- eclipse: pulso do centro + unissono --- */
 .eclipse-pulse{position:absolute; left:50%; top:50%; width:20%; height:20%; margin:-10% 0 0 -10%;
   border:1px solid rgba(216,192,138,.5); border-radius:50%; pointer-events:none;
