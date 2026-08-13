@@ -77,6 +77,12 @@ const DEADLINE_I18N_KEY = { this_week: "onb_deadline_week", this_month: "onb_dea
 
 export function Onboarding({ onDone, initial, language, googleNames, initialDisplayName }) {
   const [step, setStep] = useState(0);
+  // Replaces the autoFocus attribute on each step's primary field: React's
+  // autoFocus calls element.focus() with no options, which scrolls the page
+  // to the input even though it's already on screen — jarring, especially
+  // right under the sticky header on mobile. preventScroll avoids that.
+  const stepFocusRef = useRef(null);
+  useEffect(() => { stepFocusRef.current?.focus({ preventScroll: true }); }, [step]);
   // step 0: name
   const [displayName, setDisplayName] = useState(initial?.name || "");
   const [customName, setCustomName] = useState(initialDisplayName || "");
@@ -161,7 +167,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           )}
           {!googleNames?.length && (
             <>
-              <input type="text" autoFocus inputMode="text" enterKeyHint="next" value={customName} onChange={e => setCustomName(e.target.value)}
+              <input type="text" ref={stepFocusRef} inputMode="text" enterKeyHint="next" value={customName} onChange={e => setCustomName(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") setStep(1); }}
                 placeholder={t(language, "onb_name_placeholder")} />
               <div style={{ marginTop: 12 }}>
@@ -191,7 +197,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <div className="eyebrow">{t(language, "onb_progress_2")}</div>
           <h2>{t(language, "onb_decision_q")}</h2>
           <p className="hint">{t(language, "onb_decision_hint")}</p>
-          <textarea rows={2} autoFocus inputMode="text" enterKeyHint="done" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
+          <textarea rows={2} ref={stepFocusRef} inputMode="text" enterKeyHint="done" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
             placeholder={t(language, "onb_decision_placeholder")} />
           <div style={{ marginTop: 44 }}>
             <button className="btn" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "continue")}</button>
@@ -329,7 +335,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <button className="onb-back" onClick={goBack}>← {t(language, "back").replace("←", "").trim()}</button>
           <div className="eyebrow">{t(language, "onb_deep_progress_3")}</div>
           <h2>{t(language, "onb_success_q")}</h2>
-          <textarea rows={2} autoFocus value={successPicture} onChange={e => setSuccessPicture(e.target.value)} placeholder={t(language, "onb_success_placeholder")} maxLength={300} />
+          <textarea rows={2} ref={stepFocusRef} value={successPicture} onChange={e => setSuccessPicture(e.target.value)} placeholder={t(language, "onb_success_placeholder")} maxLength={300} />
           <p className="hint" style={{ marginTop: 28 }}>{t(language, "onb_known_q")}</p>
           <textarea rows={2} value={known} onChange={e => setKnown(e.target.value)} placeholder={t(language, "onb_known_placeholder")} maxLength={300} />
           <p className="hint" style={{ marginTop: 20 }}>{t(language, "onb_unknown_q")}</p>
@@ -415,6 +421,17 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const turnRefs = useRef([]);
   const feedRef = useRef(null);
   const feedFocusedRef = useRef(false);
+  const questionInputRef = useRef(null);
+  // Refs, not state: the entry guard must be readable/settable synchronously
+  // within the same tick two near-simultaneous calls (a real double-tap, or
+  // the rate-limit retry effect racing a manual "knock again" click) can
+  // both make before React commits a phase update — a `phase === "summoning"`
+  // check alone reads a stale render snapshot in that window. requestSeqRef
+  // additionally lets an async continuation recognize it's been superseded
+  // (by a newer convene(), or by a confirmed reset) and no-op instead of
+  // resurrecting discarded state.
+  const summoningRef = useRef(false);
+  const requestSeqRef = useRef(0);
   const [stageCompact, setStageCompact] = useState(false);
   const [viewportSpeaker, setViewportSpeaker] = useState(null);
   const [expandedTurns, setExpandedTurns] = useState(new Set());
@@ -531,14 +548,26 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   }, [phase, shown, debate, reducedMotion, fastPace]);
 
   // move focus to the debate once the first turn arrives — screen reader users
-  // otherwise stay parked on the submit button through the whole reveal
+  // otherwise stay parked on the submit button through the whole reveal.
+  // preventScroll: the feed is already on screen at this point (the seeker
+  // just watched the ring animate from here) — without it, focus() yanks
+  // the viewport into a native scroll-into-view, which on mobile momentarily
+  // hides the chamber title behind the sticky header for every seeker, not
+  // just screen reader users.
   useEffect(() => {
     if (phase === "debate" && shown === 1 && !feedFocusedRef.current) {
       feedFocusedRef.current = true;
-      feedRef.current?.focus();
+      feedRef.current?.focus({ preventScroll: true });
     }
     if (phase === "idle") feedFocusedRef.current = false;
   }, [phase, shown]);
+
+  // Same preventScroll reasoning as the feed focus above — the ask box is
+  // already visible when phase returns to idle (fresh entry or after a
+  // finished debate), so autofocusing it shouldn't also jump the viewport.
+  useEffect(() => {
+    if (phase === "idle") questionInputRef.current?.focus({ preventScroll: true });
+  }, [phase]);
 
   // reflection beat — silêncio com peso antes do voto
   useEffect(() => {
@@ -589,6 +618,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     // very bottom of the page (past share/continue buttons), so block:"end"
     // was overshooting past the verdict into the footer
     if (phase === "verdict") return;
+    // shown <= 1: the first turn is already fully on screen right where the
+    // seeker is looking (they just watched the ring animate from there) —
+    // following-scroll only earns its keep once there's an actual backlog
+    // to catch up to. Firing it on turn 1 shoved the page down before the
+    // seeker had even read anything, clipping the chamber title under the
+    // sticky header on mobile.
+    if (shown <= 1) return;
     endRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: "end" });
   }, [shown, votesShown, phase]);
 
@@ -645,6 +681,16 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   const convene = async (q) => {
     const qq = (q || question).trim();
     if (!qq) return;
+    // A double-tap on the CTA, an example chip clicked right after pressing
+    // Enter, or the rate-limit retry effect racing a manual "knock again"
+    // click, would otherwise fire two /api/council calls at once — wastes
+    // the shared Groq TPM budget (see CLAUDE.md) and races two responses
+    // against the same phase/debate state. summoningRef (not phase) is the
+    // guard because it's read/set synchronously — two calls in the same
+    // tick can both still see the old `phase` from their closure.
+    if (summoningRef.current) return;
+    summoningRef.current = true;
+    const mySeq = ++requestSeqRef.current;
     setAsked(qq); setQuestion(""); setRateLimited(false); setRetryIn(0);
     setDebate(null); setShown(0); setVotesShown(0);
     setPhase("summoning");
@@ -655,8 +701,13 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     } catch {}
     try {
       const result = await summonCouncil(qq, profile, language, decisionContext, personaIds);
+      // Superseded by a confirmed "new question" reset (or a newer convene)
+      // while this was in flight — applying it now would resurrect a debate
+      // the seeker explicitly discarded.
+      if (mySeq !== requestSeqRef.current) return;
       setDebate(result); setPhase("debate");
     } catch (e) {
+      if (mySeq !== requestSeqRef.current) return;
       if (e.kind === "rate_limited") {
         Events.rateLimitSeen({ retryAfter: e.retryAfter || 60 });
         setRateLimited(true);
@@ -671,6 +722,8 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       Events.apiErrorSeen({ kind: e.kind || "network" });
       captureError(e, { kind: e.kind, phase: "council" });
       setPhase("error");
+    } finally {
+      summoningRef.current = false;
     }
   };
 
@@ -692,7 +745,29 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     if (initialQuestionRef.current) convene(initialQuestionRef.current);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // "New question" used to discard a live Groq call or a debate the seeker
+  // hadn't finished reading yet with a single, instant, unconfirmed click —
+  // a stray tap and it's gone, no server-persisted id to recover it from.
+  // Once phase reaches "verdict" the seeker has already seen everything and
+  // (if they wanted to) shared it, so that case resets immediately as before.
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const confirmingResetTimeoutRef = useRef(null);
   const reset = () => {
+    const atRisk = phase === "summoning" || (debate && phase !== "verdict");
+    if (atRisk && !confirmingReset) {
+      setConfirmingReset(true);
+      clearTimeout(confirmingResetTimeoutRef.current);
+      confirmingResetTimeoutRef.current = setTimeout(() => setConfirmingReset(false), 3000);
+      return;
+    }
+    clearTimeout(confirmingResetTimeoutRef.current);
+    setConfirmingReset(false);
+    // A confirmed discard while a request is still in flight must stop that
+    // request's result from ever landing — bump the sequence so convene()'s
+    // continuation recognizes itself as stale and no-ops instead of
+    // resurrecting the debate the seeker just chose to discard.
+    requestSeqRef.current++;
+    summoningRef.current = false;
     if (onExit) return onExit();
     setPhase("idle"); setAsked(""); setDebate(null); setShown(0); setVotesShown(0);
   };
@@ -802,7 +877,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               <div className="eyebrow">{t(language, "chamber_label")}</div>
               <div className="title serif">{chamberTitle}</div>
             </div>
-            {phase !== "idle" && <button className="btn small" onClick={reset}>{t(language, "new_question")}</button>}
+            {phase !== "idle" && (
+              <button className={"btn small" + (confirmingReset ? " feedback" : "")} onClick={reset}>
+                {confirmingReset ? t(language, "new_question_confirm") : t(language, "new_question")}
+              </button>
+            )}
           </div>
 
           <Ring
@@ -825,7 +904,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             )}
             {compactMicrocopy && <div className="stage-microcopy">{compactMicrocopy}</div>}
             {phase !== "idle" && (
-              <button className="btn small compact-new-q" onClick={reset}>{t(language, "new_question")}</button>
+              <button className={"btn small compact-new-q" + (confirmingReset ? " feedback" : "")} onClick={reset}>
+                {confirmingReset ? t(language, "new_question_confirm") : t(language, "new_question")}
+              </button>
             )}
           </div>
         </div>
@@ -836,9 +917,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
         {phase === "idle" && (
           <div className="ask">
             <div className="eyebrow" style={{ marginBottom: 18 }}>{t(language, "bring_question")}</div>
-            <textarea rows={2} value={question} onChange={e => setQuestion(e.target.value)}
+            <textarea rows={2} ref={questionInputRef} value={question} onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); convene(); } }}
-              placeholder={t(language, "question_placeholder")} autoFocus />
+              placeholder={t(language, "question_placeholder")} />
             <div style={{ marginTop: 30 }}>
               <button className="btn primary" onClick={() => convene()} disabled={!question.trim()}>{t(language, "convene")}</button>
             </div>
