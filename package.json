@@ -23,7 +23,7 @@
     "@supabase/supabase-js": "^2.110.8",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.1",
-    "@vercel/functions": "^3.7.7",
+    "@vercel/functions": "^3.9.2",
     "impeccable": "^3.5.0",
     "jose": "^6.2.3",
     "posthog-js": "^1.410.6",
