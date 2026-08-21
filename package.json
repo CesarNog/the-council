@@ -26,7 +26,7 @@
     "@vercel/functions": "^3.9.2",
     "impeccable": "^3.6.0",
     "jose": "^6.2.3",
-    "posthog-js": "^1.415.1",
+    "posthog-js": "^1.417.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "resend": "^6.19.0",
