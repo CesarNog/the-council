@@ -24,7 +24,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "@vercel/functions": "^3.9.2",
-    "impeccable": "^3.5.0",
+    "impeccable": "^3.6.0",
     "jose": "^6.2.3",
     "posthog-js": "^1.415.1",
     "react": "^19.2.8",
