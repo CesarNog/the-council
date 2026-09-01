@@ -418,6 +418,12 @@ const S = {
     es: "o entra con",
     zh: "或通过",
   },
+  sign_in_google: {
+    en: "Continue with Google",
+    pt: "Continuar com o Google",
+    es: "Continuar con Google",
+    zh: "通过 Google 继续",
+  },
   before_council_speaks: {
     en: "Before the Council speaks…",
     pt: "Antes do Conselho falar…",
