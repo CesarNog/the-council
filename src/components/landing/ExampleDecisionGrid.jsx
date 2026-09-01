@@ -4,6 +4,7 @@ import { t, LANDING_EXAMPLE_KEYS } from "../../lib/i18n.js";
 export function ExampleDecisionGrid({ language, onSelect, authenticated }) {
   return (
     <section className="landing-section landing-examples" aria-labelledby="examples-title">
+      <div className="chapter-eyebrow">{t(language, "chapter_question")}</div>
       <h2 id="examples-title" className="landing-section-title">{t(language, "landing_examples_title")}</h2>
       <div className="landing-example-grid">
         {LANDING_EXAMPLE_KEYS.map((key) => {
