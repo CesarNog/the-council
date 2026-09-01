@@ -1037,7 +1037,44 @@ button,a{min-width:0;}
 }
 
 /* ---------- landing 3D cinematic ---------- */
-.landing-page{width:100%; max-width:100%; min-width:0; overflow-x:hidden;}
+.landing-page{
+  width:100%; max-width:100%; min-width:0; overflow-x:hidden;
+  /* Scoped, not global: redefining these three custom properties here
+     re-fonts every existing --serif/--sans/--mono rule already written for
+     the landing page (chapter-eyebrow included, when nested here) without
+     touching a single selector — and without leaking into the Chamber or
+     Onboarding, which sit outside .landing-page and keep the site's
+     original type system. */
+  --serif:'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  --sans:'Archivo', 'Inter', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', 'JetBrains Mono', monospace;
+}
+/* The disciplined, hairline-ledger register the redesign calls for reads as
+   too soft with the rest of the site's rounded-lg + ambient-glow card
+   language — sharpen radius and trade the glow blooms for a plain lift,
+   scoped to landing's own cards only. */
+.landing-page .landing-how-card,
+.landing-page .landing-persona-card,
+.landing-page .landing-example-chip,
+.landing-page .landing-verdict-card{
+  border-radius:2px;
+}
+.landing-page .landing-how-card:hover{
+  box-shadow:var(--shadow-card-hover), var(--card-hi);
+}
+.landing-page .landing-persona-card:hover,
+.landing-page .landing-persona-card:focus-within{
+  box-shadow:var(--shadow-card-hover), var(--card-hi);
+}
+.landing-page .landing-example-chip:hover{
+  box-shadow:var(--shadow-card-hover), var(--card-hi);
+}
+.landing-page .landing-verdict-card{
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+}
+.landing-page .landing-verdict-card:hover{
+  box-shadow:0 40px 90px -34px rgba(0,0,0,.92);
+}
 .landing-hero{
   position:relative; display:grid;
   grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
