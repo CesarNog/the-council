@@ -5,6 +5,7 @@ import { t, personaName } from "../../lib/i18n.js";
 export function PersonaPreview({ language }) {
   return (
     <section className="landing-section landing-personas" aria-labelledby="personas-title">
+      <div className="chapter-eyebrow">{t(language, "chapter_debate")}</div>
       <h2 id="personas-title" className="landing-section-title">{t(language, "landing_personas_title")}</h2>
       <p className="landing-section-sub">{t(language, "landing_personas_sub")}</p>
       <div className="landing-persona-grid">

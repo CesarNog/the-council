@@ -10,6 +10,10 @@
      doesn't apply; use gold-text wherever the color is applied to readable text */
   --ivory:#EDE8DE; --ivory-dim:rgba(237,232,222,.62); --ivory-faint:rgba(237,232,222,.50);
   --gold:#C9A96E; --gold-dim:rgba(201,169,110,.35); --gold-text:rgba(201,169,110,.75);
+  /* Semantic, not decorative — used only where a vote's own direction (not
+     the site's identity accent) needs to read at a glance, e.g. the landing
+     page's sample tally bar. */
+  --consensus:#4C8570; --dissent:#B2523F;
   --serif:'Cormorant Garamond', Georgia, serif; --sans:'Inter', system-ui, sans-serif; --mono:'JetBrains Mono', monospace;
   --safe-bottom:env(safe-area-inset-bottom, 0px);
   --header-h:53px;
@@ -1145,6 +1149,10 @@ button,a{min-width:0;}
   box-shadow:0 0 40px rgba(201,169,110,.45);
 }
 .landing-section{padding:64px 24px; max-width:1100px; margin:0 auto; width:100%; min-width:0; position:relative;}
+/* .chapter-eyebrow's default margin-top is tuned for stacking inside the
+   Chamber's own flow — .landing-section already supplies top padding, so
+   the same 52px on top of that reads as a lopsided gap here. */
+.landing-section > .chapter-eyebrow:first-child{margin-top:0;}
 /* Full-bleed ambient anchors give the long dark page vertical rhythm */
 .landing-personas::before,.landing-verdict-preview::before{
   content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
@@ -1230,6 +1238,12 @@ button,a{min-width:0;}
   box-shadow:var(--shadow-gold), 0 40px 90px -34px rgba(0,0,0,.92), 0 0 60px -26px rgba(201,169,110,.55);
 }
 .landing-verdict-q{font-family:var(--serif); font-style:italic; font-size:clamp(18px,3vw,24px); margin-bottom:16px;}
+.landing-tally-bar{display:flex; height:10px; border-radius:5px; overflow:hidden; margin-bottom:10px;
+  border:1px solid var(--line);}
+.landing-tally-seg{height:100%;}
+.landing-tally-seg.yes{background:var(--consensus);}
+.landing-tally-seg.no{background:var(--dissent);}
+.landing-tally-seg.depends{background:var(--gold-dim);}
 .landing-verdict-tally{font-family:var(--mono); font-size:12px; letter-spacing:.12em; color:var(--gold); margin-bottom:16px;}
 .landing-verdict-body{font-size:15px; line-height:1.65; color:var(--ivory-dim); margin-bottom:16px;}
 .landing-verdict-tag{font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--ivory-faint);}
