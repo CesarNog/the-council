@@ -25,7 +25,7 @@
     "@upstash/redis": "^1.38.3",
     "@vercel/functions": "^3.9.5",
     "impeccable": "^3.6.0",
-    "jose": "^6.2.10",
+    "jose": "^6.2.12",
     "posthog-js": "^1.422.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
