@@ -29,7 +29,7 @@
     "posthog-js": "^1.428.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "resend": "^6.26.0",
+    "resend": "^6.28.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
