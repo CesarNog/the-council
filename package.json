@@ -22,7 +22,7 @@
     "@sentry/react": "^10.74.0",
     "@supabase/supabase-js": "^2.116.0",
     "@upstash/ratelimit": "^2.1.0",
-    "@upstash/redis": "^1.38.4",
+    "@upstash/redis": "^1.39.0",
     "@vercel/functions": "^3.9.7",
     "impeccable": "^4.1.0",
     "jose": "^6.2.12",
