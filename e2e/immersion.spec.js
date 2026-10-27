@@ -41,6 +41,9 @@ test("live consensus meter appears while votes land", async ({ page }) => {
 });
 
 test("ring member card shows revealed stats on hover", async ({ page }) => {
+  // nodes breathe forever, so Playwright's hover never sees a stable element;
+  // reduced motion stops the breathing and also covers that path
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/?preview=split");
   await page.locator("body").click({ position: { x: 5, y: 5 } });
   await page.keyboard.press("End");
