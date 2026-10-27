@@ -37,7 +37,7 @@ test("live consensus meter appears while votes land", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/?preview=split");
   await expect(page.locator(".consensus-meter")).toBeVisible({ timeout: 60000 });
-  await expect(page.locator(".cm-count")).toContainText("/9");
+  await expect(page.locator(".cm-count")).toHaveText(/^[1-9]\/9$/);
 });
 
 test("ring member card shows revealed stats on hover", async ({ page }) => {
@@ -52,7 +52,7 @@ test("ring member card shows revealed stats on hover", async ({ page }) => {
   const card = founder.locator(".member-card");
   await expect(card).toHaveCSS("opacity", "1");
   await expect(card).toContainText("1");
-  await expect(founder).toHaveAttribute("aria-label", /Founder/);
+  await expect(founder).toHaveAttribute("aria-label", /Founder · .+ · Spoke 1× · Vote: Yes · “\[split QA preview turn\]”/);
 });
 
 test("copy quote writes the attributed quote to the clipboard", async ({ page, context }) => {
@@ -67,4 +67,14 @@ test("copy quote writes the attributed quote to the clipboard", async ({ page, c
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   expect(clip).toContain("[QA preview quote]");
   expect(clip).toContain("The Council");
+});
+
+test("synthetic previews never land in local history", async ({ page }) => {
+  await page.goto("/?preview=split");
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press("End");
+  await expect(page.locator(".verdict .headline")).toBeVisible();
+  await page.waitForTimeout(500);
+  const history = await page.evaluate(() => localStorage.getItem("council:history"));
+  expect(JSON.parse(history || "[]")).toEqual([]);
 });

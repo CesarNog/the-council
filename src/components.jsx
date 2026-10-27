@@ -58,7 +58,13 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
         // card anchors toward the ring centre so edge nodes don't clip off-screen
         const anchor = cx > 62 ? "right" : cx < 38 ? "left" : "center";
         const summary = s
-          ? [personaName(language, p.id), s.turns ? t(language, "member_turns", s.turns) : t(language, "member_silent"), s.vote ? `${t(language, "member_vote")}: ${voteLabel(language, s.vote)}` : null].filter(Boolean).join(" · ")
+          ? [
+              personaName(language, p.id),
+              personaTag(language, p.id),
+              s.turns ? t(language, "member_turns", s.turns) : t(language, "member_silent"),
+              s.vote ? `${t(language, "member_vote")}: ${voteLabel(language, s.vote)}` : null,
+              s.lastLine ? `“${s.lastLine.slice(0, 110)}${s.lastLine.length > 110 ? "…" : ""}”` : null,
+            ].filter(Boolean).join(" · ")
           : personaName(language, p.id);
         return (
           <div key={p.id} className={cls} role="img" tabIndex={s ? 0 : undefined} aria-label={summary}
@@ -1025,7 +1031,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
   const recordedRef = useRef(null);
   useEffect(() => {
-    if (phase !== "verdict" || !debate?.id || recordedRef.current === debate.id) return;
+    // synthetic QA previews (?preview=eclipse|split) were never persisted —
+    // recording them would leave a history entry pointing at a 404
+    if (phase !== "verdict" || !debate?.id || debate.id === "preview" || recordedRef.current === debate.id) return;
     recordedRef.current = debate.id;
     updateProfile({
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
