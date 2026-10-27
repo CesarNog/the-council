@@ -1615,3 +1615,55 @@ button,a{min-width:0;}
   .daily-greeting .eyebrow, .dg-line{animation:none !important; opacity:1;}
   .member-card, .cm-bar i{transition:none !important;}
 }
+
+/* ===== adoption pass ===== */
+
+/* one-step start: question field in the landing hero */
+.landing-ask{width:100%; max-width:520px; margin:22px 0 4px; text-align:left;}
+.landing-ask-label{display:block; font-family:var(--serif); font-size:20px; color:var(--ivory); margin-bottom:10px;}
+.landing-ask textarea{width:100%; min-height:76px; resize:vertical; padding:14px 16px; border-radius:10px;
+  font:inherit; font-size:16px; line-height:1.45; color:var(--ivory);
+  background:color-mix(in srgb, var(--surface) 70%, transparent); border:1px solid var(--gold-dim);
+  transition:border-color .2s, box-shadow .2s;}
+.landing-ask textarea::placeholder{color:var(--ivory-faint);}
+.landing-ask textarea:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,169,110,.16);}
+.landing-ask-hint{margin:8px 0 0; font-size:13px; color:var(--ivory-faint); line-height:1.45;}
+@media (max-width:768px){
+  .landing-ask{margin-inline:auto;}
+}
+
+/* onboarding: readable options and an always-visible way to convene */
+.onb-option{font-family:var(--sans); font-size:15px; letter-spacing:0; text-transform:none; min-height:44px;}
+.onb-actions{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:32px;}
+.onb-actions:empty{display:none;}
+.onb-actions .onb-skip-link{font-family:var(--sans); font-size:14px; letter-spacing:0; text-transform:none; min-height:44px;
+  background:none; border:0; color:var(--ivory-dim); text-decoration:underline; text-underline-offset:4px; cursor:pointer;}
+.onb-actions .onb-skip-link:disabled{opacity:.4; cursor:default;}
+
+/* header: chips on wide screens, a native select on phones */
+.lang-select{display:none; font:inherit; font-size:14px; color:var(--ivory); background:var(--bg2);
+  border:1px solid var(--line); border-radius:6px; padding:0 10px; min-height:40px;}
+@media (max-width:640px){
+  .header-right .lang-chip{display:none;}
+  .lang-select{display:block;}
+  .brand-name{white-space:nowrap;}
+}
+
+/* cookie banner: compact on phones so it stops covering a quarter of every step */
+@media (max-width:640px){
+  .consent-banner-inner{padding:10px 14px; gap:8px;}
+  .consent-text{font-size:12px; line-height:1.45; flex-basis:100%;}
+  .consent-actions{display:grid; grid-template-columns:auto 1fr 1fr; gap:6px; width:100%;}
+  .consent-actions .btn.small{padding:10px 8px; font-size:9.5px; min-height:40px; white-space:normal;}
+  .council-root.consent-banner-active{--consent-reserve:96px;}
+}
+.landing-ask + .landing-cta-group{margin-top:14px;}
+/* phones: the question field is the main action, so it has to land in the
+   first screen — a smaller ring and no restated tagline make the room */
+@media (max-width:480px){
+  .landing-hero-visual{max-height:min(26vh,230px); width:min(100%,230px); min-height:0;}
+  .landing-trust{display:none;}
+  .landing-ask{margin-top:14px;}
+  .landing-ask-label{font-size:18px; text-align:center;}
+  .landing-ask-hint{text-align:center;}
+}

@@ -1,14 +1,16 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 
 vi.mock("../../lib/analytics.js", () => ({
   Events: { landingCta: vi.fn() },
 }));
 
 import { Landing } from "./LandingPage.jsx";
+
+afterEach(cleanup);
 
 describe("Landing page", () => {
   it("renders headline and primary CTA", () => {
@@ -50,5 +52,29 @@ describe("Landing page", () => {
   it("renders sample verdict section", () => {
     render(<Landing language="en" onEnter={vi.fn()} history={[]} onRevisit={vi.fn()} />);
     expect(document.getElementById("sample-verdict")).toBeTruthy();
+  });
+
+  it("a typed hero question goes straight to the chamber", () => {
+    const onEnter = vi.fn();
+    render(<Landing language="en" onEnter={onEnter} history={[]} onRevisit={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/what are you trying to decide/i), { target: { value: "  Should I move?  " } });
+    fireEvent.click(screen.getAllByRole("button", { name: /Consult my Council/i })[0]);
+    expect(onEnter).toHaveBeenCalledWith("Should I move?");
+  });
+
+  it("an empty hero field keeps the guided onboarding", () => {
+    const onEnter = vi.fn();
+    render(<Landing language="en" onEnter={onEnter} history={[]} onRevisit={vi.fn()} />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Consult my Council/i })[0]);
+    expect(onEnter).toHaveBeenCalledWith();
+  });
+
+  it("Enter in the hero field submits the question", () => {
+    const onEnter = vi.fn();
+    render(<Landing language="pt" onEnter={onEnter} history={[]} onRevisit={vi.fn()} />);
+    const field = screen.getByLabelText(/o que você está tentando decidir/i);
+    fireEvent.change(field, { target: { value: "Devo mudar?" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(onEnter).toHaveBeenCalledWith("Devo mudar?");
   });
 });
