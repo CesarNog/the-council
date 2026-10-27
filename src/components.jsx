@@ -10,6 +10,7 @@ import { speak, stopSpeaking, voiceSupported } from "./lib/voice.js";
 import { updateProfile } from "./lib/auth.js";
 import { captureError } from "./lib/sentry.js";
 import { Events } from "./lib/analytics.js";
+import { normalizeMood, runningTally, leadingSide, memberStats, localDayKey, shouldGreetToday, pickDelight, delightDelayMs, formatQuote } from "./lib/chamber-fx.js";
 
 // scrollIntoView's behavior option is honored by the browser directly and is
 // NOT overridden by CSS scroll-behavior, so reduced-motion has to be checked
@@ -31,9 +32,13 @@ export { CouncilLogo } from "./components/CouncilLogo.jsx";
 export { Sigil } from "./lib/sigil.jsx";
 export { Landing } from "./components/landing/LandingPage.jsx";
 
-export function Ring({ active, speaking, mentioned, phase, label, language = "en", eclipse = false, echoRipple = false }) {
+function voteLabel(language, v) {
+  return v === "yes" ? t(language, "vote_yes") : v === "no" ? t(language, "vote_no") : t(language, "vote_depends");
+}
+
+export function Ring({ active, speaking, mentioned, phase, label, language = "en", eclipse = false, echoRipple = false, stats = null, delight = null, entering = false }) {
   return (
-    <div className={"ring-wrap" + (eclipse ? " eclipse-ring" : "")}>
+    <div className={"ring-wrap" + (eclipse ? " eclipse-ring" : "") + (entering ? " entering" : "")}>
       {eclipse && <div className="eclipse-pulse" />}
       {eclipse && <div className="eclipse-pulse delayed" />}
       {echoRipple && <div className="echo-ripple" />}
@@ -42,15 +47,40 @@ export function Ring({ active, speaking, mentioned, phase, label, language = "en
       {PERSONAS.map((p, i) => {
         const a = (-90 + i * 40) * Math.PI / 180;
         const cx = 50 + 44 * Math.cos(a), cy = 50 + 44 * Math.sin(a);
+        const s = stats ? stats(p.id) : null;
         const cls = "node"
           + (active === p.id ? " active" : " breathing")
           + (speaking === p.id ? " speaking-voice" : "")
           + (mentioned?.has(p.id) && active !== p.id ? " mentioned" : "")
-          + (eclipse ? " unison" : "");
+          + (eclipse ? " unison" : "")
+          + (s ? " has-card" : "")
+          + (delight === p.id ? " delight" : "");
+        // card anchors toward the ring centre so edge nodes don't clip off-screen
+        const anchor = cx > 62 ? "right" : cx < 38 ? "left" : "center";
+        const summary = s
+          ? [
+              personaName(language, p.id),
+              personaTag(language, p.id),
+              s.turns ? t(language, "member_turns", s.turns) : t(language, "member_silent"),
+              s.vote ? `${t(language, "member_vote")}: ${voteLabel(language, s.vote)}` : null,
+              s.lastLine ? `“${s.lastLine.slice(0, 110)}${s.lastLine.length > 110 ? "…" : ""}”` : null,
+            ].filter(Boolean).join(" · ")
+          : personaName(language, p.id);
         return (
-          <div key={p.id} className={cls} role="img" aria-label={personaName(language, p.id)} style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--pc": p.color, "--intensity": INTENSITY[p.id] }}>
+          <div key={p.id} className={cls} role="img" tabIndex={s ? 0 : undefined} aria-label={summary}
+            style={{ left: `${cx}%`, top: `${cy}%`, color: p.color, "--pc": p.color, "--intensity": INTENSITY[p.id], "--i": i }}>
             <Sigil id={p.id} />
             <span className="tip" style={{ color: p.color, "--pc": p.color }}>{personaShortName(language, p.id)}</span>
+            {delight === p.id && <span className="delight-caption" aria-hidden="true">{t(language, `delight_${p.id}`)}</span>}
+            {s && (
+              <span className={`member-card ${anchor}`} aria-hidden="true">
+                <span className="mc-name" style={{ color: p.color }}>{personaName(language, p.id)}</span>
+                <span className="mc-tag">{personaTag(language, p.id)}</span>
+                <span className="mc-row">{s.turns ? t(language, "member_turns", s.turns) : t(language, "member_silent")}</span>
+                {s.vote && <span className={`mc-vote ${s.vote === "depends" ? "dep" : s.vote}`}>{t(language, "member_vote")}: {voteLabel(language, s.vote)}</span>}
+                {s.lastLine && <span className="mc-line">“{s.lastLine.slice(0, 110)}{s.lastLine.length > 110 ? "…" : ""}”</span>}
+              </span>
+            )}
           </div>
         );
       })}
@@ -136,7 +166,12 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
     });
   };
 
-  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (step === 1 && question.trim()) setStep(2); } };
+  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (step === 1 && question.trim()) finish(); } };
+  // Context (weight, category, fear) sharpens the debate but is optional —
+  // every context screen offers a way to convene right now.
+  const skipToConvene = question.trim()
+    ? <button type="button" className="onb-skip-link" onClick={finish}>{t(language, "onb_skip_convene")}</button>
+    : null;
 
   return (
     <div className="onb">
@@ -197,10 +232,11 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <div className="eyebrow">{t(language, "onb_progress_2")}</div>
           <h2>{t(language, "onb_decision_q")}</h2>
           <p className="hint">{t(language, "onb_decision_hint")}</p>
-          <textarea rows={2} ref={stepFocusRef} inputMode="text" enterKeyHint="done" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
+          <textarea rows={2} ref={stepFocusRef} inputMode="text" enterKeyHint="go" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
             placeholder={t(language, "onb_decision_placeholder")} />
-          <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "continue")}</button>
+          <div className="onb-actions">
+            <button className="btn primary" onClick={finish} disabled={!question.trim()}>{t(language, "convene")}</button>
+            <button type="button" className="onb-skip-link" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "onb_add_context")}</button>
           </div>
         </div>
       )}
@@ -220,6 +256,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
               </button>
             ))}
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 
@@ -237,6 +274,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
               </button>
             ))}
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 
@@ -258,6 +296,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <div style={{ marginTop: 44 }}>
             <button className="btn primary" onClick={() => setStep(5)} disabled={!mainFear}>{t(language, "continue")}</button>
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 
@@ -407,6 +446,113 @@ function vibrate(pattern) {
   if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(pattern);
 }
 
+const STAR_POINTS = Array.from({ length: 22 }, (_, i) => ({
+  left: `${(i * 37 + 11) % 100}%`,
+  top: `${(i * 53 + 7) % 60}%`,
+  delay: `${(i * 0.9) % 7}s`,
+}));
+const RAIN_DROPS = Array.from({ length: 26 }, (_, i) => ({
+  left: `${(i * 41 + 3) % 100}%`,
+  delay: `${(i * 0.37) % 2.2}s`,
+  dur: `${1.1 + (i % 5) * 0.18}s`,
+}));
+
+// Environment as storytelling: mood tints the room, candles flicker, fog
+// drifts, and on fine pointers the key light leans toward the cursor.
+function ChamberAtmosphere({ mood, reducedMotion }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (reducedMotion || typeof window === "undefined" || !window.matchMedia?.("(pointer: fine)").matches) return;
+    let frame = 0, x = 50, y = 30;
+    const onMove = e => {
+      x = (e.clientX / window.innerWidth) * 100;
+      y = (e.clientY / window.innerHeight) * 100;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        ref.current?.style.setProperty("--lx", `${x.toFixed(1)}%`);
+        ref.current?.style.setProperty("--ly", `${y.toFixed(1)}%`);
+      });
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => { window.removeEventListener("pointermove", onMove); cancelAnimationFrame(frame); };
+  }, [reducedMotion]);
+
+  return (
+    <div ref={ref} className={`chamber-atmo mood-${mood}`} data-mood={mood} aria-hidden="true">
+      <div className="atmo-mood" />
+      <div className="atmo-key" />
+      <div className="atmo-fog" />
+      <div className="atmo-fog second" />
+      <div className="atmo-candles"><i /><i /><i /></div>
+      {mood === "hopeful" && (
+        <div className="atmo-stars">
+          {STAR_POINTS.map((s, i) => <span key={i} style={{ left: s.left, top: s.top, animationDelay: s.delay }} />)}
+        </div>
+      )}
+      {mood === "somber" && (
+        <div className="atmo-rain">
+          {RAIN_DROPS.map((d, i) => <span key={i} style={{ left: d.left, animationDelay: d.delay, animationDuration: d.dur }} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConsensusMeter({ votes, votesShown, language }) {
+  const run = runningTally(votes, votesShown);
+  const total = votes.length || 1;
+  const lead = leadingSide(run);
+  const status = !run.total ? "" : lead
+    ? t(language, "consensus_leaning", voteLabel(language, lead))
+    : t(language, "consensus_split");
+  return (
+    <div className="consensus-meter" role="status" aria-live="polite">
+      <div className="cm-head">
+        <span className="eyebrow">{t(language, "consensus_label")}</span>
+        <span className="cm-status">{status} <span className="cm-count">{run.total}/{votes.length}</span></span>
+      </div>
+      <div className="cm-bar">
+        <i className="yes" style={{ width: `${(run.yes / total) * 100}%` }} />
+        <i className="dep" style={{ width: `${(run.dep / total) * 100}%` }} />
+        <i className="no" style={{ width: `${(run.no / total) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+const GREET_KEY = "council:last_greet";
+const GREETERS = ["founder", "artist", "monk"];
+
+function readGreetFlag() {
+  try {
+    if (!shouldGreetToday(localStorage.getItem(GREET_KEY))) return false;
+    localStorage.setItem(GREET_KEY, localDayKey());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function DailyGreeting({ language, onDone, reducedMotion }) {
+  useEffect(() => {
+    const id = setTimeout(onDone, reducedMotion ? 6000 : 7800);
+    return () => clearTimeout(id);
+  }, [onDone, reducedMotion]);
+  return (
+    <button type="button" className="daily-greeting" onClick={onDone}>
+      <span className="eyebrow">{t(language, "greet_label")}</span>
+      {GREETERS.map((id, i) => (
+        <span key={id} className="dg-line" style={{ "--pc": byId[id].color, animationDelay: `${1.2 + i * 1.1}s` }}>
+          <span className="dg-sig" style={{ color: byId[id].color }}><Sigil id={id} /></span>
+          <span className="dg-who" style={{ color: byId[id].color }}>{personaShortName(language, id)}</span>
+          <span className="dg-txt serif">{t(language, `greet_${id}`)}</span>
+        </span>
+      ))}
+    </button>
+  );
+}
+
 export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeSlot, language, decisionContext }) {
   const [phase, setPhase] = useState("idle"); // idle | summoning | debate | reflecting | voting | verdict | error
   const [question, setQuestion] = useState("");
@@ -453,6 +599,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
   // only written on a *completed* debate, so this can't flip mid-reveal.
   const [fastPace] = useState(() => loadHistory().length > 0);
   const reducedMotion = prefersReducedMotion();
+  // once per local day, only on a plain entry — never over a shared/preview
+  // debate or an auto-convened question, where it would delay the content
+  const [greeting, setGreeting] = useState(() => !preloaded && !initialQuestion && readGreetFlag());
+  const [delight, setDelight] = useState(null);
+  const [copiedQuote, setCopiedQuote] = useState(false);
   const revealAll = () => {
     if (!debate) return;
     setShown(debate.turns.length);
@@ -772,6 +923,50 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
     setPhase("idle"); setAsked(""); setDebate(null); setShown(0); setVotesShown(0);
   };
 
+  // rare idle gestures — only in calm phases, never during the eclipse's
+  // silence, never in a hidden tab, never under reduced motion
+  const delightAllowed = !reducedMotion && (phase === "idle" || (phase === "verdict" && !isEclipse));
+  useEffect(() => {
+    if (!delightAllowed) { setDelight(null); return; }
+    let showTimer, hideTimer;
+    const schedule = () => {
+      showTimer = setTimeout(() => {
+        if (typeof document !== "undefined" && document.hidden) return schedule();
+        setDelight(pickDelight());
+        hideTimer = setTimeout(() => { setDelight(null); schedule(); }, 3400);
+      }, delightDelayMs());
+    };
+    schedule();
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
+  }, [delightAllowed]);
+
+  const ringStats = useMemo(() => {
+    if (!debate || phase === "idle" || phase === "summoning") return null;
+    return id => memberStats(debate, id, shown, votesShown);
+  }, [debate, phase, shown, votesShown]);
+
+  const sharePreviewOpen = !!sharePreview;
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key === "Escape" && sharePreviewOpen) { setSharePreview(null); return; }
+      const tag = e.target?.tagName;
+      if (e.metaKey || e.ctrlKey || e.altKey || tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      if (sharePreviewOpen || phase !== "debate" || !debate) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); setShown(s => Math.min(s + 1, debate.turns.length)); }
+      else if (e.key === "End") { e.preventDefault(); revealAll(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, debate, sharePreviewOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCopyQuote = () => {
+    const text = formatQuote(debate?.quote, t(language, "quote_attribution"));
+    if (!text) return;
+    navigator.clipboard?.writeText(text)
+      .then(() => { setCopiedQuote(true); setTimeout(() => setCopiedQuote(false), 2000); })
+      .catch(() => {});
+  };
+
   const appUrl = shareUrl(debate?.id);
   // no server-persisted id means /r/:id would point nowhere — link-based
   // sharing (WhatsApp, X, LinkedIn, Facebook, native share, copy link) only
@@ -845,7 +1040,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
 
   const recordedRef = useRef(null);
   useEffect(() => {
-    if (phase !== "verdict" || !debate?.id || recordedRef.current === debate.id) return;
+    // synthetic QA previews (?preview=eclipse|split) were never persisted —
+    // recording them would leave a history entry pointing at a 404
+    if (phase !== "verdict" || !debate?.id || debate.id === "preview" || recordedRef.current === debate.id) return;
     recordedRef.current = debate.id;
     updateProfile({
       recordDebate: { id: debate.id, question: asked, verdict: debate.verdict, mood: debate.mood, unanimousVote: eclipseVote },
@@ -870,6 +1067,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
       <div className="ambient" style={{
         background: `radial-gradient(50% 42% at 50% 12%, ${ambientColor}14, transparent 70%)`
       }} />
+      <ChamberAtmosphere mood={debate && phase !== "idle" ? normalizeMood(debate.mood) : "neutral"} reducedMotion={reducedMotion} />
       <div className="chamber">
         <div className={`council-stage${stageCompact && phase !== "idle" ? " compact" : ""}`}>
           <div className="chamber-head">
@@ -892,6 +1090,9 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
             language={language}
             eclipse={isEclipse && phase === "verdict"}
             echoRipple={phase === "reflecting" && !!debate?.memoryEcho}
+            stats={ringStats}
+            delight={delight}
+            entering={greeting && !reducedMotion}
             label={phase === "summoning" ? t(language, "deliberating") : phase === "reflecting" ? t(language, "reflecting") : phase === "voting" ? t(language, "voting") : phase === "verdict" ? t(language, "adjourned") : null}
           />
 
@@ -911,6 +1112,10 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
           </div>
         </div>
         <div ref={sentinelRef} style={{ height: 0, pointerEvents: "none" }} aria-hidden="true" />
+
+        {phase === "idle" && greeting && (
+          <DailyGreeting language={language} reducedMotion={reducedMotion} onDone={() => setGreeting(false)} />
+        )}
 
         {phase === "idle" && lifeModeSlot}
 
@@ -965,6 +1170,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               <button type="button" className="reveal-all-btn" onClick={revealAll}>
                 {t(language, "reveal_all")}
               </button>
+              {phase === "debate" && <span className="kbd-hint" aria-hidden="true">{t(language, "kbd_hint")}</span>}
             </div>
           )}
           <div className="feed" ref={feedRef} tabIndex={-1} aria-label={t(language, "chapter_debate")} aria-live="polite" aria-atomic="false">
@@ -1054,6 +1260,7 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               <div className="eyebrow">{t(language, "deliberation_closed")}</div>
               <h3 className="serif">{t(language, "council_votes")}</h3>
             </div>
+            {phase === "voting" && <ConsensusMeter votes={debate.votes} votesShown={votesShown} language={language} />}
             <div className="votes">
               {debate.votes.slice(0, votesShown).map((v, i) => {
                 const p = byId[v.p];
@@ -1124,6 +1331,11 @@ export function Chamber({ profile, preloaded, initialQuestion, onExit, lifeModeS
               <div className={"headline serif reveal" + (verdictStage >= 2 ? " in" : "")}>{isEclipse ? t(language, "eclipse_headline", eclipseVote === "yes" ? t(language, "yes") : t(language, "no")) : councilHeadline(debate, language)}</div>
               <div className={"vx serif reveal" + (verdictStage >= 2 ? " in" : "")}>{debate.verdict}</div>
               {debate.quote && <div className={"pull-quote serif reveal" + (verdictStage >= 3 ? " in" : "")}>"{debate.quote}"</div>}
+              {debate.quote && verdictStage >= 3 && (
+                <button type="button" className={"copy-quote" + (copiedQuote ? " done" : "")} onClick={handleCopyQuote}>
+                  {copiedQuote ? t(language, "quote_copied") : t(language, "copy_quote")}
+                </button>
+              )}
               <div className={"rule reveal" + (verdictStage >= 3 ? " in" : "")} />
               {isEclipse && <div className={"eclipse-rarity reveal" + (verdictStage >= 3 ? " in" : "")}>{t(language, "eclipse_rarity")}</div>}
               {debate.question && <div className={"cq reveal" + (verdictStage >= 4 ? " in" : "")}>{debate.question}</div>}

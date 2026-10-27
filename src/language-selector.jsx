@@ -1,4 +1,4 @@
-import { LANGUAGES } from "./lib/i18n.js";
+import { LANGUAGES, t } from "./lib/i18n.js";
 
 export function LanguageSelector({ language, onChange }) {
   return (
@@ -13,6 +13,15 @@ export function LanguageSelector({ language, onChange }) {
           {l.label}
         </button>
       ))}
+      {/* phones: four chips wrapped to two header rows — a native select fits one */}
+      <select
+        className="lang-select"
+        value={language}
+        onChange={e => onChange(e.target.value)}
+        aria-label={t(language, "lang_label")}
+      >
+        {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+      </select>
     </div>
   );
 }

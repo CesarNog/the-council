@@ -656,6 +656,48 @@ const S = {
   email_verdict_btn:    { en: "Email this verdict",   pt: "Enviar por e-mail",      es: "Enviar por correo",      zh: "邮件发送裁决" },
   email_verdict_sent:   { en: "Opening email…",       pt: "Abrindo e-mail…",        es: "Abriendo correo…",       zh: "正在打开邮件…" },
   email_verdict_subject: { en: q => `The Council on: ${q}`, pt: q => `O Conselho sobre: ${q}`, es: q => `El Consejo sobre: ${q}`, zh: q => `议会关于：${q}` },
+
+  // immersion pass: rare idle gestures
+  delight_founder:     { en: "checks a blueprint",        pt: "confere uma planta",          es: "revisa un plano",             zh: "查看一张蓝图" },
+  delight_billionaire: { en: "glances at the clock",      pt: "olha para o relógio",         es: "mira el reloj",               zh: "瞥了一眼时钟" },
+  delight_artist:      { en: "sketches in the margin",    pt: "rabisca na margem",           es: "dibuja en el margen",         zh: "在页边作画" },
+  delight_athlete:     { en: "rolls their shoulders",     pt: "alonga os ombros",            es: "estira los hombros",          zh: "活动了一下肩膀" },
+  delight_monk:        { en: "closes their eyes",         pt: "fecha os olhos",              es: "cierra los ojos",             zh: "闭上双眼" },
+  delight_scientist:   { en: "writes a note",             pt: "anota algo",                  es: "toma una nota",               zh: "记下一笔" },
+  delight_explorer:    { en: "looks out the window",      pt: "olha pela janela",            es: "mira por la ventana",         zh: "望向窗外" },
+  delight_romantic:    { en: "smiles at a memory",        pt: "sorri para uma lembrança",    es: "sonríe a un recuerdo",        zh: "对着回忆微笑" },
+  delight_shadow:      { en: "laughs quietly",            pt: "ri baixinho",                 es: "ríe en voz baja",             zh: "低声笑了" },
+
+  // daily opening
+  greet_label:   { en: "The Council gathers",  pt: "O Conselho se reúne",   es: "El Consejo se reúne",   zh: "议会正在集合" },
+  greet_founder: { en: "You're back.",          pt: "Você voltou.",          es: "Has vuelto.",           zh: "你回来了。" },
+  greet_artist:  { en: "I've been thinking…",   pt: "Andei pensando…",       es: "He estado pensando…",   zh: "我一直在想……" },
+  greet_monk:    { en: "Welcome home.",         pt: "Bem-vindo de volta.",   es: "Bienvenido a casa.",    zh: "欢迎回家。" },
+
+  // live consensus meter
+  consensus_label:   { en: "Consensus",       pt: "Consenso",        es: "Consenso",        zh: "共识" },
+  consensus_split:   { en: "Divided",         pt: "Dividido",        es: "Dividido",        zh: "意见分歧" },
+  consensus_leaning: { en: s => `Leaning ${s}`, pt: s => `Tendendo a ${s}`, es: s => `Inclinado a ${s}`, zh: s => `倾向于${s}` },
+
+  // ring member card
+  member_turns:  { en: n => `Spoke ${n}×`,      pt: n => `Falou ${n}×`,      es: n => `Habló ${n}×`,      zh: n => `发言 ${n} 次` },
+  member_silent: { en: "Has not spoken yet",    pt: "Ainda não falou",      es: "Aún no ha hablado",    zh: "尚未发言" },
+  member_vote:   { en: "Vote",                   pt: "Voto",                 es: "Voto",                 zh: "投票" },
+
+  // adoption pass: one-step start from the landing, optional context
+  hero_ask_label:       { en: "What are you trying to decide?", pt: "O que você está tentando decidir?", es: "¿Qué estás intentando decidir?", zh: "你正在纠结什么决定？" },
+  hero_ask_placeholder: { en: "e.g. Should I take the job offer in another city?", pt: "Ex.: Devo aceitar a proposta de emprego em outra cidade?", es: "Ej.: ¿Debería aceptar la oferta de trabajo en otra ciudad?", zh: "例如：我该接受外地的工作邀请吗？" },
+  hero_ask_hint_empty:  { en: "No sign-up. Leave it blank and the Council asks a few questions first.", pt: "Sem cadastro. Em branco, o Conselho faz algumas perguntas antes.", es: "Sin registro. En blanco, el Consejo te hará unas preguntas antes.", zh: "无需注册。留空的话，议会会先问你几个问题。" },
+  hero_ask_hint_ready:  { en: "No sign-up. The debate starts right away.", pt: "Sem cadastro. O debate começa na hora.", es: "Sin registro. El debate empieza al instante.", zh: "无需注册。辩论立即开始。" },
+  onb_skip_convene:     { en: "Skip and convene now", pt: "Pular e convocar agora", es: "Saltar y convocar ahora", zh: "跳过，立即召集" },
+  onb_add_context:      { en: "Add context first (optional)", pt: "Adicionar contexto antes (opcional)", es: "Añadir contexto antes (opcional)", zh: "先补充背景（可选）" },
+  lang_label:           { en: "Language", pt: "Idioma", es: "Idioma", zh: "语言" },
+
+  // quote + keyboard
+  copy_quote:        { en: "Copy quote",    pt: "Copiar citação",  es: "Copiar cita",   zh: "复制金句" },
+  quote_copied:      { en: "Quote copied",  pt: "Citação copiada", es: "Cita copiada",  zh: "已复制" },
+  quote_attribution: { en: "— The Council", pt: "— O Conselho",    es: "— El Consejo",  zh: "—— 议会" },
+  kbd_hint:          { en: "→ next · End reveal all", pt: "→ próximo · End revela tudo", es: "→ siguiente · End revela todo", zh: "→ 下一位 · End 全部显示" },
 };
 
 export function t(lang, key, ...args) {
