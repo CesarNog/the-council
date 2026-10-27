@@ -362,16 +362,22 @@ function NotFoundPage({ onHome, language = "en" }) {
 
 function eclipsePreviewDebate() {
   if (typeof window === "undefined") return null;
-  if (new URLSearchParams(window.location.search).get("preview") !== "eclipse") return null;
+  const params = new URLSearchParams(window.location.search);
+  const kind = params.get("preview");
+  if (kind !== "eclipse" && kind !== "split") return null;
   const ids = ["founder", "billionaire", "artist", "athlete", "monk", "scientist", "explorer", "romantic", "shadow"];
+  // split: mixed votes so the non-eclipse verdict, consensus meter and mood
+  // lighting can be validated visually without spending Groq TPM
+  const splitVotes = ["yes", "yes", "no", "yes", "depends", "no", "yes", "depends", "no"];
+  const mood = params.get("mood") || "electric";
   return {
-    question: "[QA preview] Should I take the leap?",
+    question: `[QA preview] Should I take the leap?`,
     debate: {
       id: "preview",
-      mood: "electric",
-      turns: ids.map(p => ({ p, t: "[Eclipse QA preview turn]" })),
-      votes: ids.map(p => ({ p, v: "yes", r: "[QA]" })),
-      verdict: "[QA preview] This is a synthetic unanimous debate used only to visually validate the Eclipse sequence.",
+      mood,
+      turns: ids.map(p => ({ p, t: `[${kind} QA preview turn]` })),
+      votes: ids.map((p, i) => ({ p, v: kind === "split" ? splitVotes[i] : "yes", r: "[QA]" })),
+      verdict: `[QA preview] Synthetic ${kind} debate used only to visually validate the chamber sequence.`,
       quote: "[QA preview quote]",
       question: "[QA preview reflection question]",
       realities: [],
