@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { LandingHeroFallback } from "./LandingHeroFallback.jsx";
 import { HowItWorks } from "./HowItWorks.jsx";
 import { PersonaPreview } from "./PersonaPreview.jsx";
@@ -54,6 +54,16 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
     return () => obs.disconnect();
   }, []);
 
+  // A typed question goes straight to the chamber (one step to value);
+  // an empty field keeps the guided onboarding the button always led to.
+  const [heroQuestion, setHeroQuestion] = useState("");
+  const askId = useId();
+  const submitHero = () => {
+    const q = heroQuestion.trim();
+    Events.landingCta({ action: q ? "hero_ask" : "primary", authenticated: !!authenticated, language });
+    if (q) onEnter(q); else onEnter();
+  };
+
   const recentQs = history.slice(0, 2);
   const greetingName = firstName(displayName);
   const greeting = greetingName
@@ -95,11 +105,25 @@ export function Landing({ onEnter, authSlot, language, history = [], onRevisit, 
           <p className="sub fade-up d3">{t(language, "landing_sub")}</p>
           <p className="landing-trust fade-up d3">{t(language, "landing_trust")}</p>
           {personaHint}
+          <form className="fade-up d4 landing-ask" onSubmit={e => { e.preventDefault(); submitHero(); }}>
+            <label className="landing-ask-label" htmlFor={askId}>{t(language, "hero_ask_label")}</label>
+            <textarea
+              id={askId}
+              rows={2}
+              maxLength={500}
+              value={heroQuestion}
+              onChange={e => setHeroQuestion(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitHero(); } }}
+              placeholder={t(language, "hero_ask_placeholder")}
+              enterKeyHint="go"
+            />
+            <p className="landing-ask-hint">{t(language, heroQuestion.trim() ? "hero_ask_hint_ready" : "hero_ask_hint_empty")}</p>
+          </form>
           <div className="fade-up d4 cta-group landing-cta-group">
             <button
               ref={heroSentinelRef}
               className="btn primary landing-cta-primary"
-              onClick={() => { Events.landingCta({ action: "primary", authenticated: !!authenticated, language }); onEnter(); }}
+              onClick={submitHero}
               onMouseEnter={() => setCtaHover(true)}
               onMouseLeave={() => setCtaHover(false)}
               onFocus={() => setCtaHover(true)}

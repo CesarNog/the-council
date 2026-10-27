@@ -166,7 +166,12 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
     });
   };
 
-  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (step === 1 && question.trim()) setStep(2); } };
+  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (step === 1 && question.trim()) finish(); } };
+  // Context (weight, category, fear) sharpens the debate but is optional —
+  // every context screen offers a way to convene right now.
+  const skipToConvene = question.trim()
+    ? <button type="button" className="onb-skip-link" onClick={finish}>{t(language, "onb_skip_convene")}</button>
+    : null;
 
   return (
     <div className="onb">
@@ -227,10 +232,11 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <div className="eyebrow">{t(language, "onb_progress_2")}</div>
           <h2>{t(language, "onb_decision_q")}</h2>
           <p className="hint">{t(language, "onb_decision_hint")}</p>
-          <textarea rows={2} ref={stepFocusRef} inputMode="text" enterKeyHint="done" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
+          <textarea rows={2} ref={stepFocusRef} inputMode="text" enterKeyHint="go" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={onKey}
             placeholder={t(language, "onb_decision_placeholder")} />
-          <div style={{ marginTop: 44 }}>
-            <button className="btn" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "continue")}</button>
+          <div className="onb-actions">
+            <button className="btn primary" onClick={finish} disabled={!question.trim()}>{t(language, "convene")}</button>
+            <button type="button" className="onb-skip-link" onClick={() => setStep(2)} disabled={!question.trim()}>{t(language, "onb_add_context")}</button>
           </div>
         </div>
       )}
@@ -250,6 +256,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
               </button>
             ))}
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 
@@ -267,6 +274,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
               </button>
             ))}
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 
@@ -288,6 +296,7 @@ export function Onboarding({ onDone, initial, language, googleNames, initialDisp
           <div style={{ marginTop: 44 }}>
             <button className="btn primary" onClick={() => setStep(5)} disabled={!mainFear}>{t(language, "continue")}</button>
           </div>
+          <div className="onb-actions">{skipToConvene}</div>
         </div>
       )}
 

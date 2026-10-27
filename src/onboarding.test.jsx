@@ -13,7 +13,7 @@ function fillQuickSteps() {
   fireEvent.click(screen.getByRole("button", { name: /continue/i }));
   // step 1: question
   fireEvent.change(screen.getByPlaceholderText(/quit my job/i), { target: { value: "Should I move abroad?" } });
-  fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+  fireEvent.click(screen.getByRole("button", { name: /add context first/i }));
   // step 2: emotional weight (any option advances)
   fireEvent.click(screen.getByRole("button", { name: /^moderate$/i }));
   // step 3: category
@@ -87,5 +87,51 @@ describe("Onboarding — Quick vs Deep Council", () => {
     expect(payload.options).toEqual(["Stay"]);
     expect(payload.deadline).toBe("");
     expect(payload.known).toBe("");
+  });
+});
+
+describe("Onboarding — convene without optional context", () => {
+  function reachQuestion() {
+    fireEvent.click(screen.getByRole("button", { name: /continue/i })); // name is optional
+    fireEvent.change(screen.getByPlaceholderText(/quit my job/i), { target: { value: "Should I move abroad?" } });
+  }
+
+  it("convenes straight from the question screen", () => {
+    const onDone = vi.fn();
+    render(<Onboarding onDone={onDone} language="en" />);
+    reachQuestion();
+    fireEvent.click(screen.getByRole("button", { name: /convene the council/i }));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    const payload = onDone.mock.calls[0][0];
+    expect(payload.question).toBe("Should I move abroad?");
+    expect(payload.emotionalWeight).toBe("");
+    expect(payload.options).toBeUndefined();
+  });
+
+  it("Enter on the question convenes", () => {
+    const onDone = vi.fn();
+    render(<Onboarding onDone={onDone} language="en" />);
+    reachQuestion();
+    fireEvent.keyDown(screen.getByPlaceholderText(/quit my job/i), { key: "Enter" });
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it("each context screen can skip ahead, keeping what was already answered", () => {
+    const onDone = vi.fn();
+    render(<Onboarding onDone={onDone} language="en" />);
+    reachQuestion();
+    fireEvent.click(screen.getByRole("button", { name: /add context first/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^moderate$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /skip and convene now/i }));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    const payload = onDone.mock.calls[0][0];
+    expect(payload.emotionalWeight).toBe("moderate");
+    expect(payload.decisionCategory).toBe("");
+  });
+
+  it("cannot convene with an empty question", () => {
+    render(<Onboarding onDone={vi.fn()} language="en" />);
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+    expect(screen.getByRole("button", { name: /convene the council/i })).toBeDisabled();
   });
 });
