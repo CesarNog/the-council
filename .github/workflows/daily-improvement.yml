@@ -93,6 +93,11 @@ jobs:
             do not add boilerplate docstrings (the repo forbids superfluous
             comments).
 
+      - uses: actions/setup-python@v7
+        if: steps.gemini_run.outcome == 'failure'
+        with:
+          python-version: '3.12'
+
       - name: Fallback — autonomous improvement via aider + Groq
         id: aider_fallback
         if: steps.gemini_run.outcome == 'failure'
@@ -115,7 +120,7 @@ jobs:
           BRANCH="chore/daily-improvement-groq-${{ github.run_id }}-${{ github.run_attempt }}"
           git checkout -b "$BRANCH"
 
-          pip install --quiet --disable-pip-version-check aider-chat
+          python -m pip install --quiet --disable-pip-version-check aider-chat
 
           # llama-3.3-70b-versatile, not openai/gpt-oss-120b (the model
           # api/council.js uses) — chosen for broad, well-documented aider/
